@@ -109,9 +109,6 @@ function Layout({ children, tasks, boards }) {
         <NavLink to="/" end className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
           Общий ЛБ
         </NavLink>
-        <NavLink to="/cycle" className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
-          По 15 (цикл)
-        </NavLink>
         {visibleBoards.map((board) => (
           <NavLink key={board.slug} to={`/board/${board.slug}`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
             {board.title}
