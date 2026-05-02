@@ -46,8 +46,9 @@ function validateTasks(input) {
     if (!slug) throw new Error(`task #${idx + 1}: slug is required`);
     if (!title) throw new Error(`task #${idx + 1}: title is required`);
     if (!competition) throw new Error(`task #${idx + 1}: competition is required`);
-    if (seen.has(slug)) throw new Error(`duplicate slug: ${slug}`);
-    seen.add(slug);
+    const normSlug = slug.toLowerCase();
+    if (seen.has(normSlug)) throw new Error(`duplicate slug: ${normSlug}`);
+    seen.add(normSlug);
 
     const baselineScore = parseOptionalNumber(task.baselineScore, `task #${idx + 1}: baselineScore`);
     const authorScore = parseOptionalNumber(task.authorScore, `task #${idx + 1}: authorScore`);
@@ -60,7 +61,7 @@ function validateTasks(input) {
     }
 
     const result = {
-      slug,
+      slug: normSlug,
       title,
       competition,
       higherIsBetter: task.higherIsBetter !== false,
@@ -357,8 +358,13 @@ app.get('/api/leaderboard', (_req, res) => {
 });
 
 app.get('/api/tasks/:slug', (req, res) => {
-  const task = cache.byTask[req.params.slug];
-  const privateTask = cache.privateByTask[req.params.slug] || null;
+  const wanted = String(req.params.slug || '').toLowerCase();
+  const findKey = (map) =>
+    Object.keys(map).find((k) => k.toLowerCase() === wanted);
+  const taskKey = findKey(cache.byTask);
+  const privateKey = findKey(cache.privateByTask);
+  const task = taskKey ? cache.byTask[taskKey] : null;
+  const privateTask = privateKey ? cache.privateByTask[privateKey] : null;
 
   if (!task && !privateTask) {
     res.status(404).json({ error: `Task '${req.params.slug}' not found` });
