@@ -55,6 +55,37 @@ function rowDirClass(dir) {
   return dir === 'up' ? 'row-up' : dir === 'down' ? 'row-down' : '';
 }
 
+function csvEscape(v) {
+  if (v === null || v === undefined) return '';
+  const s = String(v);
+  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+function downloadCSV(filename, headers, rows) {
+  const lines = [headers.map(csvEscape).join(',')];
+  for (const row of rows) {
+    lines.push(row.map(csvEscape).join(','));
+  }
+  const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function DownloadButton({ onClick }) {
+  return (
+    <button className="control-btn control-btn-ghost" onClick={onClick} title="Скачать CSV">
+      ↓ CSV
+    </button>
+  );
+}
+
 function usePolling(loader, deps = []) {
   const [state, setState] = useState({
     data: null,
@@ -149,11 +180,29 @@ function OverallPage() {
   if (loading) return <p className="status">Загрузка общего ЛБ...</p>;
   if (error) return <p className="status error">{error}</p>;
 
+  function exportCSV() {
+    const headers = ['#', 'Nickname', 'Team Name', 'Total points', ...data.tasks.map((t) => t.title)];
+    const rows = data.overall.map((row) => [
+      row.place,
+      row.nickname || '',
+      row.teamName || '',
+      row.totalPoints.toFixed(2),
+      ...data.tasks.map((t) => {
+        const p = row.tasks?.[t.slug]?.points;
+        return p !== undefined ? p.toFixed(2) : '';
+      }),
+    ]);
+    downloadCSV('overall.csv', headers, rows);
+  }
+
   return (
     <section className="panel">
       <div className="panel-head">
         <h2>Общий рейтинг</h2>
-        <span>Updated: {new Date(data.updatedAt).toLocaleString()}</span>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <DownloadButton onClick={exportCSV} />
+          <span>Updated: {new Date(data.updatedAt).toLocaleString()}</span>
+        </div>
       </div>
 
       <ErrorBanner errors={data.errors} />
@@ -219,14 +268,32 @@ function CyclingOverallPage() {
   const slice = data.overall.slice(start, start + PAGE_SIZE);
   const endShown = Math.min(start + PAGE_SIZE, total);
 
+  function exportCSV() {
+    const headers = ['#', 'Nickname', 'Team Name', 'Total points', ...data.tasks.map((t) => t.title)];
+    const rows = data.overall.map((row) => [
+      row.place,
+      row.nickname || '',
+      row.teamName || '',
+      row.totalPoints.toFixed(2),
+      ...data.tasks.map((t) => {
+        const p = row.tasks?.[t.slug]?.points;
+        return p !== undefined ? p.toFixed(2) : '';
+      }),
+    ]);
+    downloadCSV('overall.csv', headers, rows);
+  }
+
   return (
     <section className="panel">
       <div className="panel-head">
         <h2>Места {start + 1}–{endShown}</h2>
-        <span>
-          Страница {currentPage + 1} / {totalPages} · смена каждые {PAGE_MS / 1000}с · updated:{' '}
-          {new Date(data.updatedAt).toLocaleString()}
-        </span>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <DownloadButton onClick={exportCSV} />
+          <span>
+            Страница {currentPage + 1} / {totalPages} · смена каждые {PAGE_MS / 1000}с · updated:{' '}
+            {new Date(data.updatedAt).toLocaleString()}
+          </span>
+        </div>
       </div>
 
       <ErrorBanner errors={data.errors} />
@@ -306,11 +373,29 @@ function BoardPage({ boards }) {
     )
     .map((row, i) => ({ ...row, place: i + 1 }));
 
+  function exportCSV() {
+    const headers = ['#', 'Nickname', 'Team Name', 'Board points', ...groupTasks.map((t) => t.title)];
+    const rows = ranked.map((row) => [
+      row.place,
+      row.nickname || '',
+      row.teamName || '',
+      row.groupPoints.toFixed(2),
+      ...groupTasks.map((t) => {
+        const p = row.tasks?.[t.slug]?.points;
+        return p !== undefined ? p.toFixed(2) : '';
+      }),
+    ]);
+    downloadCSV(`board-${board.slug}.csv`, headers, rows);
+  }
+
   return (
     <section className="panel">
       <div className="panel-head">
         <h2>{board.title}</h2>
-        <span>Updated: {new Date(data.updatedAt).toLocaleString()}</span>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <DownloadButton onClick={exportCSV} />
+          <span>Updated: {new Date(data.updatedAt).toLocaleString()}</span>
+        </div>
       </div>
 
       <ErrorBanner errors={data.errors} />
@@ -363,11 +448,27 @@ function TaskPage() {
 
   const { task } = data;
 
+  function exportCSV() {
+    const headers = ['#', 'Nickname', 'Team Name', 'Kaggle Rank', 'Raw Score', 'NEOAI Points'];
+    const rows = task.entries.map((row) => [
+      row.place,
+      row.nickname || '',
+      row.teamName || '',
+      row.rank ?? '',
+      row.score.toFixed(6),
+      row.points.toFixed(2),
+    ]);
+    downloadCSV(`task-${task.slug}.csv`, headers, rows);
+  }
+
   return (
     <section className="panel">
       <div className="panel-head">
         <h2>{task.title}</h2>
-        <span>Competition: {task.competition}</span>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <DownloadButton onClick={exportCSV} />
+          <span>Competition: {task.competition}</span>
+        </div>
       </div>
 
       <p className="meta">
