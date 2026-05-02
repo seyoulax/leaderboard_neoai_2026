@@ -470,13 +470,9 @@ function TaskPage() {
         <h2>{task.title}</h2>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <DownloadButton onClick={exportCSV} />
-          <span>Competition: {task.competition}</span>
+          <span>Updated: {new Date(data.updatedAt).toLocaleString()}</span>
         </div>
       </div>
-
-      <p className="meta">
-        Updated: {new Date(data.updatedAt).toLocaleString()} | Metric mode: {task.higherIsBetter ? 'Higher is better' : 'Lower is better'}
-      </p>
 
       <ErrorBanner errors={data.errors} />
 
