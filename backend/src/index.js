@@ -137,7 +137,21 @@ async function loadBoards() {
     if (!Array.isArray(parsed)) return [];
     const tasks = await loadTasks();
     const known = new Set(tasks.map((t) => t.slug));
-    return validateBoards(parsed, known);
+
+    const sanitized = [];
+    for (const board of parsed) {
+      if (!board || typeof board !== 'object') continue;
+      const filtered = Array.isArray(board.taskSlugs)
+        ? board.taskSlugs.filter((s) => typeof s === 'string' && known.has(s.trim()))
+        : [];
+      if (filtered.length === 0) {
+        console.warn(`[boards] skipping '${board.slug}' — no known task slugs left`);
+        continue;
+      }
+      sanitized.push({ ...board, taskSlugs: filtered });
+    }
+
+    return validateBoards(sanitized, known);
   } catch (e) {
     if (e.code === 'ENOENT') return [];
     throw e;
