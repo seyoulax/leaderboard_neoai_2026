@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Отбор на международные олимпиады по ИИ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a0a0a;
+            color: #fafafa;
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+            background-size: 128px 128px;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.5;
+        }
+        .container {
+            text-align: center;
+            padding: 2rem;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            margin-bottom: 3rem;
+        }
+        .logo span {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        .logo .accent { color: #775aff; }
+        h1 {
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+        }
+        h1 .gradient {
+            background: linear-gradient(135deg, #775aff 0%, #2cb9ff 50%, #00e68a 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        p {
+            font-size: 1.125rem;
+            color: #888;
+            max-width: 580px;
+            margin: 0 auto 4rem;
+            line-height: 1.6;
+        }
+        .years {
+            display: flex;
+            gap: 2rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .year-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 220px;
+            height: 180px;
+            border-radius: 1.25rem;
+            border: 1px solid #1f1f1f;
+            background: #111;
+            text-decoration: none;
+            color: #fafafa;
+            transition: transform 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+        }
+        .year-card:hover {
+            transform: translateY(-6px);
+            border-color: #775aff;
+            background: linear-gradient(180deg, rgba(119,90,255,0.06) 0%, #111 100%);
+        }
+        .year-card .year {
+            font-size: 3rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            background: linear-gradient(135deg, #775aff 0%, #2cb9ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .year-card .label {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 0.5rem;
+            font-weight: 500;
+        }
+        .year-card.active .label {
+            color: #a78bfa;
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .logo { animation: fadeUp 0.6s ease-out; }
+        h1 { animation: fadeUp 0.6s ease-out 0.1s both; }
+        p { animation: fadeUp 0.6s ease-out 0.2s both; }
+        .years { animation: fadeUp 0.6s ease-out 0.3s both; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                <rect width="24" height="24" rx="6" fill="#775aff"/>
+                <path d="M12 6L14.5 10.5L19 12L14.5 13.5L12 18L9.5 13.5L5 12L9.5 10.5L12 6Z" fill="white"/>
+            </svg>
+            <span>Отбор <span class="accent">IOAI</span></span>
+        </div>
+        <h1>Отбор на <span class="gradient">международные олимпиады</span> по ИИ</h1>
+        <p>Рейтинг кандидатов на основе достижений в олимпиадах и соревнованиях. Выберите сезон.</p>
+        <div class="years">
+            <a href="2026.html" class="year-card active">
+                <div class="year">2026</div>
+                <div class="label">Текущий сезон</div>
+            </a>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,1778 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Отбор на международные олимпиады по ИИ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a0a0a;
+            color: #fafafa;
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Noise */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+            background-size: 128px 128px;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.5;
+        }
+
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 4.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 3rem;
+            background: rgba(10, 10, 10, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid #1f1f1f;
+            z-index: 100;
+        }
+        .header-logo {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+        .header-logo .accent { color: #775aff; }
+        .header-nav {
+            display: flex;
+            gap: 1.25rem;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            max-width: 70%;
+        }
+        .header-nav::-webkit-scrollbar { display: none; }
+        .header-nav a {
+            color: #666;
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: color 0.2s;
+            white-space: nowrap;
+        }
+        .header-nav a:hover { color: #fafafa; }
+
+        /* Hero */
+        .hero {
+            padding: 10rem 3rem 5rem;
+            text-align: center;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 50%;
+            transform: translateX(-50%);
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(119,90,255,0.12) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.4rem 1rem;
+            background: rgba(119, 90, 255, 0.1);
+            border: 1px solid rgba(119, 90, 255, 0.25);
+            border-radius: 100px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #a78bfa;
+            margin-bottom: 2rem;
+            animation: fadeUp 0.6s ease-out;
+        }
+        .hero h1 {
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            animation: fadeUp 0.6s ease-out 0.1s both;
+        }
+        .hero h1 .gradient {
+            background: linear-gradient(135deg, #775aff 0%, #2cb9ff 50%, #00e68a 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero p {
+            font-size: 1.125rem;
+            color: #888;
+            max-width: 620px;
+            margin: 0 auto 1.5rem;
+            line-height: 1.6;
+            animation: fadeUp 0.6s ease-out 0.2s both;
+        }
+        .hero-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: #a78bfa;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: 1px solid rgba(119,90,255,0.3);
+            padding: 0.5rem 1.2rem;
+            border-radius: 100px;
+            margin-bottom: 3rem;
+            transition: border-color 0.2s, background 0.2s;
+            animation: fadeUp 0.6s ease-out 0.25s both;
+        }
+        .hero-link:hover { border-color: rgba(119,90,255,0.6); background: rgba(119,90,255,0.07); }
+
+        /* Stats */
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 4rem;
+            padding: 0 3rem 4rem;
+            animation: fadeUp 0.6s ease-out 0.3s both;
+            flex-wrap: wrap;
+        }
+        .stat { text-align: center; }
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, #fafafa, #888);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .stat-value .highlight { -webkit-text-fill-color: #775aff; }
+        .stat-label {
+            font-size: 0.8rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 600;
+            margin-top: 0.25rem;
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #2a2a2a, transparent);
+            margin: 0 3rem;
+        }
+
+        /* Main section */
+        .section {
+            padding: 4rem 3rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+        }
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+        .section-subtitle {
+            font-size: 0.875rem;
+            color: #666;
+        }
+
+        .podium-status {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.2rem 0.65rem;
+            border-radius: 100px;
+            margin-top: 0.5rem;
+        }
+
+        /* Status badges */
+        .badge-winner {
+            color: #ffd700;
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.25);
+        }
+        .badge-prize {
+            color: #c0c0c0;
+            background: rgba(192, 192, 192, 0.08);
+            border: 1px solid rgba(192, 192, 192, 0.2);
+        }
+        .badge-bronze {
+            color: #cd7f32;
+            background: rgba(205, 127, 50, 0.08);
+            border: 1px solid rgba(205, 127, 50, 0.2);
+        }
+        .badge-finalist {
+            color: #2cb9ff;
+            background: rgba(44, 185, 255, 0.08);
+            border: 1px solid rgba(44, 185, 255, 0.2);
+        }
+        .badge-points {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.2rem 0.6rem;
+            border-radius: 100px;
+            color: #00e68a;
+            background: rgba(0, 230, 138, 0.1);
+            border: 1px solid rgba(0, 230, 138, 0.2);
+        }
+        .badge-invite {
+            display: inline-block;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.2rem 0.6rem;
+            border-radius: 100px;
+            color: #a78bfa;
+            background: rgba(119, 90, 255, 0.1);
+            border: 1px solid rgba(119, 90, 255, 0.2);
+        }
+
+        /* Leaderboard table */
+        .lb-table {
+            width: 100%;
+            border: 1px solid #1f1f1f;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            background: #111;
+        }
+        .lb-row {
+            display: grid;
+            grid-template-columns: 55px 1fr 1.2fr 120px 100px 110px;
+            align-items: center;
+            padding: 0.875rem 1.5rem;
+            border-bottom: 1px solid #1a1a1a;
+            transition: background 0.2s;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+        .lb-row:last-child { border-bottom: none; }
+        .lb-row:hover { background: #161616; }
+        .lb-row-head {
+            background: #0d0d0d;
+            border-bottom: 1px solid #1f1f1f;
+            cursor: default;
+        }
+        .lb-row-head span {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .lb-rank {
+            font-size: 0.95rem;
+            font-weight: 700;
+            text-align: center;
+        }
+        .lb-rank.gold { color: #ffd700; }
+        .lb-rank.silver { color: #c0c0c0; }
+        .lb-rank.bronze { color: #cd7f32; }
+
+        .lb-person {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+        .lb-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 600;
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            flex-shrink: 0;
+        }
+        .lb-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .lb-region {
+            font-size: 0.8rem;
+            color: #888;
+        }
+        .lb-status-cell { text-align: center; }
+        .lb-score {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #00e68a;
+            text-align: right;
+        }
+        .lb-points-cell { text-align: right; }
+
+        .lb-row:not(.lb-row-head) {
+            opacity: 0;
+            animation: fadeUp 0.4s ease-out forwards;
+        }
+
+        /* Scoring rules table */
+        .scoring-table {
+            width: 100%;
+            box-shadow: 0 0 0 1px #1f1f1f;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            background: #111;
+        }
+        .scoring-row {
+            display: grid;
+            grid-template-columns: 1.8fr 1fr 1fr 1fr;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            border-bottom: 1px solid #1a1a1a;
+            transition: background 0.2s;
+            gap: 0.5rem;
+        }
+        .scoring-row:last-child { border-bottom: none; }
+        .scoring-row:hover { background: #161616; }
+        .scoring-row-head {
+            background: #0d0d0d;
+            border-bottom: 1px solid #1f1f1f;
+        }
+        .scoring-row-head span {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        .scoring-name {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .scoring-cell {
+            font-size: 0.8rem;
+            text-align: center;
+            color: #888;
+        }
+        .scoring-cell .pts {
+            font-weight: 700;
+            color: #00e68a;
+        }
+        .scoring-cell .invite {
+            color: #a78bfa;
+            font-weight: 500;
+        }
+
+        /* Funnel */
+        .funnel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            margin-bottom: 3rem;
+            animation: fadeUp 0.6s ease-out 0.4s both;
+        }
+        .funnel-stage {
+            text-align: center;
+            padding: 1.25rem 2rem;
+            position: relative;
+            flex: 1;
+            max-width: 280px;
+        }
+        .funnel-stage::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 0;
+            height: 0;
+            border-top: 12px solid transparent;
+            border-bottom: 12px solid transparent;
+            border-left: 12px solid #2a2a2a;
+        }
+        .funnel-stage:last-child::after { display: none; }
+        .funnel-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+        .funnel-label {
+            font-size: 0.75rem;
+            color: #666;
+            font-weight: 500;
+            margin-top: 0.25rem;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal {
+            background: #141414;
+            border: 1px solid #2a2a2a;
+            border-radius: 1.25rem;
+            width: 90%;
+            max-width: 540px;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 2.5rem;
+            position: relative;
+            transform: translateY(30px) scale(0.96);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay.active .modal {
+            transform: translateY(0) scale(1);
+        }
+        .modal-close {
+            position: absolute;
+            top: 1.25rem;
+            right: 1.25rem;
+            width: 32px;
+            height: 32px;
+            border: 1px solid #2a2a2a;
+            border-radius: 50%;
+            background: #1a1a1a;
+            color: #888;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: border-color 0.2s, color 0.2s;
+        }
+        .modal-close:hover { border-color: #555; color: #fafafa; }
+
+        .modal-person { text-align: center; margin-bottom: 2rem; }
+        .modal-avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            font-weight: 700;
+            background: #1a1a1a;
+            border: 2px solid #333;
+        }
+        .modal-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+        .modal-region {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+        .modal-score {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #00e68a;
+            margin-bottom: 0.25rem;
+        }
+        .modal-divider {
+            height: 1px;
+            background: #1f1f1f;
+            margin: 1.5rem 0;
+        }
+        .modal-section-title {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 1rem;
+        }
+        .modal-task {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #1a1a1a;
+        }
+        .modal-task:last-child { border-bottom: none; }
+        .modal-task-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .modal-task-score {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #a78bfa;
+        }
+        .modal-task-attempts {
+            font-size: 0.75rem;
+            color: #555;
+            margin-top: 0.15rem;
+        }
+        .modal-task-bar {
+            width: 100%;
+            height: 4px;
+            background: #1a1a1a;
+            border-radius: 2px;
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
+        .modal-task-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            background: linear-gradient(90deg, #775aff, #2cb9ff);
+        }
+
+        /* Footer */
+        .footer {
+            padding: 3rem;
+            text-align: center;
+            border-top: 1px solid #1a1a1a;
+            margin-top: 4rem;
+        }
+        .footer p { font-size: 0.8rem; color: #444; }
+        .footer a { color: #666; text-decoration: none; transition: color 0.2s; }
+        .footer a:hover { color: #a78bfa; }
+
+        /* Collapse button */
+        .collapse-btn {
+            padding: 0.5rem 1.25rem;
+            background: rgba(119, 90, 255, 0.1);
+            border: 1px solid rgba(119, 90, 255, 0.25);
+            border-radius: 100px;
+            color: #a78bfa;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
+            font-family: inherit;
+        }
+        .collapse-btn:hover {
+            background: rgba(119, 90, 255, 0.2);
+            border-color: rgba(119, 90, 255, 0.4);
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+
+        @media (max-width: 768px) {
+            .header { padding: 0 1.5rem; }
+            .header-nav { display: none; }
+            .hero { padding: 8rem 1.5rem 3rem; }
+            .stats { gap: 2rem; }
+            .stat-value { font-size: 1.75rem; }
+            .section { padding: 3rem 1.5rem; }
+
+            .lb-row {
+                grid-template-columns: 40px 1fr 90px 80px;
+                padding: 0.75rem 1rem;
+                font-size: 0.8rem;
+            }
+            .lb-row .lb-region { display: none; }
+            .lb-row .lb-status-cell { display: none; }
+            .funnel { flex-direction: column; gap: 1rem; }
+            .funnel-stage::after { display: none; }
+            .scoring-row {
+                grid-template-columns: 1.5fr 0.8fr 0.8fr 0.8fr;
+                padding: 0.6rem 1rem;
+                font-size: 0.75rem;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .lb-row {
+                grid-template-columns: 40px 1fr 80px;
+            }
+            .lb-row .lb-points-cell { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="header-logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <rect width="24" height="24" rx="6" fill="#775aff"/>
+                <path d="M12 6L14.5 10.5L19 12L14.5 13.5L12 18L9.5 13.5L5 12L9.5 10.5L12 6Z" fill="white"/>
+            </svg>
+            <a href="index.html" style="color:#fafafa;text-decoration:none;"><span>Отбор <span class="accent">IOAI</span> 2026</span></a>
+        </div>
+        <nav class="header-nav">
+            <a href="#leaderboard">Рейтинг</a>
+            <a href="#scoring">Баллы</a>
+            <a href="#ioai">IOAI</a>
+            <a href="#iaio">IAIO</a>
+            <a href="#vsosh-final">ВсОШ ИИ</a>
+            <a href="#vsosh-prog-final">ВсОШ Прог ЗЭ</a>
+            <a href="#vsosh-prog">ВсОШ Прог РЭ</a>
+            <a href="#yandex-cup">YC ML</a>
+            <a href="#rsosh">РСОШ</a>
+            <a href="#ai-challenge">AI Ch</a>
+            <a href="#nto-ai">НТО ИИ</a>
+            <a href="#nto-bdimo">БДиМО</a>
+            <a href="#faio">FAIO</a>
+            <a href="#prod-mlops">PROD</a>
+            <a href="#innopolis">Innopolis</a>
+            <a href="#dano">DANO</a>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <div class="hero-badge">&#9733; Сезон 2025–2026</div>
+        <h1>Отбор на <span class="gradient">международные олимпиады</span> по ИИ</h1>
+        <p>Рейтинг кандидатов на основе достижений в олимпиадах и соревнованиях.</p>
+        <a href="https://cu.ru/olympiad/ioai" target="_blank" rel="noopener" class="hero-link">Страница отбора IOAI ↗</a>
+    </section>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="divider"></div>
+
+    <!-- Overall Leaderboard -->
+    <section class="section" id="leaderboard">
+        <div class="section-header">
+            <div>
+                <h2 class="section-title">Общий рейтинг кандидатов</h2>
+                <p class="section-subtitle">Суммарные баллы за все олимпиады</p>
+            </div>
+        </div>
+
+        <div class="lb-table" id="overall-table">
+            <div class="lb-row lb-row-head" style="grid-template-columns: 55px 1fr 1.2fr 50px 100px 100px;">
+                <span>#</span>
+                <span>Участник</span>
+                <span>Регион</span>
+                <span style="text-align:center">Кл</span>
+                <span style="text-align:right">Баллы</span>
+                <span style="text-align:right">Олимпиад</span>
+            </div>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- Scoring Table -->
+    <section class="section" id="scoring">
+        <div class="section-header">
+            <div>
+                <h2 class="section-title">Таблица баллов за достижения</h2>
+                <p class="section-subtitle">Баллы для отбора на международные олимпиады</p>
+            </div>
+        </div>
+        <div class="scoring-table" id="scoring-table"></div>
+    </section>
+
+
+    <!-- Olympiad sections (all collapsible with podium) -->
+    <div id="olympiad-sections"></div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal" id="modal">
+            <button class="modal-close" id="modal-close">&times;</button>
+            <div id="modal-content"></div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>Отбор на международные олимпиады по ИИ &mdash; 2025 &middot; <a href="https://cu.ru/olympiad/ioai" target="_blank" rel="noopener">cu.ru/olympiad/ioai</a></p>
+    </footer>
+
+    <script>
+    // --- CSV Parser ---
+    // --- Helpers ---
+    function initials(name) {
+        if (!name) return '?';
+        return name.split(' ').map(w => w[0]).filter(Boolean).join('').slice(0, 2);
+    }
+
+    function fmtNum(n) {
+        return Number(n).toLocaleString('ru-RU');
+    }
+
+    function getGradeLabel(enrollmentYear) {
+        if (!enrollmentYear) return '';
+        const ey = Number(enrollmentYear);
+        if (!ey) return '';
+        const now = new Date();
+        const currentSchoolYear = now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
+        // School year starts in September of currentSchoolYear
+        const yearsInSchool = currentSchoolYear - ey + 1;
+        if (yearsInSchool >= 1 && yearsInSchool <= 11) {
+            return yearsInSchool + ' кл';
+        } else if (yearsInSchool > 11) {
+            const course = yearsInSchool - 11;
+            return course + ' курс';
+        }
+        return '';
+    }
+
+    function getStatusBadge(status) {
+        if (!status) return '';
+        if (status.includes('Абсолютный победитель') || status === 'Победитель') {
+            return `<span class="podium-status badge-winner">${status}</span>`;
+        } else if (status.includes('серебро')) {
+            return `<span class="podium-status badge-prize">${status}</span>`;
+        } else if (status.includes('бронза')) {
+            return `<span class="podium-status badge-bronze">${status}</span>`;
+        } else if (status.includes('Призёр')) {
+            return `<span class="podium-status badge-prize">${status}</span>`;
+        }
+        return `<span class="podium-status badge-finalist">${status}</span>`;
+    }
+
+    function getPointsBadge(pts) {
+        if (!isNaN(pts) && pts !== '' && pts !== 'приглашение') {
+            return `<span class="badge-points">+${pts} баллов</span>`;
+        }
+        return `<span class="badge-invite">${pts || 'приглашение'}</span>`;
+    }
+
+    function rankClass(rank) {
+        rank = Number(rank);
+        if (rank === 1) return 'gold';
+        if (rank === 2) return 'silver';
+        if (rank === 3) return 'bronze';
+        return '';
+    }
+
+    // Returns the display name respecting privacy: if student has a profile but no name,
+    // data is hidden — show 'Участник'. If no profile at all, use the competition row fallback.
+    function displayName(student, fallback) {
+        if ('has_agreement' in student) return student.name || 'Участник';
+        return fallback || '';
+    }
+
+    function displayRegion(student, fallback) {
+        if ('has_agreement' in student) return student.city || student.region || '';
+        return fallback || '';
+    }
+
+    const inFilter = () => true; // data.json already filtered to active participants
+
+    // --- Student profiles lookup (loaded from students.csv) ---
+    let STUDENTS = {}; // profile_id -> {name, region, ...}
+    // Global achievements per profile_id: [{olympiad, status, points, score, details}]
+    let ACHIEVEMENTS = {}; // profile_id -> [{...}]
+    let TOTAL_POINTS = {}; // profile_id -> total selection points
+
+    function getStudent(profile_id) {
+        return STUDENTS[profile_id] || {};
+    }
+
+    // --- Parse leaderboard CSV row into entry object ---
+    function parseLeaderboardEntry(row) {
+        const student = getStudent(row.profile_id);
+        const tasks = [];
+        const taskLabels = ['A', 'B', 'C', 'D'];
+        for (const label of taskLabels) {
+            const scoreKey = `task_${label}_score`;
+            const attKey = `task_${label}_attempts`;
+            if (scoreKey in row) {
+                tasks.push({
+                    label: label,
+                    score: Number(row[scoreKey]) || 0,
+                    attempts: Number(row[attKey]) || 0,
+                });
+            }
+        }
+        return {
+            rank: Number(row.rank),
+            profile_id: row.profile_id,
+            user_id: row.user_id,
+            name: student.name || `Участник #${row.user_id}`,
+            nickname: row.nickname || '',
+            region: student.region || '',
+            status: row.status || 'Финалист',
+            score: Number(row.total_score) || 0,
+            selection_points: row.selection_points || 'приглашение',
+            tasks: tasks,
+            is_russia: student.is_russia,
+        };
+    }
+
+    // --- Modal ---
+    const overlay = document.getElementById('modal-overlay');
+    const modalContent = document.getElementById('modal-content');
+    const modalClose = document.getElementById('modal-close');
+
+    function openProfileModal(profileId) {
+        const student = getStudent(profileId);
+        const name = student.name || 'Участник';
+        const region = student.city || student.region || '';
+        const gradeLabel = student.grade || getGradeLabel(student.enrollment_year);
+        const achievements = (ACHIEVEMENTS[profileId] || []).slice().sort((a, b) => b.points - a.points);
+        const totalPts = TOTAL_POINTS[profileId] || 0;
+        const priv = student.has_agreement === false;
+
+        // Strip rank numbers like "#5 из 2522", "#3/248", "Победитель #1" for private profiles
+        function stripRank(s) {
+            return s.replace(/#\d+(?:\/\d+)?/g, '').replace(/из \d+/g, '').replace(/^\s*·\s*|\s*·\s*$/g, '').replace(/\s{2,}/g, ' ').trim();
+        }
+
+        const achievementsHtml = achievements.map(a => {
+            const statusText = priv ? stripRank(a.status) : a.status;
+            const extra = priv ? '' : `${a.score ? ' · Балл: ' + a.score : ''}${a.details ? ' · ' + a.details : ''}`;
+            return `
+            <div class="modal-task" style="flex-direction:column;align-items:stretch;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div>
+                        <div class="modal-task-name">${a.olympiad}</div>
+                        <div class="modal-task-attempts">${statusText}${extra}</div>
+                    </div>
+                    <div style="text-align:right;flex-shrink:0;margin-left:1rem;">
+                        ${a.points > 0
+                            ? `<span class="badge-points" style="font-size:0.8rem;">+${a.points}</span>`
+                            : `<span class="badge-invite" style="font-size:0.8rem;">${a.pointsLabel || 'приглашение'}</span>`
+                        }
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+
+        modalContent.innerHTML = `
+            <div class="modal-person">
+                <div class="modal-avatar">${initials(name)}</div>
+                <div class="modal-name">${name}</div>
+                <div class="modal-region">${region}${!priv && gradeLabel ? ' · ' + gradeLabel : ''}</div>
+                ${!priv && student.kaggle ? `<a href="https://www.kaggle.com/${student.kaggle}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:0.3rem;color:#20beff;font-size:0.8rem;text-decoration:none;margin-top:0.3rem;"><svg width="14" height="14" viewBox="0 0 320 512" fill="currentColor"><path d="M304.2 501.5L158.4 320.3 298.2 185c2.6-2.7 1.7-10.5-5.3-10.5h-69.2c-3.5 0-7 1.8-10.5 5.3L120 274.6V15c0-5.3-3.5-10.5-10.5-10.5H46c-5.3 0-10.5 5.3-10.5 10.5v480c0 5.3 5.3 10.5 10.5 10.5h63.4c7 0 10.5-5.3 10.5-10.5V351.5l31.5-28.1 95.3 152.8c3.5 3.5 7 5.3 10.5 5.3h73.7c5.3 0 8.8-7 5.3-12.5z"/></svg>@${student.kaggle}</a>` : ''}
+                <div class="modal-score" style="margin-top:1rem;">${totalPts}</div>
+                <div style="font-size:0.8rem;color:#666;">Суммарные баллы отбора</div>
+            </div>
+            <div class="modal-divider"></div>
+            <div class="modal-section-title">Достижения (${achievements.length})</div>
+            ${achievementsHtml || '<div style="color:#555;font-size:0.85rem;">Нет данных</div>'}
+            ${(() => {
+                if (priv) return '';
+                const kg = KAGGLE_BY_PID[profileId];
+                if (!kg || !kg.length) return '';
+                const medalIcon = m => m === '1' ? '🥇' : m === '2' ? '🥈' : m === '3' ? '🥉' : '';
+                return `
+                    <div class="modal-divider"></div>
+                    <div class="modal-section-title">Kaggle (${kg.length})</div>
+                    ${kg.map(k => `
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:0.4rem 0;border-bottom:1px solid #1a1a1a;font-size:0.8rem;">
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${k.competition}</div>
+                            </div>
+                            <div style="display:flex;gap:0.75rem;flex-shrink:0;margin-left:0.5rem;color:#888;">
+                                <span style="color:#20beff;font-weight:600;">#${k.rank}/${k.total}</span>
+                                ${Number(k.team_size) > 1 ? `<span>👥${k.team_size}</span>` : ''}
+                                <span>${medalIcon(k.medal)}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                `;
+            })()}
+        `;
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    modalClose.addEventListener('click', closeModal);
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+    // --- Render functions ---
+    function renderStats(leaderboard, danoRows, ycRows, faioRows, iaioRows, innoRows, aicRows, ntoBdimoRows, ntoAiRows, ioaiRows, vsoshAiPassedRows, prodRows) {
+        const invited = new Set();
+        const byOlympiad = {};
+
+        const currentSchoolYear2 = new Date().getMonth() >= 8 ? new Date().getFullYear() : new Date().getFullYear() - 1;
+        function isSchoolStudent(pid) {
+            const s = getStudent(pid);
+            if (s.is_russia === false) return false;
+            if (!s.enrollment_year) return true;
+            const years = currentSchoolYear2 - Number(s.enrollment_year) + 1;
+            return years >= 1 && years <= 11;
+        }
+
+        function collectIds(rows, getProfileId, isRussiaCheck) {
+            const ids = new Set();
+            (rows || []).forEach(row => {
+                const pid = getProfileId(row);
+                if (!pid) return;
+                if (isRussiaCheck && !isRussiaCheck(row)) return;
+                const s = getStudent(pid);
+                if (s.is_russia === false) return;
+                invited.add(pid);
+                ids.add(pid);
+            });
+            return ids;
+        }
+
+        // ВсОШ ИИ passed participants are invited (no school filter needed — all are students)
+        (vsoshAiPassedRows || []).forEach(row => {
+            if (row.profile_id) invited.add(row.profile_id);
+        });
+
+        const olympiadSets = {};
+        olympiadSets['IOAI'] = collectIds(ioaiRows, r => r.profile_id, r => r.is_russia === 'true');
+        olympiadSets['IAIO'] = collectIds(iaioRows, r => r.profile_id, r => r.is_russia_team === 'true');
+        olympiadSets['Yandex Cup ML'] = collectIds(ycRows, r => r.profile_id);
+        olympiadSets['РСОШ ИИ'] = collectIds(leaderboard, r => r.profile_id);
+        leaderboard.forEach(e => invited.add(e.profile_id));
+        olympiadSets['AI Challenge'] = collectIds(aicRows, r => r.profile_id);
+        olympiadSets['НТО ИИ'] = collectIds(ntoAiRows, r => r.profile_id);
+        olympiadSets['НТО БДиМО'] = collectIds(ntoBdimoRows, r => r.profile_id);
+        olympiadSets['FAIO'] = collectIds(faioRows, r => r.profile_id);
+        olympiadSets['PROD MLOps'] = collectIds(prodRows, r => r.profile_id);
+        olympiadSets['Innopolis'] = collectIds(innoRows, r => r.profile_id);
+        olympiadSets['DANO'] = collectIds(danoRows, r => r.profile_id);
+
+        for (const pid of [...invited]) {
+            if (!isSchoolStudent(pid)) invited.delete(pid);
+        }
+        for (const [name, ids] of Object.entries(olympiadSets)) {
+            for (const pid of [...ids]) {
+                if (!isSchoolStudent(pid)) ids.delete(pid);
+            }
+        }
+
+        for (const [name, ids] of Object.entries(olympiadSets)) {
+            byOlympiad[name] = ids.size;
+        }
+
+        const withPoints = new Set();
+        Object.entries(TOTAL_POINTS).forEach(([pid, pts]) => {
+            if (pts > 0 && isSchoolStudent(pid)) withPoints.add(pid);
+        });
+
+        const olympiadHtml = Object.entries(byOlympiad).map(([name, count]) =>
+            `<div class="stat">
+                <div class="stat-value">${count}</div>
+                <div class="stat-label">${name}</div>
+            </div>`
+        ).join('');
+
+        document.getElementById('stats').innerHTML = `
+            <div class="stat">
+                <div class="stat-value"><span class="highlight">497</span></div>
+                <div class="stat-label">Приглашено на онлайн отбор</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value"><span class="highlight">${Object.keys(STUDENTS).length}</span></div>
+                <div class="stat-label">Прошли на очный отбор</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">${withPoints.size}</div>
+                <div class="stat-label">С баллами</div>
+            </div>
+            ${olympiadHtml}
+        `;
+    }
+
+    function renderFunnel() {
+        const stages = [
+            { name: 'Отборочный этап', count: 30979 },
+            { name: 'Основной этап', count: 396 },
+            { name: 'Заключительный этап', count: 62 },
+        ];
+        document.getElementById('funnel').innerHTML = stages.map(s => `
+            <div class="funnel-stage">
+                <div class="funnel-value">${fmtNum(s.count)}</div>
+                <div class="funnel-label">${s.name}</div>
+            </div>
+        `).join('');
+    }
+
+    const OLYMPIAD_URLS = {
+        'IOAI': 'https://cu.ru/olympiad/ioai',
+        'IAIO': 'https://cu.ru/olympiad/events/iaio',
+        'ВсОШ «Искусственный интеллект»': 'https://vserosolimp.edsoo.ru/',
+        'ВсОШ «Программирование»': 'https://vserosolimp.edsoo.ru/',
+        'Yandex Cup — ML-трек': 'https://yandex.ru/cup/ml',
+        'РСОШ Всероссийская олимпиада по ИИ': 'https://ai.edu.gov.ru/',
+        'AI Challenge': 'https://aiijc.com/',
+        'НТО профиль «Искусственный интеллект»': 'https://ntcontest.ru/tracks/nto-school/proekt-po-iskusstvennomu-intellektu/',
+        'НТО профиль «БДиМО»': 'https://ntcontest.ru/tracks/nto-school/proekt-po-iskusstvennomu-intellektu/bolshie-dannye-i-mashinnoe-obuchenie/',
+        'FAIO': 'https://faio.kz/',
+        'PROD MLOps-инжиниринг': 'https://prodcontest.ru/',
+        'Innopolis Open «ИИ»': '#innopolis',
+        'Олимпиада DANO': 'https://dano.hse.ru/',
+    };
+
+    function renderScoringTable(scoringRows) {
+        const table = document.getElementById('scoring-table');
+        table.innerHTML = `
+            <div class="scoring-row scoring-row-head">
+                <span>Олимпиада / Соревнование</span>
+                <span style="text-align:center">Финалист</span>
+                <span style="text-align:center">Призёр</span>
+                <span style="text-align:center">Победитель</span>
+            </div>
+        `;
+
+        scoringRows.forEach(row => {
+            const hasData = row.has_data === 'true';
+            const formatCell = (v) => {
+                if (!v || v === '') return '<span style="color:#333;">—</span>';
+                const n = Number(v);
+                if (!isNaN(n) && v !== '') return `<span class="pts">+${n}</span>`;
+                return `<span class="invite">${v}</span>`;
+            };
+            const el = document.createElement('div');
+            el.className = 'scoring-row';
+            const oUrl = OLYMPIAD_URLS[row.olympiad];
+            const isExternal = oUrl && !oUrl.startsWith('#');
+            const nameHtml = oUrl
+                ? `<a href="${oUrl}"${isExternal ? ' target="_blank" rel="noopener"' : ''} onclick="event.stopPropagation()" style="color:inherit;text-decoration:none;border-bottom:1px solid #333;">${row.olympiad}</a>`
+                : row.olympiad;
+            el.innerHTML = `
+                <div class="scoring-name">${nameHtml}</div>
+                <div class="scoring-cell">${formatCell(row.finalist)}</div>
+                <div class="scoring-cell">${formatCell(row.prize_winner)}</div>
+                <div class="scoring-cell">${formatCell(row.winner)}</div>
+            `;
+            table.appendChild(el);
+        });
+    }
+
+    // --- Universal olympiad section renderer ---
+    const olympiadSections = {};
+
+    function createOlympiadSection(id, title, subtitle, url) {
+        const container = document.getElementById('olympiad-sections');
+        const section = document.createElement('section');
+        section.className = 'section';
+        section.id = id;
+        const titleHtml = url
+            ? `<a href="${url}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:inherit;text-decoration:none;border-bottom:1px solid #2a2a2a;">${title} <span style="font-size:0.7em;color:#666;">↗</span></a>`
+            : title;
+        section.innerHTML = `
+            <div class="divider" style="margin:0 -3rem 2rem;"></div>
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">${titleHtml}</h2>
+                    <p class="section-subtitle">${subtitle}</p>
+                </div>
+                <button class="collapse-btn" onclick="toggleOlympiad('${id}')">Показать ▼</button>
+            </div>
+            <div class="olympiad-body" style="display:none;">
+
+                <div class="lb-table" id="${id}-table">
+                    <div class="lb-row lb-row-head" style="grid-template-columns: 55px 1fr 1fr 50px 120px 100px;">
+                        <span>#</span>
+                        <span>Участник</span>
+                        <span>Регион</span>
+                        <span style="text-align:center">Кл</span>
+                        <span style="text-align:center">Статус</span>
+                        <span style="text-align:right">Баллы</span>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.appendChild(section);
+        olympiadSections[id] = { loaded: false, expanded: false };
+    }
+
+    function toggleOlympiad(id) {
+        const section = document.getElementById(id);
+        const body = section.querySelector('.olympiad-body');
+        const btn = section.querySelector('.collapse-btn');
+        const state = olympiadSections[id];
+        state.expanded = !state.expanded;
+
+        if (state.expanded) {
+            body.style.display = 'block';
+            btn.textContent = 'Скрыть ▲';
+            if (!state.loaded && state.loader) {
+                state.loaded = true;
+                state.loader();
+            }
+        } else {
+            body.style.display = 'none';
+            btn.textContent = 'Показать ▼';
+        }
+    }
+
+
+    function renderOlympiadTable(sectionId, entries, extraCol) {
+        const table = document.getElementById(`${sectionId}-table`);
+        // Update header if extra column
+        if (extraCol) {
+            const head = table.querySelector('.lb-row-head');
+            head.style.gridTemplateColumns = '55px 1fr 1fr 1fr 50px 120px 100px';
+            const extraSpan = document.createElement('span');
+            extraSpan.textContent = extraCol;
+            head.insertBefore(extraSpan, head.children[3]);
+        }
+
+        entries.forEach((e, i) => {
+            const row = document.createElement('div');
+            row.className = 'lb-row';
+            const cols = extraCol ? '55px 1fr 1fr 1fr 50px 120px 100px' : '55px 1fr 1fr 50px 120px 100px';
+            row.style.cssText = `grid-template-columns: ${cols}; animation-delay: ${(i + 1) * 0.04}s;`;
+
+            let extraHtml = extraCol ? `<div class="lb-region" style="font-size:0.75rem;">${e.extra || ''}</div>` : '';
+
+            row.innerHTML = `
+                <span class="lb-rank ${rankClass(Number(e.rank))}">${e.rank}</span>
+                <div class="lb-person">
+                    <div class="lb-avatar">${initials(e.name)}</div>
+                    <div>
+                        <div class="lb-name">${e.name}${e.kaggle ? ` <a href="https://www.kaggle.com/${e.kaggle}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:#20beff;vertical-align:middle;"><svg width="12" height="12" viewBox="0 0 320 512" fill="currentColor"><path d="M304.2 501.5L158.4 320.3 298.2 185c2.6-2.7 1.7-10.5-5.3-10.5h-69.2c-3.5 0-7 1.8-10.5 5.3L120 274.6V15c0-5.3-3.5-10.5-10.5-10.5H46c-5.3 0-10.5 5.3-10.5 10.5v480c0 5.3 5.3 10.5 10.5 10.5h63.4c7 0 10.5-5.3 10.5-10.5V351.5l31.5-28.1 95.3 152.8c3.5 3.5 7 5.3 10.5 5.3h73.7c5.3 0 8.8-7 5.3-12.5z"/></svg></a>` : ''}</div>
+                    </div>
+                </div>
+                <div class="lb-region">${e.region}</div>
+                ${extraHtml}
+                <div style="text-align:center;font-size:0.85rem;color:#888;">${e.grade}</div>
+                <div class="lb-status-cell">${getStatusBadge(e.status)}</div>
+                <div class="lb-score">${e.scoreLabel}</div>
+            `;
+            row.addEventListener('click', () => openProfileModal(e.profileId));
+            table.appendChild(row);
+        });
+    }
+
+    function mapEntry(row, nameField, regionField, scoreField, rankField, statusField, opts) {
+        opts = opts || {};
+        const student = row.profile_id ? getStudent(row.profile_id) : {};
+        const name = displayName(student, row[nameField] || '');
+        const region = displayRegion(student, row[regionField] || '');
+        const score = Number(row[scoreField]) || 0;
+        return {
+            profileId: row.profile_id || '',
+            rank: row[rankField] || '',
+            name: name,
+            region: region,
+            score: score,
+            scoreLabel: opts.scoreFormat ? opts.scoreFormat(score) : (score ? score.toFixed(2) : '—'),
+            status: row[statusField] || '',
+            grade: student.grade || getGradeLabel(student.enrollment_year),
+            extra: opts.extra ? opts.extra(row) : '',
+            tag: opts.tag ? opts.tag(row, student) : '',
+            highlight: opts.highlight ? opts.highlight(row) : false,
+            kaggle: student.kaggle || '',
+        };
+    }
+
+    function privacyEntry(e) {
+        const s = getStudent(e.profileId);
+        if (s.has_agreement !== false) return e;
+        return Object.assign({}, e, { rank: '—', score: 0, scoreLabel: '—', grade: '', extra: '', kaggle: '' });
+    }
+
+    // --- Overall leaderboard (all NEOAI 2026 participants) ---
+    function renderOverallLeaderboard() {
+        const candidates = Object.keys(STUDENTS)
+            .map(pid => ({
+                profile_id: pid,
+                points: TOTAL_POINTS[pid] || 0,
+                achievements: ACHIEVEMENTS[pid] || [],
+            }))
+            .sort((a, b) => b.points - a.points || b.achievements.length - a.achievements.length || (getStudent(a.profile_id).name || '').localeCompare(getStudent(b.profile_id).name || '', 'ru'))
+            .map((c, i) => ({ ...c, rank: i + 1 }));
+
+        if (candidates.length === 0) return;
+
+        // Table
+        const table = document.getElementById('overall-table');
+
+        candidates.forEach((c, i) => {
+            const student = getStudent(c.profile_id);
+            const cls = rankClass(c.rank);
+
+            const row = document.createElement('div');
+            row.className = 'lb-row';
+            row.style.cssText = `grid-template-columns: 55px 1fr 1.2fr 50px 100px 100px; animation-delay: ${(i + 1) * 0.04}s;`;
+            const priv = student.has_agreement === false;
+            row.innerHTML = `
+                <span class="lb-rank ${cls}">${c.rank}</span>
+                <div class="lb-person">
+                    <div class="lb-avatar">${initials(student.name || 'Участник')}</div>
+                    <div>
+                        <div class="lb-name">${student.name || 'Участник'}${!priv && student.kaggle ? ` <a href="https://www.kaggle.com/${student.kaggle}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:#20beff;vertical-align:middle;"><svg width="12" height="12" viewBox="0 0 320 512" fill="currentColor"><path d="M304.2 501.5L158.4 320.3 298.2 185c2.6-2.7 1.7-10.5-5.3-10.5h-69.2c-3.5 0-7 1.8-10.5 5.3L120 274.6V15c0-5.3-3.5-10.5-10.5-10.5H46c-5.3 0-10.5 5.3-10.5 10.5v480c0 5.3 5.3 10.5 10.5 10.5h63.4c7 0 10.5-5.3 10.5-10.5V351.5l31.5-28.1 95.3 152.8c3.5 3.5 7 5.3 10.5 5.3h73.7c5.3 0 8.8-7 5.3-12.5z"/></svg></a>` : ''}</div>
+                    </div>
+                </div>
+                <div class="lb-region">${student.city || student.region || ''}</div>
+                <div style="text-align:center;font-size:0.85rem;color:#888;">${priv ? '' : (student.grade || getGradeLabel(student.enrollment_year))}</div>
+                <div class="lb-score">${c.points}</div>
+                <div class="lb-score" style="color:#888;">${c.achievements.length}</div>
+            `;
+            row.addEventListener('click', () => openProfileModal(c.profile_id));
+            table.appendChild(row);
+        });
+    }
+
+    // --- Kaggle leaderboard ---
+    function renderKaggleLeaderboard(kaggleRows) {
+        if (!kaggleRows || !kaggleRows.length) return;
+
+        const now = Date.now();
+        const DAY_MS = 24 * 3600 * 1000;
+
+        function parseDeadlineMs(dateStr) {
+            if (!dateStr) return now;
+            // Format: MM/DD/YYYY or YYYY-MM-DD
+            const parts = dateStr.split(/[\/\-]/);
+            if (parts.length === 3) {
+                if (parts[0].length === 4) return new Date(parts[0], parts[1]-1, parts[2]).getTime();
+                return new Date(parts[2], parts[0]-1, parts[1]).getTime();
+            }
+            return now;
+        }
+
+        // Calculate rating per profile_id
+        const ratings = {};
+        const compCounts = {};
+        const medalCounts = {};
+
+        kaggleRows.forEach(r => {
+            const pid = r.profile_id;
+            if (!pid) return;
+            const rank = Number(r.private_rank || r.public_rank);
+            const totalTeams = Number(r.total_teams);
+            const teamSize = Number(r.team_size) || 1;
+            if (!rank || !totalTeams) return;
+
+            const t = Math.max(0, (now - parseDeadlineMs(r.deadline)) / DAY_MS);
+            const decay = Math.exp(-t / 500);
+            const pts = (100000 / Math.sqrt(teamSize)) * Math.pow(rank, -0.75) * Math.log10(1 + Math.log10(totalTeams)) * decay;
+
+            if (!ratings[pid]) ratings[pid] = 0;
+            ratings[pid] += pts;
+
+            if (!compCounts[pid]) compCounts[pid] = 0;
+            compCounts[pid]++;
+
+            if (r.medal && r.medal !== '0') {
+                if (!medalCounts[pid]) medalCounts[pid] = {gold: 0, silver: 0, bronze: 0};
+                if (r.medal === '1') medalCounts[pid].gold++;
+                else if (r.medal === '2') medalCounts[pid].silver++;
+                else if (r.medal === '3') medalCounts[pid].bronze++;
+            }
+        });
+
+        function medalStr(m) {
+            if (!m) return '—';
+            const parts = [];
+            if (m.gold) parts.push('🥇×' + m.gold);
+            if (m.silver) parts.push('🥈×' + m.silver);
+            if (m.bronze) parts.push('🥉×' + m.bronze);
+            return parts.length ? parts.join(' ') : '—';
+        }
+
+        // Sort by rating
+        const sorted = Object.entries(ratings)
+            .map(([pid, pts]) => ({pid, pts: Math.round(pts), comps: compCounts[pid] || 0, medals: medalCounts[pid] || null}))
+            .sort((a, b) => b.pts - a.pts);
+
+        if (!sorted.length) return;
+
+        // Table
+        const table = document.getElementById('kaggle-table');
+        sorted.forEach((c, i) => {
+            const student = getStudent(c.pid);
+
+            const row = document.createElement('div');
+            row.className = 'lb-row';
+            row.style.cssText = `grid-template-columns: 55px 1fr 1fr 100px 80px 100px; animation-delay: ${(i + 1) * 0.04}s;`;
+            row.innerHTML = `
+                <span class="lb-rank ${rankClass(i + 1)}">${i + 1}</span>
+                <div class="lb-person">
+                    <div class="lb-avatar">${initials(student.name || 'Участник')}</div>
+                    <div>
+                        <div class="lb-name">${student.name || 'Участник'}${student.kaggle ? ` <a href="https://www.kaggle.com/${student.kaggle}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:#20beff;vertical-align:middle;"><svg width="12" height="12" viewBox="0 0 320 512" fill="currentColor"><path d="M304.2 501.5L158.4 320.3 298.2 185c2.6-2.7 1.7-10.5-5.3-10.5h-69.2c-3.5 0-7 1.8-10.5 5.3L120 274.6V15c0-5.3-3.5-10.5-10.5-10.5H46c-5.3 0-10.5 5.3-10.5 10.5v480c0 5.3 5.3 10.5 10.5 10.5h63.4c7 0 10.5-5.3 10.5-10.5V351.5l31.5-28.1 95.3 152.8c3.5 3.5 7 5.3 10.5 5.3h73.7c5.3 0 8.8-7 5.3-12.5z"/></svg></a>` : ''}</div>
+                    </div>
+                </div>
+                <div class="lb-region">${student.city || student.region || ''}</div>
+                <div class="lb-score" style="color:#20beff;">${fmtNum(c.pts)}</div>
+                <div class="lb-score" style="color:#888;">${c.comps}</div>
+                <div class="lb-score">${medalStr(c.medals)}</div>
+            `;
+            row.addEventListener('click', () => openProfileModal(c.pid));
+            table.appendChild(row);
+        });
+    }
+
+    // --- Foreign leaderboard ---
+    function renderForeignLeaderboard() {
+        const candidates = Object.entries(TOTAL_POINTS)
+            .map(([pid, pts]) => ({ profile_id: pid, points: pts, achievements: ACHIEVEMENTS[pid] || [] }))
+            .filter(c => {
+                const s = getStudent(c.profile_id);
+                return s.is_russia === false && c.achievements.length > 0;
+            })
+            .sort((a, b) => b.points - a.points || b.achievements.length - a.achievements.length || (getStudent(a.profile_id).name || '').localeCompare(getStudent(b.profile_id).name || '', 'ru'))
+            .slice(0, 20);
+
+        if (candidates.length === 0) return;
+
+        document.querySelector('#foreign .section-subtitle').textContent =
+            `Топ-${Math.min(20, candidates.length)} по суммарным баллам`;
+
+        const table = document.getElementById('foreign-table');
+        candidates.forEach((c, i) => {
+            const student = getStudent(c.profile_id);
+
+            const row = document.createElement('div');
+            row.className = 'lb-row';
+            row.style.cssText = `grid-template-columns: 55px 1fr 1fr 100px 100px; animation-delay: ${(i + 1) * 0.04}s;`;
+            row.innerHTML = `
+                <span class="lb-rank">${i + 1}</span>
+                <div class="lb-person">
+                    <div class="lb-avatar">${initials(student.name || 'Участник')}</div>
+                    <div>
+                        <div class="lb-name">${student.name || 'Участник'}${student.kaggle ? ` <a href="https://www.kaggle.com/${student.kaggle}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:#20beff;vertical-align:middle;"><svg width="12" height="12" viewBox="0 0 320 512" fill="currentColor"><path d="M304.2 501.5L158.4 320.3 298.2 185c2.6-2.7 1.7-10.5-5.3-10.5h-69.2c-3.5 0-7 1.8-10.5 5.3L120 274.6V15c0-5.3-3.5-10.5-10.5-10.5H46c-5.3 0-10.5 5.3-10.5 10.5v480c0 5.3 5.3 10.5 10.5 10.5h63.4c7 0 10.5-5.3 10.5-10.5V351.5l31.5-28.1 95.3 152.8c3.5 3.5 7 5.3 10.5 5.3h73.7c5.3 0 8.8-7 5.3-12.5z"/></svg></a>` : ''}</div>
+                    </div>
+                </div>
+                <div class="lb-region">${student.city || student.region || ''}</div>
+                <div class="lb-score">${c.points}</div>
+                <div class="lb-score" style="color:#888;">${c.achievements.length}</div>
+            `;
+            row.addEventListener('click', () => openProfileModal(c.profile_id));
+            table.appendChild(row);
+        });
+    }
+
+    // --- Compute achievements and points ---
+    let KAGGLE_BY_PID = {};  // profile_id -> [{competition, rank, medal, team_size, total_teams}]
+
+    function addAchievement(profileId, achievement) {
+        if (!ACHIEVEMENTS[profileId]) ACHIEVEMENTS[profileId] = [];
+        ACHIEVEMENTS[profileId].push(achievement);
+        if (!TOTAL_POINTS[profileId]) TOTAL_POINTS[profileId] = 0;
+        TOTAL_POINTS[profileId] += (achievement.points || 0);
+    }
+
+    function computeAchievements(leaderboard, danoRows, ycRows, faioRows, iaioRows, innoRows, aicRows, ntoBdimoRows, ntoAiRows, ioaiRows, prodRows) {
+        ACHIEVEMENTS = {};
+        TOTAL_POINTS = {};
+
+        // IOAI: gold(winner)=20, silver/bronze(prize)=10
+        (ioaiRows || []).forEach(row => {
+            if (!row.profile_id) return;
+            let pts = 0;
+            let ptsLabel = 'приглашение';
+            if (row.medal === 'gold') { pts = 20; ptsLabel = '+20'; }
+            else if (row.medal === 'silver' || row.medal === 'bronze') { pts = 10; ptsLabel = '+10'; }
+            addAchievement(row.profile_id, {
+                olympiad: 'IOAI 2025',
+                status: row.status,
+                points: pts,
+                pointsLabel: ptsLabel,
+                score: Number(row.score).toFixed(2),
+                details: `#${row.rank}`,
+            });
+        });
+
+        // RSOSH AI: winners=10, silver=5, bronze=5, finalist=0 (invitation)
+        leaderboard.forEach(e => {
+            let pts = 0;
+            let ptsLabel = 'приглашение';
+            const sp = Number(e.selection_points);
+            if (!isNaN(sp) && sp > 0) { pts = sp; ptsLabel = `+${sp}`; }
+            addAchievement(e.profile_id, {
+                olympiad: 'РСОШ Олимпиада по ИИ',
+                status: e.status,
+                points: pts,
+                pointsLabel: ptsLabel,
+                score: e.score.toFixed(3),
+                details: e.nickname ? `@${e.nickname}` : '',
+            });
+        });
+
+        // DANO: winners=5 (per scoring table), prize=invitation
+        (danoRows || []).forEach(row => {
+            let pts = 0;
+            let ptsLabel = 'приглашение';
+            if (row.status === 'Победитель') { pts = 5; ptsLabel = '+5'; }
+            addAchievement(row.profile_id, {
+                olympiad: 'Олимпиада DANO',
+                status: row.status,
+                points: pts,
+                pointsLabel: ptsLabel,
+                score: row.score,
+                details: `Команда: ${row.team}`,
+            });
+        });
+
+        // FAIO: winner=10, prize=5, participant=invitation
+        (faioRows || []).forEach(row => {
+            const student = getStudent(row.profile_id);
+            let pts = 0;
+            let ptsLabel = 'приглашение';
+            if (row.status === 'Победитель') { pts = 10; ptsLabel = '+10'; }
+            else if (row.status === 'Призёр') { pts = 5; ptsLabel = '+5'; }
+            addAchievement(row.profile_id, {
+                olympiad: 'FAIO',
+                status: row.status,
+                points: pts,
+                pointsLabel: ptsLabel,
+                score: Number(row.team_score).toFixed(3),
+                details: `Команда #${row.team_rank}`,
+            });
+        });
+
+        // IAIO: gold(winner)=20, silver/bronze(prize)=10, invite for participation
+        (iaioRows || []).forEach(row => {
+            if (!row.profile_id) return;
+            let pts = 0;
+            let ptsLabel = 'приглашение';
+            if (row.medal === 'gold') { pts = 20; ptsLabel = '+20'; }
+            else if (row.medal === 'silver' || row.medal === 'bronze') { pts = 10; ptsLabel = '+10'; }
+            addAchievement(row.profile_id, {
+                olympiad: 'IAIO 2026',
+                status: row.status,
+                points: pts,
+                pointsLabel: ptsLabel,
+                score: Number(row.score).toFixed(3),
+                details: `#${row.rank}`,
+            });
+        });
+
+        // AI Challenge: winner=10, prize=5, finalist=invitation
+        (aicRows || []).forEach(row => {
+            let pts = 0;
+            let ptsLabel = 'приглашение';
+            if (row.status === 'Победитель') { pts = 10; ptsLabel = '+10'; }
+            else if (row.status === 'Призёр') { pts = 5; ptsLabel = '+5'; }
+            addAchievement(row.profile_id, {
+                olympiad: 'AI Challenge',
+                status: row.status,
+                points: pts,
+                pointsLabel: ptsLabel,
+                score: '',
+                details: `${row.track}${row.team ? ' · ' + row.team : ''}`,
+            });
+        });
+
+        // PROD MLOps: диплом 1 степени = 5, 2-3 = приглашение
+        (prodRows || []).forEach(row => {
+            let pts = 0;
+            let ptsLabel = 'приглашение';
+            if (row.status.includes('1 степени')) { pts = 5; ptsLabel = '+5'; }
+            addAchievement(row.profile_id, {
+                olympiad: 'PROD MLOps-инжиниринг',
+                status: row.status,
+                points: pts,
+                pointsLabel: ptsLabel,
+                score: '',
+                details: `#${row.rank}`,
+            });
+        });
+
+        // Innopolis Open AI: winner=5, prize=invitation
+        (innoRows || []).forEach(row => {
+            let pts = 0;
+            let ptsLabel = 'приглашение';
+            if (row.status === 'Победитель') { pts = 5; ptsLabel = '+5'; }
+            addAchievement(row.profile_id, {
+                olympiad: 'Innopolis Open «ИИ»',
+                status: row.status,
+                points: pts,
+                pointsLabel: ptsLabel,
+                score: row.total,
+                details: `Тур 1: ${row.round1}, Тур 2: ${row.round2}`,
+            });
+        });
+
+        // НТО БДиМО: winner=10, prize=5
+        (ntoBdimoRows || []).forEach(row => {
+            let pts = 0;
+            let ptsLabel = 'приглашение';
+            if (row.status === 'Победитель') { pts = 10; ptsLabel = '+10'; }
+            else if (row.status === 'Призёр') { pts = 5; ptsLabel = '+5'; }
+            addAchievement(row.profile_id, {
+                olympiad: 'НТО «БДиМО»',
+                status: row.status,
+                points: pts,
+                pointsLabel: ptsLabel,
+                score: row.total || '',
+                details: `#${row.rank} · ${row.team || ''}`,
+            });
+        });
+
+        // НТО ИИ: winner=10, prize=5
+        (ntoAiRows || []).forEach(row => {
+            let pts = 0;
+            let ptsLabel = 'приглашение';
+            if (row.status === 'победитель' || row.status === 'Победитель') { pts = 10; ptsLabel = '+10'; }
+            else if (row.status === 'призер' || row.status === 'Призёр') { pts = 5; ptsLabel = '+5'; }
+            addAchievement(row.profile_id, {
+                olympiad: 'НТО «ИИ»',
+                status: row.status,
+                points: pts,
+                pointsLabel: ptsLabel,
+                score: row.total || '',
+                details: `#${row.rank} · ${row.team || ''}`,
+            });
+        });
+
+        // Yandex Cup ML: winner=15, prize=10, finalist=5
+        (ycRows || []).forEach(row => {
+            let pts = 0;
+            let ptsLabel = '';
+            if (row.status === 'Победитель') { pts = 15; ptsLabel = '+15'; }
+            else if (row.status === 'Призер') { pts = 10; ptsLabel = '+10'; }
+            else { pts = 5; ptsLabel = '+5'; }
+            addAchievement(row.profile_id, {
+                olympiad: 'Yandex Cup — ML-трек',
+                status: row.status,
+                points: pts,
+                pointsLabel: ptsLabel,
+                score: Number(row.score).toFixed(2),
+                details: `#${row.rank}`,
+            });
+        });
+    }
+
+    // --- Load data from consolidated JSON ---
+    let _DATA = null;
+    async function loadData() {
+        if (_DATA) return _DATA;
+        const resp = await fetch('data.json?t=' + Date.now());
+        _DATA = await resp.json();
+        return _DATA;
+    }
+
+
+    // --- Register all olympiad sections ---
+    function registerOlympiads() {
+        const olympiads = [
+            { id: 'ioai', title: 'IOAI 2025', subtitle: 'International Olympiad in AI', key: 'ioai', url: 'https://cu.ru/olympiad/ioai',
+              map: r => {
+                  const s = r.profile_id ? getStudent(r.profile_id) : {};
+                  const isRus = r.is_russia === 'true';
+                  return { profileId: r.profile_id||'', rank: r.rank, name: displayName(s, r.name||''), region: displayRegion(s, r.country||''), score: Number(r.score)||0, scoreLabel: (Number(r.score)||0).toFixed(2), status: r.status, grade: s.grade || getGradeLabel(s.enrollment_year), extra: '', tag: isRus ? 'RUS' : '', highlight: isRus, kaggle: s.kaggle || '' };
+              }},
+            { id: 'iaio', title: 'IAIO 2026', subtitle: 'International AI Olympiad', key: 'iaio', url: 'https://cu.ru/olympiad/events/iaio',
+              map: r => {
+                  const s = r.profile_id ? getStudent(r.profile_id) : {};
+                  const isRus = r.is_russia_team === 'true';
+                  return { profileId: r.profile_id||'', rank: r.rank, name: displayName(s, r.name||''), region: displayRegion(s, r.country||''), score: Number(r.score)||0, scoreLabel: (Number(r.score)||0).toFixed(3), status: r.status, grade: s.grade || getGradeLabel(s.enrollment_year), extra: '', tag: isRus ? 'RUS' : '', highlight: isRus, kaggle: s.kaggle || '' };
+              }},
+            { id: 'vsosh-final', title: 'ВсОШ ИИ — Заключительный этап 2026', subtitle: '248 участников · AI + Математика', key: 'vsosh_ai_final', url: 'https://vserosolimp.edsoo.ru/',
+              extraCol: 'AI / Матем',
+              map: r => {
+                  const s = r.profile_id ? getStudent(r.profile_id) : {};
+                  const hasAch = r.profile_id && ACHIEVEMENTS[r.profile_id]?.some(a => !a.olympiad.startsWith('ВсОШ'));
+                  const total = Number(r.total)||0;
+                  const ai = Number(r.ai_total)||0;
+                  const math = Number(r.math_total)||0;
+                  return { profileId: r.profile_id||'', rank: r.rank, name: displayName(s, r.name||''), region: displayRegion(s, r.region||''), score: total, scoreLabel: total.toFixed(1), status: '', grade: r['class'] ? r['class']+' кл' : (s.grade || getGradeLabel(s.enrollment_year)), extra: ai.toFixed(1)+' / '+math.toFixed(0), tag: hasAch ? '★' : '', highlight: hasAch, kaggle: s.kaggle||'' };
+              }},
+            { id: 'vsosh-prog-final', title: 'ВсОШ «Программирование» — ЗЭ 2026', subtitle: 'Заключительный этап · 488 участников', key: 'vsosh_prog_final', url: 'https://roi.algocode.ru/roi_2026/',
+              map: r => mapEntry(r, 'name', 'region', 'total', 'rank', 'status', {scoreFormat: s => s ? String(Math.round(s)) : '—'}) },
+            { id: 'vsosh-prog', title: 'ВсОШ «Программирование» — РЭ 2026', subtitle: 'Участники других олимпиад · 39 из 5896', key: 'vsosh_prog_known', url: 'https://vserosolimp.edsoo.ru/',
+              map: r => mapEntry(r, 'name', 'region', 'total', 'rank', 'status', {scoreFormat: s => s ? String(Math.round(s)) : '—'}) },
+            { id: 'yandex-cup', title: 'Yandex Cup — ML-трек 2025', subtitle: '7 участников', key: 'yandex_cup', url: 'https://yandex.ru/cup/ml',
+              map: r => mapEntry(r, 'name', 'region', 'score', 'rank', 'status', {scoreFormat: s => s.toFixed(2)}) },
+            { id: 'rsosh', title: 'РСОШ — Олимпиада по ИИ 2025', subtitle: 'Заключительный этап', key: 'rsosh_final', url: 'https://ai.edu.gov.ru/',
+              map: r => mapEntry(r, 'name', 'region', 'total_score', 'rank', 'status', {scoreFormat: s => s.toFixed(3)}) },
+            { id: 'ai-challenge', title: 'AI Challenge 2025', subtitle: '4 трека', key: 'ai_challenge', url: 'https://aiijc.com/',
+              extraCol: 'Трек/Команда',
+              map: r => { const e = mapEntry(r, 'name', 'region', 'rank', 'rank', 'status'); e.score = 0; e.scoreLabel = ''; e.extra = r.track + (r.team ? ' · '+r.team : ''); return e; }},
+            { id: 'nto-ai', title: 'НТО профиль «ИИ» 2025', subtitle: '111 участников · Полные результаты', key: 'nto_ai', url: 'https://ntcontest.ru/tracks/nto-school/proekt-po-iskusstvennomu-intellektu/',
+              extraCol: 'Команда',
+              map: r => {
+                  const e = mapEntry(r, 'name', 'region', 'total', 'rank', 'status', {scoreFormat: s => s.toFixed(2)});
+                  e.extra = r.team || '';
+                  return e;
+              }},
+            { id: 'nto-bdimo', title: 'НТО профиль «БДиМО» 2025', subtitle: '112 участников · Полные результаты', key: 'nto_bdimo', url: 'https://ntcontest.ru/tracks/nto-school/proekt-po-iskusstvennomu-intellektu/bolshie-dannye-i-mashinnoe-obuchenie/',
+              extraCol: 'Команда',
+              map: r => {
+                  const e = mapEntry(r, 'name', 'region', 'total', 'rank', 'status', {scoreFormat: s => s.toFixed(2)});
+                  e.extra = r.team || '';
+                  return e;
+              }},
+            { id: 'faio', title: 'FAIO 2025', subtitle: 'Командное соревнование', key: 'faio', url: 'https://faio.kz/',
+              map: r => mapEntry(r, 'name', 'region', 'team_score', 'team_rank', 'status', {scoreFormat: s => s.toFixed(3)}) },
+            { id: 'prod-mlops', title: 'PROD MLOps-инжиниринг 2025', subtitle: '7 участников', key: 'prod_mlops', url: 'https://prodcontest.ru/',
+              map: r => mapEntry(r, 'name', 'region', 'rank', 'rank', 'status', {scoreFormat: () => ''}) },
+            { id: 'innopolis', title: 'Innopolis Open «ИИ» 2025', subtitle: '35 участников', key: 'innopolis',
+              map: r => mapEntry(r, 'name', 'region', 'total', 'rank', 'status', {scoreFormat: s => s ? String(Math.round(s)) : '—'}) },
+            { id: 'dano', title: 'Олимпиада DANO 2025', subtitle: '79 участников', key: 'dano', url: 'https://dano.hse.ru/',
+              extraCol: 'Команда',
+              map: r => { const e = mapEntry(r, 'name', 'region', 'score', 'rank', 'status', {scoreFormat: s => s.toFixed(2)}); e.extra = r.team||''; return e; }},
+        ];
+
+        olympiads.forEach(o => {
+            createOlympiadSection(o.id, o.title, o.subtitle, o.url);
+            olympiadSections[o.id].loader = async () => {
+                const d = await loadData();
+                const rows = d[o.key] || [];
+                const limited = o.limit ? rows.slice(0, o.limit) : rows;
+                const entries = limited.filter(r => inFilter(r.profile_id)).map(o.map).map(privacyEntry);
+                renderOlympiadTable(o.id, entries, o.extraCol);
+            };
+        });
+    }
+
+    async function init() {
+        const d = await loadData();
+        const studentsRows = d.students || [];
+        const scoringRows = d.scoring_table || [];
+        const f = rows => rows.filter(r => inFilter(r.profile_id));
+        const finalRows = f(d.rsosh_final || []);
+        const danoRows = f(d.dano || []);
+        const ycRows = f(d.yandex_cup || []);
+        const faioRows = f(d.faio || []);
+        const iaioRows = f(d.iaio || []);
+        const innoRows = f(d.innopolis || []);
+        const aicRows = f(d.ai_challenge || []);
+        const ntoBdimoRows = f(d.nto_bdimo || []);
+        const ntoAiRows = f(d.nto_ai || []);
+        const ioaiRows = f(d.ioai || []);
+        const vsoshAiRows = f(d.vsosh_ai_known || []);
+        const vsoshAiPassedRows = f(d.vsosh_ai_passed || []);
+        const vsoshProgRows = f(d.vsosh_prog_known || []);
+        const vsoshProgFinalRows = f(d.vsosh_prog_final || []);
+        const vsoshFinalRows = f(d.vsosh_ai_final || []);
+        const prodRows = f(d.prod_mlops || []);
+        const kaggleResultsRows = [];
+
+        // Build student profiles lookup
+        studentsRows.forEach(row => {
+            STUDENTS[row.profile_id] = {
+                name: row.name,
+                region: row.region,
+                grade: row.grade || '',
+                city: row.city || '',
+                enrollment_year: row.enrollment_year || '',
+                is_russia: row.is_russia !== 'false',
+                has_agreement: row.has_agreement === 'true',
+            };
+        });
+
+        const leaderboard = finalRows
+            .map(parseLeaderboardEntry)
+            .filter(entry => entry.is_russia !== false);
+
+        // All RSOSH entries (including foreign) for achievements
+        const allRsosh = finalRows.map(parseLeaderboardEntry);
+        computeAchievements(allRsosh, danoRows, ycRows, faioRows, iaioRows, innoRows, aicRows, ntoBdimoRows, ntoAiRows, ioaiRows, prodRows);
+
+        // Add ВсОШ ИИ regional results to achievements (no points, info only)
+        vsoshAiRows.forEach(row => {
+            if (!row.profile_id) return;
+            const passed = row.passed === 'true';
+            const passedLabel = passed ? ' · Прошёл на закл.' : (row.passed === 'false' ? ' · Не прошёл' : '');
+            addAchievement(row.profile_id, {
+                olympiad: 'ВсОШ ИИ — РЭ',
+                status: `#${row.rank} из 2522${passedLabel}`,
+                points: 0,
+                pointsLabel: passed ? 'приглашение' : '—',
+                score: row.score,
+                details: row.region,
+            });
+        });
+
+        // ВсОШ ИИ заключительный этап: winner=20, prize=10, finalist=invitation
+        (vsoshFinalRows || []).forEach(row => {
+            if (!row.profile_id) return;
+            let pts = 0;
+            let ptsLabel = 'приглашение';
+            if (row.status === 'Победитель') { pts = 20; ptsLabel = '+20'; }
+            else if (row.status === 'Призёр') { pts = 10; ptsLabel = '+10'; }
+            const ai = Number(row.ai_total) || 0;
+            const math = Number(row.math_total) || 0;
+            addAchievement(row.profile_id, {
+                olympiad: 'ВсОШ ИИ — ЗЭ',
+                status: `${row.status} #${row.rank}/248`,
+                points: pts,
+                pointsLabel: ptsLabel,
+                score: (ai + math).toFixed(1),
+                details: `AI:${ai.toFixed(1)} + Мат:${math.toFixed(0)}`,
+            });
+        });
+
+        // Add ВсОШ Программирование regional results (no points, info only)
+        vsoshProgRows.forEach(row => {
+            if (!row.profile_id) return;
+            addAchievement(row.profile_id, {
+                olympiad: 'ВсОШ Прог — РЭ',
+                status: `#${row.rank} из 5896`,
+                points: 0,
+                pointsLabel: '—',
+                score: row.total,
+                details: row.region,
+            });
+        });
+
+        // ВсОШ Программирование заключительный этап: winner=20, prize=10, finalist=invitation
+        (vsoshProgFinalRows || []).forEach(row => {
+            if (!row.profile_id) return;
+            let pts = 0;
+            let ptsLabel = 'приглашение';
+            if (row.status === 'Победитель') { pts = 20; ptsLabel = '+20'; }
+            else if (row.status === 'Призёр') { pts = 10; ptsLabel = '+10'; }
+            addAchievement(row.profile_id, {
+                olympiad: 'ВсОШ Прог — ЗЭ',
+                status: `${row.status} #${row.rank}/488`,
+                points: pts,
+                pointsLabel: ptsLabel,
+                score: row.total,
+                details: `Класс ${row.class} · ${row.region}`,
+            });
+        });
+
+        renderStats(leaderboard, danoRows, ycRows, faioRows, iaioRows, innoRows, aicRows, ntoBdimoRows, ntoAiRows, ioaiRows, vsoshAiPassedRows, prodRows);
+        renderOverallLeaderboard();
+
+        // Build kaggle results by profile_id for modal
+        (kaggleResultsRows || []).forEach(r => {
+            if (!r.profile_id) return;
+            if (!KAGGLE_BY_PID[r.profile_id]) KAGGLE_BY_PID[r.profile_id] = [];
+            KAGGLE_BY_PID[r.profile_id].push({
+                competition: r.competition,
+                rank: r.private_rank || r.public_rank || '',
+                total: r.total_teams || '',
+                medal: r.medal || '',
+                team_size: r.team_size || '1',
+                team_name: r.team_name || '',
+            });
+        });
+        // renderKaggleLeaderboard(kaggleResultsRows);  // hidden on master
+        // renderForeignLeaderboard();                   // hidden on master
+        renderScoringTable(scoringRows);
+        registerOlympiads();
+    }
+
+    init();
+    </script>
+</body>
+</html>
