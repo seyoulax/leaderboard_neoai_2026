@@ -179,6 +179,7 @@ function OverallPage() {
 
   if (loading) return <p className="status">Загрузка общего ЛБ...</p>;
   if (error) return <p className="status error">{error}</p>;
+  if (!data?.updatedAt) return <p className="status">Бэк прогревается — идёт первое обновление с Kaggle, попробуй через минуту…</p>;
 
   function exportCSV() {
     const headers = ['#', 'Nickname', 'Team Name', 'Total points', ...data.tasks.map((t) => t.title)];
@@ -260,6 +261,7 @@ function CyclingOverallPage() {
 
   if (loading) return <p className="status">Загрузка общего ЛБ...</p>;
   if (error) return <p className="status error">{error}</p>;
+  if (!data?.updatedAt) return <p className="status">Бэк прогревается — идёт первое обновление с Kaggle…</p>;
 
   const total = data.overall.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -345,6 +347,7 @@ function BoardPage({ boards }) {
   if (!board) return <p className="status error">Лидерборд '{slug}' не найден.</p>;
   if (loading) return <p className="status">Загрузка лидерборда...</p>;
   if (error) return <p className="status error">{error}</p>;
+  if (!data?.updatedAt) return <p className="status">Бэк прогревается — идёт первое обновление с Kaggle…</p>;
 
   const presentSlugs = board.taskSlugs.filter((s) => data.tasks.some((t) => t.slug === s));
   const groupTasks = data.tasks.filter((t) => presentSlugs.includes(t.slug));
