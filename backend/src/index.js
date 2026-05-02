@@ -18,7 +18,7 @@ const KAGGLE_CMD = process.env.KAGGLE_CMD || 'kaggle';
 const TASKS_FILE = path.resolve(__dirname, '..', process.env.TASKS_FILE || './data/tasks.json');
 const PARTICIPANTS_FILE = path.resolve(__dirname, '..', process.env.PARTICIPANTS_FILE || './data/participants.json');
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || '';
-const REQUEST_GAP_MS = Number(process.env.REQUEST_GAP_MS || 1500);
+const REQUEST_GAP_MS = Number(process.env.REQUEST_GAP_MS || 3000);
 
 function validateTasks(input) {
   if (!Array.isArray(input) || input.length === 0) {
