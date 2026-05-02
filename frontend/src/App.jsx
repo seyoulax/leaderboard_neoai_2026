@@ -27,6 +27,34 @@ const GROUPS = {
   '3': { title: '3 тур', slugs: ['task-7', 'task-8', 'task-9'] },
 };
 
+const DELTA_EPS = 0.01;
+
+function getDir(current, previous) {
+  if (
+    current == null ||
+    previous == null ||
+    !Number.isFinite(current) ||
+    !Number.isFinite(previous)
+  ) {
+    return null;
+  }
+  if (current - previous > DELTA_EPS) return 'up';
+  if (previous - current > DELTA_EPS) return 'down';
+  return null;
+}
+
+function DeltaCell({ value, prev, digits = 2, extraClass = '' }) {
+  const dir = getDir(value, prev);
+  const dirClass = dir === 'up' ? 'cell-up' : dir === 'down' ? 'cell-down' : '';
+  return (
+    <td className={`mono ${extraClass} ${dirClass}`.trim()}>
+      {value !== undefined && value !== null ? value.toFixed(digits) : '-'}
+      {dir === 'up' ? <span className="delta-arrow up"> ▲</span> : null}
+      {dir === 'down' ? <span className="delta-arrow down"> ▼</span> : null}
+    </td>
+  );
+}
+
 function usePolling(loader, deps = []) {
   const [state, setState] = useState({
     data: null,
@@ -144,10 +172,16 @@ function OverallPage() {
                 <td>{row.place}</td>
                 <td className="team">{row.nickname || '-'}</td>
                 <td>{row.teamName || '-'}</td>
-                <td className="mono">{row.totalPoints.toFixed(2)}</td>
+                <DeltaCell value={row.totalPoints} prev={row.previousTotalPoints} />
                 {data.tasks.map((task) => {
-                  const points = row.tasks?.[task.slug]?.points;
-                  return <td key={task.slug} className="mono">{points !== undefined ? points.toFixed(2) : '-'}</td>;
+                  const cell = row.tasks?.[task.slug];
+                  return (
+                    <DeltaCell
+                      key={task.slug}
+                      value={cell?.points}
+                      prev={cell?.previousPoints}
+                    />
+                  );
                 })}
               </tr>
             ))}
@@ -211,13 +245,15 @@ function CyclingOverallPage() {
                 <td>{row.place}</td>
                 <td className="team">{row.nickname || '-'}</td>
                 <td>{row.teamName || '-'}</td>
-                <td className="mono">{row.totalPoints.toFixed(2)}</td>
+                <DeltaCell value={row.totalPoints} prev={row.previousTotalPoints} />
                 {data.tasks.map((task) => {
-                  const points = row.tasks?.[task.slug]?.points;
+                  const cell = row.tasks?.[task.slug];
                   return (
-                    <td key={task.slug} className="mono">
-                      {points !== undefined ? points.toFixed(2) : '-'}
-                    </td>
+                    <DeltaCell
+                      key={task.slug}
+                      value={cell?.points}
+                      prev={cell?.previousPoints}
+                    />
                   );
                 })}
               </tr>
@@ -244,7 +280,18 @@ function GroupPage() {
   const ranked = data.overall
     .map((row) => {
       const total = presentSlugs.reduce((sum, slug) => sum + (row.tasks?.[slug]?.points ?? 0), 0);
-      return { ...row, groupPoints: Number(total.toFixed(6)) };
+      const hasAnyPrev = presentSlugs.some((slug) => row.tasks?.[slug]?.previousPoints != null);
+      const prevTotal = hasAnyPrev
+        ? presentSlugs.reduce(
+            (sum, slug) => sum + (row.tasks?.[slug]?.previousPoints ?? row.tasks?.[slug]?.points ?? 0),
+            0
+          )
+        : null;
+      return {
+        ...row,
+        groupPoints: Number(total.toFixed(6)),
+        previousGroupPoints: prevTotal != null ? Number(prevTotal.toFixed(6)) : null,
+      };
     })
     .filter((row) => presentSlugs.some((slug) => row.tasks?.[slug] !== undefined))
     .sort(
@@ -282,10 +329,16 @@ function GroupPage() {
                 <td>{row.place}</td>
                 <td className="team">{row.nickname || '-'}</td>
                 <td>{row.teamName || '-'}</td>
-                <td className="mono">{row.groupPoints.toFixed(2)}</td>
+                <DeltaCell value={row.groupPoints} prev={row.previousGroupPoints} />
                 {groupTasks.map((task) => {
-                  const points = row.tasks?.[task.slug]?.points;
-                  return <td key={task.slug} className="mono">{points !== undefined ? points.toFixed(2) : '-'}</td>;
+                  const cell = row.tasks?.[task.slug];
+                  return (
+                    <DeltaCell
+                      key={task.slug}
+                      value={cell?.points}
+                      prev={cell?.previousPoints}
+                    />
+                  );
                 })}
               </tr>
             ))}
@@ -338,7 +391,7 @@ function TaskPage() {
                 <td>{row.teamName || '-'}</td>
                 <td className="mono">{row.rank ?? '-'}</td>
                 <td className="mono">{row.score.toFixed(6)}</td>
-                <td className="mono">{row.points.toFixed(2)}</td>
+                <DeltaCell value={row.points} prev={row.previousPoints} />
               </tr>
             ))}
           </tbody>
@@ -354,6 +407,7 @@ function ObsOverall() {
     key: r.participantKey,
     name: r.nickname || r.teamName || '-',
     score: r.totalPoints.toFixed(2),
+    dir: getDir(r.totalPoints, r.previousTotalPoints),
   }));
   return (
     <ObsView
@@ -382,7 +436,14 @@ function ObsGroup() {
   const rows = (data?.overall || [])
     .map((r) => {
       const total = presentSlugs.reduce((sum, slug) => sum + (r.tasks?.[slug]?.points ?? 0), 0);
-      return { ...r, groupPoints: total };
+      const hasAnyPrev = presentSlugs.some((slug) => r.tasks?.[slug]?.previousPoints != null);
+      const prevTotal = hasAnyPrev
+        ? presentSlugs.reduce(
+            (sum, slug) => sum + (r.tasks?.[slug]?.previousPoints ?? r.tasks?.[slug]?.points ?? 0),
+            0
+          )
+        : null;
+      return { ...r, groupPoints: total, previousGroupPoints: prevTotal };
     })
     .filter((r) => presentSlugs.some((slug) => r.tasks?.[slug] !== undefined))
     .sort(
@@ -394,6 +455,7 @@ function ObsGroup() {
       key: r.participantKey,
       name: r.nickname || r.teamName || '-',
       score: r.groupPoints.toFixed(2),
+      dir: getDir(r.groupPoints, r.previousGroupPoints),
     }));
 
   return (
@@ -422,6 +484,7 @@ function ObsTask() {
     key: r.participantKey,
     name: r.nickname || r.teamName || '-',
     score: formatRawScore(r.score),
+    dir: getDir(r.points, r.previousPoints),
   }));
 
   return (
@@ -456,7 +519,14 @@ function ObsBarGroup() {
   const rows = (data?.overall || [])
     .map((r) => {
       const total = presentSlugs.reduce((sum, slug) => sum + (r.tasks?.[slug]?.points ?? 0), 0);
-      return { ...r, groupPoints: total };
+      const hasAnyPrev = presentSlugs.some((slug) => r.tasks?.[slug]?.previousPoints != null);
+      const prevTotal = hasAnyPrev
+        ? presentSlugs.reduce(
+            (sum, slug) => sum + (r.tasks?.[slug]?.previousPoints ?? r.tasks?.[slug]?.points ?? 0),
+            0
+          )
+        : null;
+      return { ...r, groupPoints: total, previousGroupPoints: prevTotal };
     })
     .filter((r) => presentSlugs.some((slug) => r.tasks?.[slug] !== undefined))
     .sort(
@@ -468,10 +538,12 @@ function ObsBarGroup() {
       key: r.participantKey,
       name: r.nickname || r.teamName || '-',
       score: r.groupPoints.toFixed(2),
+      dir: getDir(r.groupPoints, r.previousGroupPoints),
       taskPoints: taskLabels.map(({ slug, short }) => ({
         slug,
         short,
         points: r.tasks?.[slug]?.points,
+        dir: getDir(r.tasks?.[slug]?.points, r.tasks?.[slug]?.previousPoints),
       })),
     }));
 

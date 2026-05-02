@@ -111,16 +111,25 @@ export default function ObsBar({ contextLabel, rows, updatedAt, loading, error }
                         <span className="obsbar-rank-num">{displayRank}</span>
                       </div>
                       <div className="obsbar-name">{row.name}</div>
-                      <div className="obsbar-score">{row.score}</div>
+                      <div className={`obsbar-score ${row.dir === 'up' ? 'cell-up' : row.dir === 'down' ? 'cell-down' : ''}`.trim()}>
+                        {row.score}
+                        {row.dir === 'up' ? <span className="delta-arrow up"> ▲</span> : null}
+                        {row.dir === 'down' ? <span className="delta-arrow down"> ▼</span> : null}
+                      </div>
                     </div>
                     {row.taskPoints && row.taskPoints.length > 0 ? (
                       <div className="obsbar-tasks">
                         {row.taskPoints.map((tp) => (
-                          <span key={tp.slug} className="obsbar-task-chip">
+                          <span
+                            key={tp.slug}
+                            className={`obsbar-task-chip ${tp.dir === 'up' ? 'cell-up' : tp.dir === 'down' ? 'cell-down' : ''}`.trim()}
+                          >
                             <span className="obsbar-task-label">{tp.short}</span>
                             <span className="obsbar-task-val">
                               {tp.points !== undefined ? tp.points.toFixed(0) : '·'}
                             </span>
+                            {tp.dir === 'up' ? <span className="delta-arrow up">▲</span> : null}
+                            {tp.dir === 'down' ? <span className="delta-arrow down">▼</span> : null}
                           </span>
                         ))}
                       </div>

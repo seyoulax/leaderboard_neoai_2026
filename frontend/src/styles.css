@@ -471,3 +471,26 @@ code {
 .muted {
   color: var(--muted);
 }
+
+/* Delta highlight (score went up/down between Kaggle refreshes) */
+.cell-up {
+  background-color: rgba(72, 199, 116, 0.10);
+}
+
+.cell-down {
+  background-color: rgba(255, 107, 107, 0.10);
+}
+
+.delta-arrow {
+  font-size: 0.85em;
+  margin-left: 2px;
+  font-weight: 600;
+}
+
+.delta-arrow.up {
+  color: #48c774;
+}
+
+.delta-arrow.down {
+  color: #ff6b6b;
+}

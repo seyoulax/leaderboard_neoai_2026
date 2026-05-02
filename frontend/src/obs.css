@@ -758,3 +758,22 @@ html.obs body {
   font-weight: 600;
   color: var(--obs-text);
 }
+
+/* Delta highlight in OBS overlays — kept gentle to not steal attention */
+.obs .cell-up {
+  background-color: rgba(72, 199, 116, 0.14);
+}
+.obs .cell-down {
+  background-color: rgba(255, 107, 107, 0.14);
+}
+.obs .delta-arrow {
+  font-size: 0.85em;
+  margin-left: 2px;
+  font-weight: 600;
+}
+.obs .delta-arrow.up {
+  color: #48c774;
+}
+.obs .delta-arrow.down {
+  color: #ff6b6b;
+}

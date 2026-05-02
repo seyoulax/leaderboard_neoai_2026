@@ -157,6 +157,7 @@ async function refreshCache() {
     }
 
     const result = buildLeaderboards(taskRows);
+    annotateWithDeltas(result, cache);
 
     cache = {
       ...cache,
@@ -187,6 +188,36 @@ async function refreshCache() {
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function annotateWithDeltas(result, prevCache) {
+  const prevTaskPoints = new Map();
+  const prevTotalPoints = new Map();
+
+  for (const slug of Object.keys(prevCache.byTask || {})) {
+    const entries = prevCache.byTask[slug]?.entries || [];
+    for (const e of entries) {
+      if (e.participantKey) prevTaskPoints.set(`${slug}|${e.participantKey}`, e.points);
+    }
+  }
+  for (const e of prevCache.overall || []) {
+    if (e.participantKey) prevTotalPoints.set(e.participantKey, e.totalPoints);
+  }
+
+  for (const slug of Object.keys(result.byTask)) {
+    for (const e of result.byTask[slug].entries) {
+      const prev = prevTaskPoints.get(`${slug}|${e.participantKey}`);
+      e.previousPoints = prev !== undefined ? prev : null;
+    }
+  }
+  for (const ovr of result.overall) {
+    const prev = prevTotalPoints.get(ovr.participantKey);
+    ovr.previousTotalPoints = prev !== undefined ? prev : null;
+    for (const slug of Object.keys(ovr.tasks || {})) {
+      const prevP = prevTaskPoints.get(`${slug}|${ovr.participantKey}`);
+      ovr.tasks[slug].previousPoints = prevP !== undefined ? prevP : null;
+    }
+  }
 }
 
 app.get('/api/health', (_req, res) => {
@@ -288,6 +319,7 @@ function findKaggleStats(kaggleId) {
   return {
     place: row.place,
     totalPoints: row.totalPoints,
+    previousTotalPoints: row.previousTotalPoints ?? null,
     nickname: row.nickname,
     teamName: row.teamName,
     tasks: row.tasks,

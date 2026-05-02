@@ -3,7 +3,7 @@ function normalizeWithAnchors(entries, baseline, author) {
   return entries.map((entry) => {
     const raw = ((entry.score - baseline) / denominator) * 100;
     const points = Math.max(0, raw);
-    return {
+    return {  
       participantKey: entry.participantKey,
       nickname: entry.nickname,
       teamName: entry.teamName,

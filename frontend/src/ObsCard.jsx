@@ -51,18 +51,29 @@ export default function ObsCard() {
           <div className="obscard-role">{p.role || 'Участник'}</div>
           {p.kaggleId ? <div className="obscard-handle">@{p.kaggleId}</div> : null}
 
-          {stats ? (
-            <div className="obscard-live">
-              <div className="obscard-live-cell">
-                <div className="obscard-live-label">Место</div>
-                <div className="obscard-live-value">#{stats.place}</div>
+          {stats ? (() => {
+            const prev = stats.previousTotalPoints;
+            const dir =
+              prev != null && Number.isFinite(prev) && Math.abs(stats.totalPoints - prev) > 0.01
+                ? stats.totalPoints > prev ? 'up' : 'down'
+                : null;
+            return (
+              <div className="obscard-live">
+                <div className="obscard-live-cell">
+                  <div className="obscard-live-label">Место</div>
+                  <div className="obscard-live-value">#{stats.place}</div>
+                </div>
+                <div className="obscard-live-cell">
+                  <div className="obscard-live-label">Total points</div>
+                  <div className={`obscard-live-value ${dir === 'up' ? 'cell-up' : dir === 'down' ? 'cell-down' : ''}`.trim()}>
+                    {stats.totalPoints.toFixed(2)}
+                    {dir === 'up' ? <span className="delta-arrow up"> ▲</span> : null}
+                    {dir === 'down' ? <span className="delta-arrow down"> ▼</span> : null}
+                  </div>
+                </div>
               </div>
-              <div className="obscard-live-cell">
-                <div className="obscard-live-label">Total points</div>
-                <div className="obscard-live-value">{stats.totalPoints.toFixed(2)}</div>
-              </div>
-            </div>
-          ) : null}
+            );
+          })() : null}
 
           <div className="obscard-divider" />
 

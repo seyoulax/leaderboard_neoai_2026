@@ -97,7 +97,11 @@ export default function ObsView({ contextLabel, rows, updatedAt, loading, error 
                       <span className="obs-rank-num">{rank}</span>
                     </div>
                     <div className="obs-name">{row.name}</div>
-                    <div className="obs-score">{row.score}</div>
+                    <div className={`obs-score ${row.dir === 'up' ? 'cell-up' : row.dir === 'down' ? 'cell-down' : ''}`.trim()}>
+                      {row.score}
+                      {row.dir === 'up' ? <span className="delta-arrow up"> ▲</span> : null}
+                      {row.dir === 'down' ? <span className="delta-arrow down"> ▼</span> : null}
+                    </div>
                   </div>
                 );
               })}
