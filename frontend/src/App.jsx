@@ -108,6 +108,56 @@ function ModeToggle({ mode, onChange }) {
   );
 }
 
+function FilterToggle({ value, onChange }) {
+  return (
+    <div className="mode-toggle">
+      <button
+        className={`mode-toggle-btn ${value === 'all' ? 'active' : ''}`}
+        onClick={() => onChange('all')}
+      >
+        Все
+      </button>
+      <button
+        className={`mode-toggle-btn ${value === 'ours' ? 'active' : ''}`}
+        onClick={() => onChange('ours')}
+      >
+        Только наши
+      </button>
+    </div>
+  );
+}
+
+function useOurKaggleSet() {
+  const [set, setSet] = useState(null);
+  useEffect(() => {
+    let active = true;
+    async function load() {
+      try {
+        const data = await getParticipants();
+        if (!active) return;
+        const ids = (data.participants || [])
+          .map((p) => (p.kaggleId || '').toString().trim().toLowerCase())
+          .filter(Boolean);
+        setSet(new Set(ids));
+      } catch {
+        if (active) setSet(new Set());
+      }
+    }
+    load();
+    return () => { active = false; };
+  }, []);
+  return set;
+}
+
+function applyFilter(rows, ourSet, enabled) {
+  if (!enabled || !ourSet) return rows;
+  return rows.filter((r) => ourSet.has((r.nickname || '').toLowerCase()));
+}
+
+function reseatPlaces(rows) {
+  return rows.map((r, i) => ({ ...r, place: i + 1 }));
+}
+
 function usePolling(loader, deps = []) {
   const [state, setState] = useState({
     data: null,
@@ -199,13 +249,16 @@ function ErrorBanner({ errors }) {
 function OverallPage() {
   const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
   const [mode, setMode] = useState('public');
+  const [filter, setFilter] = useState('all');
+  const ourSet = useOurKaggleSet();
 
   if (loading) return <p className="status">Загрузка общего ЛБ...</p>;
   if (error) return <p className="status error">{error}</p>;
   if (!data?.updatedAt) return <p className="status">Бэк прогревается — идёт первое обновление с Kaggle, попробуй через минуту…</p>;
 
   const isPrivate = mode === 'private';
-  const overall = isPrivate ? (data.privateOverall || []) : data.overall;
+  const overallSrc = isPrivate ? (data.privateOverall || []) : data.overall;
+  const overall = reseatPlaces(applyFilter(overallSrc, ourSet, filter === 'ours'));
   const privateAvailable = (data.privateTaskSlugs || []).length > 0;
 
   function exportCSV() {
@@ -227,7 +280,8 @@ function OverallPage() {
     <section className="panel">
       <div className="panel-head">
         <h2>Общий рейтинг</h2>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <FilterToggle value={filter} onChange={setFilter} />
           <ModeToggle mode={mode} onChange={setMode} />
           <DownloadButton onClick={exportCSV} />
           <span>Updated: {new Date(data.updatedAt).toLocaleString()}</span>
@@ -288,6 +342,8 @@ function CyclingOverallPage() {
 
   const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
   const [pageIdx, setPageIdx] = useState(0);
+  const [filter, setFilter] = useState('all');
+  const ourSet = useOurKaggleSet();
 
   useEffect(() => {
     const timer = setInterval(() => setPageIdx((p) => p + 1), PAGE_MS);
@@ -298,16 +354,17 @@ function CyclingOverallPage() {
   if (error) return <p className="status error">{error}</p>;
   if (!data?.updatedAt) return <p className="status">Бэк прогревается — идёт первое обновление с Kaggle…</p>;
 
-  const total = data.overall.length;
+  const filteredOverall = reseatPlaces(applyFilter(data.overall, ourSet, filter === 'ours'));
+  const total = filteredOverall.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const currentPage = pageIdx % totalPages;
   const start = currentPage * PAGE_SIZE;
-  const slice = data.overall.slice(start, start + PAGE_SIZE);
+  const slice = filteredOverall.slice(start, start + PAGE_SIZE);
   const endShown = Math.min(start + PAGE_SIZE, total);
 
   function exportCSV() {
     const headers = ['#', 'Nickname', 'Team Name', 'Total points', ...data.tasks.map((t) => t.title)];
-    const rows = data.overall.map((row) => [
+    const rows = filteredOverall.map((row) => [
       row.place,
       row.nickname || '',
       row.teamName || '',
@@ -324,7 +381,8 @@ function CyclingOverallPage() {
     <section className="panel">
       <div className="panel-head">
         <h2>Места {start + 1}–{endShown}</h2>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <FilterToggle value={filter} onChange={setFilter} />
           <DownloadButton onClick={exportCSV} />
           <span>
             Страница {currentPage + 1} / {totalPages} · смена каждые {PAGE_MS / 1000}с · updated:{' '}
@@ -379,6 +437,8 @@ function BoardPage({ boards }) {
   const board = (boards || []).find((b) => b.slug === slug);
   const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
   const [mode, setMode] = useState('public');
+  const [filter, setFilter] = useState('all');
+  const ourSet = useOurKaggleSet();
 
   if (!board) return <p className="status error">Лидерборд '{slug}' не найден.</p>;
   if (loading) return <p className="status">Загрузка лидерборда...</p>;
@@ -386,7 +446,8 @@ function BoardPage({ boards }) {
   if (!data?.updatedAt) return <p className="status">Бэк прогревается — идёт первое обновление с Kaggle…</p>;
 
   const isPrivate = mode === 'private';
-  const overallSrc = isPrivate ? (data.privateOverall || []) : data.overall;
+  const overallRaw = isPrivate ? (data.privateOverall || []) : data.overall;
+  const overallSrc = applyFilter(overallRaw, ourSet, filter === 'ours');
   const privateTaskSlugs = new Set(data.privateTaskSlugs || []);
   const boardHasPrivate = board.taskSlugs.some((s) => privateTaskSlugs.has(s));
 
@@ -436,7 +497,8 @@ function BoardPage({ boards }) {
     <section className="panel">
       <div className="panel-head">
         <h2>{board.title}</h2>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <FilterToggle value={filter} onChange={setFilter} />
           <ModeToggle mode={mode} onChange={setMode} />
           <DownloadButton onClick={exportCSV} />
           <span>Updated: {new Date(data.updatedAt).toLocaleString()}</span>
@@ -495,13 +557,16 @@ function TaskPage() {
   const { slug } = useParams();
   const { data, loading, error } = usePolling(() => getTaskLeaderboard(slug), [slug]);
   const [mode, setMode] = useState('public');
+  const [filter, setFilter] = useState('all');
+  const ourSet = useOurKaggleSet();
 
   if (loading) return <p className="status">Загрузка ЛБ задачи...</p>;
   if (error) return <p className="status error">{error}</p>;
 
   const isPrivate = mode === 'private';
   const task = isPrivate ? (data.privateTask || data.task) : data.task;
-  const entries = isPrivate ? (data.privateTask?.entries || []) : data.task.entries;
+  const entriesRaw = isPrivate ? (data.privateTask?.entries || []) : data.task.entries;
+  const entries = reseatPlaces(applyFilter(entriesRaw, ourSet, filter === 'ours'));
   const privateAvailable = !!data.privateTask;
 
   function exportCSV() {
@@ -521,7 +586,8 @@ function TaskPage() {
     <section className="panel">
       <div className="panel-head">
         <h2>{task.title}</h2>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <FilterToggle value={filter} onChange={setFilter} />
           <ModeToggle mode={mode} onChange={setMode} />
           <DownloadButton onClick={exportCSV} />
           <span>Updated: {new Date(data.updatedAt).toLocaleString()}</span>
