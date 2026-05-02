@@ -693,17 +693,23 @@ function AdminTasksPage() {
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState(null);
 
+  function normalize(rawList) {
+    return (rawList || []).map((t) => ({
+      slug: t.slug || '',
+      title: t.title || '',
+      competition: t.competition || '',
+      higherIsBetter: t.higherIsBetter !== false,
+      baselineScore: t.baselineScore == null ? '' : String(t.baselineScore),
+      authorScore: t.authorScore == null ? '' : String(t.authorScore),
+    }));
+  }
+
   async function load() {
     setLoading(true);
     setError(null);
     try {
       const data = await getAdminTasks();
-      const list = (data.tasks || []).map((t) => ({
-        slug: t.slug || '',
-        title: t.title || '',
-        competition: t.competition || '',
-        higherIsBetter: t.higherIsBetter !== false,
-      }));
+      const list = normalize(data.tasks);
       setTasks(list);
       setOriginal(JSON.stringify(list));
     } catch (err) {
@@ -739,7 +745,7 @@ function AdminTasksPage() {
   function add() {
     setTasks((prev) => [
       ...prev,
-      { slug: '', title: '', competition: '', higherIsBetter: true },
+      { slug: '', title: '', competition: '', higherIsBetter: true, baselineScore: '', authorScore: '' },
     ]);
   }
 
@@ -748,7 +754,7 @@ function AdminTasksPage() {
     setError(null);
     try {
       const data = await saveAdminTasks(tasks);
-      const list = data.tasks || tasks;
+      const list = normalize(data.tasks);
       setTasks(list);
       setOriginal(JSON.stringify(list));
       setSavedAt(new Date());
@@ -781,7 +787,9 @@ function AdminTasksPage() {
           <span style={{ flex: '0 0 160px' }}>slug</span>
           <span style={{ flex: '0 0 220px' }}>title</span>
           <span style={{ flex: 1 }}>competition</span>
-          <span style={{ flex: '0 0 130px', textAlign: 'center' }}>higherIsBetter</span>
+          <span style={{ flex: '0 0 110px', textAlign: 'center' }}>higherIsBetter</span>
+          <span style={{ flex: '0 0 100px' }}>baseline</span>
+          <span style={{ flex: '0 0 100px' }}>author</span>
           <span style={{ flex: '0 0 140px' }}></span>
         </div>
 
@@ -809,13 +817,31 @@ function AdminTasksPage() {
               onChange={(e) => update(idx, { competition: e.target.value })}
               placeholder="kaggle-competition-slug"
             />
-            <label style={{ flex: '0 0 130px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <label style={{ flex: '0 0 110px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
               <input
                 type="checkbox"
                 checked={task.higherIsBetter}
                 onChange={(e) => update(idx, { higherIsBetter: e.target.checked })}
               />
             </label>
+            <input
+              className="control-input"
+              style={{ flex: '0 0 100px' }}
+              type="number"
+              step="any"
+              value={task.baselineScore}
+              onChange={(e) => update(idx, { baselineScore: e.target.value })}
+              placeholder=""
+            />
+            <input
+              className="control-input"
+              style={{ flex: '0 0 100px' }}
+              type="number"
+              step="any"
+              value={task.authorScore}
+              onChange={(e) => update(idx, { authorScore: e.target.value })}
+              placeholder=""
+            />
             <span style={{ flex: '0 0 140px', display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
               <button className="control-btn control-btn-ghost" onClick={() => move(idx, -1)} disabled={idx === 0}>↑</button>
               <button className="control-btn control-btn-ghost" onClick={() => move(idx, 1)} disabled={idx === tasks.length - 1}>↓</button>
@@ -834,6 +860,8 @@ function AdminTasksPage() {
 
         <p className="meta">
           После сохранения бэк перезапускает Kaggle-обновление автоматически.
+          Если заданы baseline и author — баллы считаются как (score − baseline) / (author − baseline) × 100;
+          иначе фолбэк на старую нормировку (top1 = 100, last = 0).
         </p>
       </div>
     </section>

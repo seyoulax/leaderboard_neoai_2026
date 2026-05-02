@@ -1,6 +1,26 @@
-function normalizeTaskScores(entries, higherIsBetter) {
+function normalizeWithAnchors(entries, baseline, author) {
+  const denominator = author - baseline;
+  return entries.map((entry) => {
+    const raw = ((entry.score - baseline) / denominator) * 100;
+    const points = Math.max(0, raw);
+    return {
+      participantKey: entry.participantKey,
+      nickname: entry.nickname,
+      teamName: entry.teamName,
+      rank: entry.rank,
+      score: entry.score,
+      points: Number(points.toFixed(6)),
+    };
+  });
+}
+
+function normalizeTaskScores(entries, higherIsBetter, baselineScore, authorScore) {
   if (entries.length === 0) {
     return [];
+  }
+
+  if (Number.isFinite(baselineScore) && Number.isFinite(authorScore) && baselineScore !== authorScore) {
+    return normalizeWithAnchors(entries, baselineScore, authorScore);
   }
 
   const rankedEntries = entries.filter((entry) => Number.isFinite(entry.rank) && entry.rank > 0);
@@ -59,13 +79,20 @@ export function buildLeaderboards(tasksWithRows) {
   const teams = new Map();
 
   for (const task of tasksWithRows) {
-    const normalized = normalizeTaskScores(task.rows, task.higherIsBetter);
+    const normalized = normalizeTaskScores(
+      task.rows,
+      task.higherIsBetter,
+      task.baselineScore,
+      task.authorScore
+    );
 
     byTask[task.slug] = {
       slug: task.slug,
       title: task.title,
       competition: task.competition,
       higherIsBetter: task.higherIsBetter,
+      baselineScore: task.baselineScore,
+      authorScore: task.authorScore,
       updatedAt: task.updatedAt,
       entries: normalized
         .sort(

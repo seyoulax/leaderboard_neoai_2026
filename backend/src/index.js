@@ -37,13 +37,36 @@ function validateTasks(input) {
     if (!competition) throw new Error(`task #${idx + 1}: competition is required`);
     if (seen.has(slug)) throw new Error(`duplicate slug: ${slug}`);
     seen.add(slug);
-    return {
+
+    const baselineScore = parseOptionalNumber(task.baselineScore, `task #${idx + 1}: baselineScore`);
+    const authorScore = parseOptionalNumber(task.authorScore, `task #${idx + 1}: authorScore`);
+    if (
+      baselineScore !== null &&
+      authorScore !== null &&
+      baselineScore === authorScore
+    ) {
+      throw new Error(`task #${idx + 1}: baselineScore and authorScore must differ`);
+    }
+
+    const result = {
       slug,
       title,
       competition,
       higherIsBetter: task.higherIsBetter !== false,
     };
+    if (baselineScore !== null) result.baselineScore = baselineScore;
+    if (authorScore !== null) result.authorScore = authorScore;
+    return result;
   });
+}
+
+function parseOptionalNumber(value, label) {
+  if (value === undefined || value === null || value === '') return null;
+  const n = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(n)) {
+    throw new Error(`${label}: must be a number`);
+  }
+  return n;
 }
 
 async function loadTasks() {
