@@ -15,6 +15,9 @@ import {
   saveAdminTasks,
   getAdminBoards,
   saveAdminBoards,
+  getAdminPrivate,
+  uploadAdminPrivate,
+  deleteAdminPrivate,
   AdminAuthError,
 } from './api';
 import ObsView from './ObsView';
@@ -83,6 +86,25 @@ function DownloadButton({ onClick }) {
     <button className="control-btn control-btn-ghost" onClick={onClick} title="Скачать CSV">
       ↓ CSV
     </button>
+  );
+}
+
+function ModeToggle({ mode, onChange }) {
+  return (
+    <div className="mode-toggle">
+      <button
+        className={`mode-toggle-btn ${mode === 'public' ? 'active' : ''}`}
+        onClick={() => onChange('public')}
+      >
+        Public
+      </button>
+      <button
+        className={`mode-toggle-btn ${mode === 'private' ? 'active' : ''}`}
+        onClick={() => onChange('private')}
+      >
+        Private
+      </button>
+    </div>
   );
 }
 
@@ -176,24 +198,29 @@ function ErrorBanner({ errors }) {
 
 function OverallPage() {
   const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
+  const [mode, setMode] = useState('public');
 
   if (loading) return <p className="status">Загрузка общего ЛБ...</p>;
   if (error) return <p className="status error">{error}</p>;
   if (!data?.updatedAt) return <p className="status">Бэк прогревается — идёт первое обновление с Kaggle, попробуй через минуту…</p>;
 
+  const isPrivate = mode === 'private';
+  const overall = isPrivate ? (data.privateOverall || []) : data.overall;
+  const privateAvailable = (data.privateTaskSlugs || []).length > 0;
+
   function exportCSV() {
     const headers = ['#', 'Nickname', 'Team Name', 'Total points', ...data.tasks.map((t) => t.title)];
-    const rows = data.overall.map((row) => [
+    const rows = overall.map((row) => [
       row.place,
       row.nickname || '',
       row.teamName || '',
       row.totalPoints.toFixed(2),
       ...data.tasks.map((t) => {
         const p = row.tasks?.[t.slug]?.points;
-        return p !== undefined ? p.toFixed(2) : '';
+        return p !== undefined ? p.toFixed(2) : (isPrivate ? '0.00' : '');
       }),
     ]);
-    downloadCSV('overall.csv', headers, rows);
+    downloadCSV(`overall${isPrivate ? '-private' : ''}.csv`, headers, rows);
   }
 
   return (
@@ -201,6 +228,7 @@ function OverallPage() {
       <div className="panel-head">
         <h2>Общий рейтинг</h2>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <ModeToggle mode={mode} onChange={setMode} />
           <DownloadButton onClick={exportCSV} />
           <span>Updated: {new Date(data.updatedAt).toLocaleString()}</span>
         </div>
@@ -208,6 +236,9 @@ function OverallPage() {
 
       <ErrorBanner errors={data.errors} />
 
+      {isPrivate && !privateAvailable ? (
+        <p className="status" style={{ margin: 24 }}>Приват ещё не посчитался — ни по одной задаче не загружен private CSV.</p>
+      ) : (
       <div className="table-wrap">
         <table>
           <thead>
@@ -222,7 +253,7 @@ function OverallPage() {
             </tr>
           </thead>
           <tbody>
-            {data.overall.map((row) => (
+            {overall.map((row) => (
               <tr key={row.participantKey} className={rowDirClass(getDir(row.totalPoints, row.previousTotalPoints))}>
                 <td>{row.place}</td>
                 <td className="team">{row.nickname || '-'}</td>
@@ -230,6 +261,9 @@ function OverallPage() {
                 <DeltaCell value={row.totalPoints} prev={row.previousTotalPoints} />
                 {data.tasks.map((task) => {
                   const cell = row.tasks?.[task.slug];
+                  if (!cell && isPrivate) {
+                    return <td key={task.slug} className="mono muted">0.00</td>;
+                  }
                   return (
                     <DeltaCell
                       key={task.slug}
@@ -243,6 +277,7 @@ function OverallPage() {
           </tbody>
         </table>
       </div>
+      )}
     </section>
   );
 }
@@ -343,16 +378,22 @@ function BoardPage({ boards }) {
   const { slug } = useParams();
   const board = (boards || []).find((b) => b.slug === slug);
   const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
+  const [mode, setMode] = useState('public');
 
   if (!board) return <p className="status error">Лидерборд '{slug}' не найден.</p>;
   if (loading) return <p className="status">Загрузка лидерборда...</p>;
   if (error) return <p className="status error">{error}</p>;
   if (!data?.updatedAt) return <p className="status">Бэк прогревается — идёт первое обновление с Kaggle…</p>;
 
+  const isPrivate = mode === 'private';
+  const overallSrc = isPrivate ? (data.privateOverall || []) : data.overall;
+  const privateTaskSlugs = new Set(data.privateTaskSlugs || []);
+  const boardHasPrivate = board.taskSlugs.some((s) => privateTaskSlugs.has(s));
+
   const presentSlugs = board.taskSlugs.filter((s) => data.tasks.some((t) => t.slug === s));
   const groupTasks = data.tasks.filter((t) => presentSlugs.includes(t.slug));
 
-  const ranked = data.overall
+  const ranked = overallSrc
     .map((row) => {
       const total = presentSlugs.reduce((sum, slug) => sum + (row.tasks?.[slug]?.points ?? 0), 0);
       const hasAnyPrev = presentSlugs.some((slug) => row.tasks?.[slug]?.previousPoints != null);
@@ -385,10 +426,10 @@ function BoardPage({ boards }) {
       row.groupPoints.toFixed(2),
       ...groupTasks.map((t) => {
         const p = row.tasks?.[t.slug]?.points;
-        return p !== undefined ? p.toFixed(2) : '';
+        return p !== undefined ? p.toFixed(2) : (isPrivate ? '0.00' : '');
       }),
     ]);
-    downloadCSV(`board-${board.slug}.csv`, headers, rows);
+    downloadCSV(`board-${board.slug}${isPrivate ? '-private' : ''}.csv`, headers, rows);
   }
 
   return (
@@ -396,6 +437,7 @@ function BoardPage({ boards }) {
       <div className="panel-head">
         <h2>{board.title}</h2>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <ModeToggle mode={mode} onChange={setMode} />
           <DownloadButton onClick={exportCSV} />
           <span>Updated: {new Date(data.updatedAt).toLocaleString()}</span>
         </div>
@@ -403,6 +445,9 @@ function BoardPage({ boards }) {
 
       <ErrorBanner errors={data.errors} />
 
+      {isPrivate && !boardHasPrivate ? (
+        <p className="status" style={{ margin: 24 }}>Приват ещё не посчитался — ни по одной задаче этого борда не загружен private CSV.</p>
+      ) : (
       <div className="table-wrap">
         <table>
           <thead>
@@ -425,6 +470,9 @@ function BoardPage({ boards }) {
                 <DeltaCell value={row.groupPoints} prev={row.previousGroupPoints} />
                 {groupTasks.map((task) => {
                   const cell = row.tasks?.[task.slug];
+                  if (!cell && isPrivate) {
+                    return <td key={task.slug} className="mono muted">0.00</td>;
+                  }
                   return (
                     <DeltaCell
                       key={task.slug}
@@ -438,6 +486,7 @@ function BoardPage({ boards }) {
           </tbody>
         </table>
       </div>
+      )}
     </section>
   );
 }
@@ -445,15 +494,19 @@ function BoardPage({ boards }) {
 function TaskPage() {
   const { slug } = useParams();
   const { data, loading, error } = usePolling(() => getTaskLeaderboard(slug), [slug]);
+  const [mode, setMode] = useState('public');
 
   if (loading) return <p className="status">Загрузка ЛБ задачи...</p>;
   if (error) return <p className="status error">{error}</p>;
 
-  const { task } = data;
+  const isPrivate = mode === 'private';
+  const task = isPrivate ? (data.privateTask || data.task) : data.task;
+  const entries = isPrivate ? (data.privateTask?.entries || []) : data.task.entries;
+  const privateAvailable = !!data.privateTask;
 
   function exportCSV() {
     const headers = ['#', 'Nickname', 'Team Name', 'Kaggle Rank', 'Raw Score', 'NEOAI Points'];
-    const rows = task.entries.map((row) => [
+    const rows = entries.map((row) => [
       row.place,
       row.nickname || '',
       row.teamName || '',
@@ -461,7 +514,7 @@ function TaskPage() {
       row.score.toFixed(6),
       row.points.toFixed(2),
     ]);
-    downloadCSV(`task-${task.slug}.csv`, headers, rows);
+    downloadCSV(`task-${task.slug}${isPrivate ? '-private' : ''}.csv`, headers, rows);
   }
 
   return (
@@ -469,6 +522,7 @@ function TaskPage() {
       <div className="panel-head">
         <h2>{task.title}</h2>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <ModeToggle mode={mode} onChange={setMode} />
           <DownloadButton onClick={exportCSV} />
           <span>Updated: {new Date(data.updatedAt).toLocaleString()}</span>
         </div>
@@ -476,6 +530,9 @@ function TaskPage() {
 
       <ErrorBanner errors={data.errors} />
 
+      {isPrivate && !privateAvailable ? (
+        <p className="status" style={{ margin: 24 }}>Приват ещё не посчитался — для этой задачи private CSV не загружен.</p>
+      ) : (
       <div className="table-wrap">
         <table>
           <thead>
@@ -489,7 +546,7 @@ function TaskPage() {
             </tr>
           </thead>
           <tbody>
-            {task.entries.map((row) => (
+            {entries.map((row) => (
               <tr key={row.participantKey} className={rowDirClass(getDir(row.points, row.previousPoints))}>
                 <td>{row.place}</td>
                 <td className="team">{row.nickname || '-'}</td>
@@ -502,6 +559,7 @@ function TaskPage() {
           </tbody>
         </table>
       </div>
+      )}
     </section>
   );
 }
@@ -942,6 +1000,79 @@ function AdminLogin({ onSuccess }) {
   );
 }
 
+function PrivateRow({ slug }) {
+  const [info, setInfo] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function load() {
+    if (!slug) return;
+    setError(null);
+    try {
+      const data = await getAdminPrivate(slug);
+      setInfo(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  useEffect(() => {
+    load();
+  }, [slug]);
+
+  async function pick(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const text = await file.text();
+      const r = await uploadAdminPrivate(slug, text);
+      setInfo({ exists: true, count: r.count, updatedAt: new Date().toISOString() });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function remove() {
+    if (!confirm(`Удалить приват для ${slug}?`)) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await deleteAdminPrivate(slug);
+      setInfo({ exists: false });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!slug) return null;
+
+  return (
+    <div className="admin-private-row">
+      <span className="admin-private-label">private:</span>
+      {info?.exists ? (
+        <>
+          <span className="muted">{info.count} строк, обновлено {new Date(info.updatedAt).toLocaleString()}</span>
+          <button className="control-btn control-btn-ghost" onClick={remove} disabled={busy}>×</button>
+        </>
+      ) : (
+        <span className="muted">не загружено</span>
+      )}
+      <label className="control-btn control-btn-ghost" style={{ cursor: 'pointer' }}>
+        {busy ? '...' : info?.exists ? '↑ заменить CSV' : '↑ загрузить CSV'}
+        <input type="file" accept=".csv,text/csv" onChange={pick} disabled={busy} style={{ display: 'none' }} />
+      </label>
+      {error ? <span style={{ color: 'var(--danger)', fontSize: 12 }}>{error}</span> : null}
+    </div>
+  );
+}
+
 function AdminTasksPage() {
   const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
@@ -1052,7 +1183,8 @@ function AdminTasksPage() {
         </div>
 
         {tasks.map((task, idx) => (
-          <div key={idx} className="admin-tasks-row">
+          <div key={idx} className="admin-tasks-task">
+          <div className="admin-tasks-row">
             <span style={{ width: 30 }} className="muted">{idx + 1}</span>
             <input
               className="control-input"
@@ -1105,6 +1237,8 @@ function AdminTasksPage() {
               <button className="control-btn control-btn-ghost" onClick={() => move(idx, 1)} disabled={idx === tasks.length - 1}>↓</button>
               <button className="control-btn control-btn-ghost" onClick={() => remove(idx)}>×</button>
             </span>
+          </div>
+          <PrivateRow slug={task.slug} />
           </div>
         ))}
 

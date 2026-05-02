@@ -115,6 +115,21 @@ export async function saveAdminTasks(tasks) {
   });
 }
 
+export async function getAdminPrivate(slug) {
+  return adminFetch(`/admin/tasks/${encodeURIComponent(slug)}/private`);
+}
+
+export async function uploadAdminPrivate(slug, csv) {
+  return adminFetch(`/admin/tasks/${encodeURIComponent(slug)}/private`, {
+    method: 'PUT',
+    body: JSON.stringify({ csv }),
+  });
+}
+
+export async function deleteAdminPrivate(slug) {
+  return adminFetch(`/admin/tasks/${encodeURIComponent(slug)}/private`, { method: 'DELETE' });
+}
+
 export async function getAdminBoards() {
   return adminFetch('/admin/boards');
 }

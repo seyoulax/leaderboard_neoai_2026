@@ -604,3 +604,54 @@ tr.row-down > td {
 .sitemap-group li a:hover {
   text-decoration: underline;
 }
+
+/* Public/Private toggle */
+.mode-toggle {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--card);
+}
+
+.mode-toggle-btn {
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 14px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.mode-toggle-btn.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* Admin: private upload sub-row */
+.admin-tasks-task {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--line);
+}
+
+.admin-private-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 0 0 38px;
+  font-size: 12px;
+}
+
+.admin-private-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}

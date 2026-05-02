@@ -7,6 +7,13 @@ import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
 import { fetchCompetitionLeaderboard } from './kaggle.js';
 import { buildLeaderboards } from './leaderboard.js';
+import {
+  parsePrivateCsv,
+  buildPrivateRows,
+  readPrivateFile,
+  writePrivateFile,
+  deletePrivateFile,
+} from './private.js';
 
 dotenv.config();
 
@@ -19,6 +26,7 @@ const KAGGLE_CMD = process.env.KAGGLE_CMD || 'kaggle';
 const TASKS_FILE = path.resolve(__dirname, '..', process.env.TASKS_FILE || './data/tasks.json');
 const BOARDS_FILE = path.resolve(__dirname, '..', process.env.BOARDS_FILE || './data/boards.json');
 const PARTICIPANTS_FILE = path.resolve(__dirname, '..', process.env.PARTICIPANTS_FILE || './data/participants.json');
+const PRIVATE_DIR = path.resolve(__dirname, '..', process.env.PRIVATE_DIR || './data/private');
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || '';
 const REQUEST_GAP_MS = Number(process.env.REQUEST_GAP_MS || 3000);
 
@@ -165,6 +173,9 @@ let cache = {
   updatedAt: null,
   overall: [],
   byTask: {},
+  privateOverall: [],
+  privateByTask: {},
+  privateTaskSlugs: [],
   tasks: [],
   errors: [],
   isRefreshing: false,
@@ -219,7 +230,28 @@ async function refreshCache() {
     }
 
     const result = buildLeaderboards(taskRows);
-    annotateWithDeltas(result, cache);
+    annotateWithDeltas(result, { byTask: cache.byTask, overall: cache.overall });
+
+    const privateTaskRows = [];
+    const privateTaskSlugs = [];
+    for (const task of tasks) {
+      const file = await readPrivateFile(PRIVATE_DIR, task.slug).catch(() => null);
+      if (!file) continue;
+      let records;
+      try {
+        records = parsePrivateCsv(file.raw);
+      } catch (e) {
+        console.warn(`[private] parse failed for ${task.slug}: ${e.message}`);
+        continue;
+      }
+      if (!records.length) continue;
+      const rows = buildPrivateRows({ records, higherIsBetter: task.higherIsBetter, participants });
+      privateTaskRows.push({ ...task, updatedAt: file.updatedAt, rows });
+      privateTaskSlugs.push(task.slug);
+    }
+
+    const privateResult = buildLeaderboards(privateTaskRows);
+    annotateWithDeltas(privateResult, { byTask: cache.privateByTask, overall: cache.privateOverall });
 
     cache = {
       ...cache,
@@ -227,6 +259,9 @@ async function refreshCache() {
       tasks,
       overall: result.overall,
       byTask: result.byTask,
+      privateOverall: privateResult.overall,
+      privateByTask: privateResult.byTask,
+      privateTaskSlugs,
       errors,
       isRefreshing: false,
     };
@@ -300,21 +335,26 @@ app.get('/api/leaderboard', (_req, res) => {
     updatedAt: cache.updatedAt,
     tasks: cache.tasks,
     overall: cache.overall,
+    privateOverall: cache.privateOverall,
+    privateByTask: cache.privateByTask,
+    privateTaskSlugs: cache.privateTaskSlugs,
     errors: cache.errors,
   });
 });
 
 app.get('/api/tasks/:slug', (req, res) => {
   const task = cache.byTask[req.params.slug];
+  const privateTask = cache.privateByTask[req.params.slug] || null;
 
-  if (!task) {
+  if (!task && !privateTask) {
     res.status(404).json({ error: `Task '${req.params.slug}' not found` });
     return;
   }
 
   res.json({
     updatedAt: cache.updatedAt,
-    task,
+    task: task || { ...privateTask, entries: [] },
+    privateTask,
     errors: cache.errors,
   });
 });
@@ -419,6 +459,54 @@ app.get('/api/admin/boards', requireAdmin, async (_req, res) => {
       throw e;
     });
     res.json({ boards: JSON.parse(raw) });
+  } catch (e) {
+    res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+app.get('/api/admin/tasks/:slug/private', requireAdmin, async (req, res) => {
+  try {
+    const file = await readPrivateFile(PRIVATE_DIR, req.params.slug);
+    if (!file) {
+      res.json({ exists: false });
+      return;
+    }
+    let count = 0;
+    try {
+      count = parsePrivateCsv(file.raw).length;
+    } catch {}
+    res.json({ exists: true, csv: file.raw, updatedAt: file.updatedAt, count });
+  } catch (e) {
+    res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+app.put('/api/admin/tasks/:slug/private', requireAdmin, async (req, res) => {
+  try {
+    const tasks = await loadTasks();
+    if (!tasks.find((t) => t.slug === req.params.slug)) {
+      res.status(404).json({ error: `task '${req.params.slug}' not found` });
+      return;
+    }
+    const csv = typeof req.body?.csv === 'string' ? req.body.csv : '';
+    const records = parsePrivateCsv(csv);
+    if (!records.length) {
+      res.status(400).json({ error: 'no valid rows parsed (need columns kaggle_id and raw_score)' });
+      return;
+    }
+    await writePrivateFile(PRIVATE_DIR, req.params.slug, csv);
+    res.json({ ok: true, count: records.length });
+    refreshCache().catch((e) => console.error('[refresh after private upload] FAILED', e));
+  } catch (e) {
+    res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+app.delete('/api/admin/tasks/:slug/private', requireAdmin, async (req, res) => {
+  try {
+    await deletePrivateFile(PRIVATE_DIR, req.params.slug);
+    res.json({ ok: true });
+    refreshCache().catch((e) => console.error('[refresh after private delete] FAILED', e));
   } catch (e) {
     res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
   }
