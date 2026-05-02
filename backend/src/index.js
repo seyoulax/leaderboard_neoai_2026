@@ -364,10 +364,6 @@ app.post('/api/refresh', async (_req, res) => {
   res.json({ ok: true, updatedAt: cache.updatedAt, errors: cache.errors });
 });
 
-const ADMIN_FAIL_WINDOW_MS = 15 * 60 * 1000;
-const ADMIN_MAX_FAILS = 5;
-const adminFails = new Map();
-
 function safeEqualToken(provided, expected) {
   const a = Buffer.from(provided || '', 'utf8');
   const b = Buffer.from(expected || '', 'utf8');
@@ -378,48 +374,18 @@ function safeEqualToken(provided, expected) {
   return crypto.timingSafeEqual(a, b);
 }
 
-function isAdminBlocked(ip) {
-  const e = adminFails.get(ip);
-  if (!e) return false;
-  if (Date.now() - e.firstAt > ADMIN_FAIL_WINDOW_MS) {
-    adminFails.delete(ip);
-    return false;
-  }
-  return e.count >= ADMIN_MAX_FAILS;
-}
-
-function recordAdminFail(ip) {
-  const now = Date.now();
-  const e = adminFails.get(ip);
-  if (!e || now - e.firstAt > ADMIN_FAIL_WINDOW_MS) {
-    adminFails.set(ip, { count: 1, firstAt: now });
-    return;
-  }
-  e.count++;
-}
-
-function clearAdminFails(ip) {
-  adminFails.delete(ip);
-}
-
 function requireAdmin(req, res, next) {
   if (!ADMIN_TOKEN) {
     res.status(503).json({ error: 'admin disabled: ADMIN_TOKEN is not set on the server' });
     return;
   }
-  const ip = req.ip || req.socket.remoteAddress || 'unknown';
-  if (isAdminBlocked(ip)) {
-    res.status(429).json({ error: 'too many failed attempts; try again in 15 minutes' });
-    return;
-  }
   const token = req.get('x-admin-token') || '';
   if (!safeEqualToken(token, ADMIN_TOKEN)) {
-    recordAdminFail(ip);
+    const ip = req.ip || req.socket.remoteAddress || 'unknown';
     console.warn(`[admin] failed auth from ${ip}`);
     res.status(401).json({ error: 'invalid admin token' });
     return;
   }
-  clearAdminFails(ip);
   next();
 }
 
