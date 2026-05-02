@@ -5,12 +5,14 @@ const TOP_N = 15;
 const REFRESH_MS = 30_000;
 const HIGHLIGHT_MS = 5000;
 
-function rowClass(rank, entered) {
+function rowClass(rank, entered, dir) {
   let cls = 'obs-row';
   if (rank === 1) cls += ' obs-top1';
   else if (rank === 2) cls += ' obs-top2';
   else if (rank === 3) cls += ' obs-top3';
   if (entered) cls += ' obs-row-new';
+  if (dir === 'up') cls += ' row-up';
+  else if (dir === 'down') cls += ' row-down';
   return cls;
 }
 
@@ -92,12 +94,12 @@ export default function ObsView({ contextLabel, rows, updatedAt, loading, error 
                 const rank = i + 1;
                 const isNew = entered.has(row.key);
                 return (
-                  <div key={row.key} className={rowClass(rank, isNew)}>
+                  <div key={row.key} className={rowClass(rank, isNew, row.dir)}>
                     <div className="obs-rank">
                       <span className="obs-rank-num">{rank}</span>
                     </div>
                     <div className="obs-name">{row.name}</div>
-                    <div className={`obs-score ${row.dir === 'up' ? 'cell-up' : row.dir === 'down' ? 'cell-down' : ''}`.trim()}>
+                    <div className="obs-score">
                       {row.score}
                       {row.dir === 'up' ? <span className="delta-arrow up"> ▲</span> : null}
                       {row.dir === 'down' ? <span className="delta-arrow down"> ▼</span> : null}

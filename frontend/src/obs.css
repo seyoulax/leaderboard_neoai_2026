@@ -760,10 +760,16 @@ html.obs body {
 }
 
 /* Delta highlight in OBS overlays — kept gentle to not steal attention */
-.obs .cell-up {
+.obs .obs-row.row-up {
   background-color: rgba(72, 199, 116, 0.14);
 }
-.obs .cell-down {
+.obs .obs-row.row-down {
+  background-color: rgba(255, 107, 107, 0.14);
+}
+.obs .obsbar-cell.row-up {
+  background-color: rgba(72, 199, 116, 0.14);
+}
+.obs .obsbar-cell.row-down {
   background-color: rgba(255, 107, 107, 0.14);
 }
 .obs .delta-arrow {

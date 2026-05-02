@@ -6,7 +6,7 @@ const PAGE_MS = 15_000;
 const REFRESH_MS = 30_000;
 const HIGHLIGHT_MS = 5000;
 
-function cellClass(rank, page, entered) {
+function cellClass(rank, page, entered, dir) {
   let cls = 'obsbar-cell';
   if (page === 0) {
     if (rank === 1) cls += ' obsbar-top1';
@@ -14,6 +14,8 @@ function cellClass(rank, page, entered) {
     else if (rank === 3) cls += ' obsbar-top3';
   }
   if (entered) cls += ' obsbar-cell-new';
+  if (dir === 'up') cls += ' row-up';
+  else if (dir === 'down') cls += ' row-down';
   return cls;
 }
 
@@ -105,13 +107,13 @@ export default function ObsBar({ contextLabel, rows, updatedAt, loading, error }
                 const displayRank = start + i + 1;
                 const isNew = entered.has(row.key);
                 return (
-                  <div key={row.key} className={cellClass(displayRank, currentPage, isNew)}>
+                  <div key={row.key} className={cellClass(displayRank, currentPage, isNew, row.dir)}>
                     <div className="obsbar-cell-top">
                       <div className="obsbar-rank">
                         <span className="obsbar-rank-num">{displayRank}</span>
                       </div>
                       <div className="obsbar-name">{row.name}</div>
-                      <div className={`obsbar-score ${row.dir === 'up' ? 'cell-up' : row.dir === 'down' ? 'cell-down' : ''}`.trim()}>
+                      <div className="obsbar-score">
                         {row.score}
                         {row.dir === 'up' ? <span className="delta-arrow up"> ▲</span> : null}
                         {row.dir === 'down' ? <span className="delta-arrow down"> ▼</span> : null}
@@ -120,10 +122,7 @@ export default function ObsBar({ contextLabel, rows, updatedAt, loading, error }
                     {row.taskPoints && row.taskPoints.length > 0 ? (
                       <div className="obsbar-tasks">
                         {row.taskPoints.map((tp) => (
-                          <span
-                            key={tp.slug}
-                            className={`obsbar-task-chip ${tp.dir === 'up' ? 'cell-up' : tp.dir === 'down' ? 'cell-down' : ''}`.trim()}
-                          >
+                          <span key={tp.slug} className="obsbar-task-chip">
                             <span className="obsbar-task-label">{tp.short}</span>
                             <span className="obsbar-task-val">
                               {tp.points !== undefined ? tp.points.toFixed(0) : '·'}

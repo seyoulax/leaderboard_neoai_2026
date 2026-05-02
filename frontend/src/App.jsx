@@ -45,14 +45,17 @@ function getDir(current, previous) {
 
 function DeltaCell({ value, prev, digits = 2, extraClass = '' }) {
   const dir = getDir(value, prev);
-  const dirClass = dir === 'up' ? 'cell-up' : dir === 'down' ? 'cell-down' : '';
   return (
-    <td className={`mono ${extraClass} ${dirClass}`.trim()}>
+    <td className={`mono ${extraClass}`.trim()}>
       {value !== undefined && value !== null ? value.toFixed(digits) : '-'}
       {dir === 'up' ? <span className="delta-arrow up"> ▲</span> : null}
       {dir === 'down' ? <span className="delta-arrow down"> ▼</span> : null}
     </td>
   );
+}
+
+function rowDirClass(dir) {
+  return dir === 'up' ? 'row-up' : dir === 'down' ? 'row-down' : '';
 }
 
 function usePolling(loader, deps = []) {
@@ -168,7 +171,7 @@ function OverallPage() {
           </thead>
           <tbody>
             {data.overall.map((row) => (
-              <tr key={row.participantKey}>
+              <tr key={row.participantKey} className={rowDirClass(getDir(row.totalPoints, row.previousTotalPoints))}>
                 <td>{row.place}</td>
                 <td className="team">{row.nickname || '-'}</td>
                 <td>{row.teamName || '-'}</td>
@@ -241,7 +244,7 @@ function CyclingOverallPage() {
           </thead>
           <tbody>
             {slice.map((row) => (
-              <tr key={row.participantKey}>
+              <tr key={row.participantKey} className={rowDirClass(getDir(row.totalPoints, row.previousTotalPoints))}>
                 <td>{row.place}</td>
                 <td className="team">{row.nickname || '-'}</td>
                 <td>{row.teamName || '-'}</td>
@@ -325,7 +328,7 @@ function GroupPage() {
           </thead>
           <tbody>
             {ranked.map((row) => (
-              <tr key={row.participantKey}>
+              <tr key={row.participantKey} className={rowDirClass(getDir(row.groupPoints, row.previousGroupPoints))}>
                 <td>{row.place}</td>
                 <td className="team">{row.nickname || '-'}</td>
                 <td>{row.teamName || '-'}</td>
@@ -385,7 +388,7 @@ function TaskPage() {
           </thead>
           <tbody>
             {task.entries.map((row) => (
-              <tr key={row.participantKey}>
+              <tr key={row.participantKey} className={rowDirClass(getDir(row.points, row.previousPoints))}>
                 <td>{row.place}</td>
                 <td className="team">{row.nickname || '-'}</td>
                 <td>{row.teamName || '-'}</td>
