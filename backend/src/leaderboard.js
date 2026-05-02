@@ -1,9 +1,17 @@
 function normalizeWithAnchors(entries, baseline, author) {
-  const denominator = author - baseline;
+  const direction = author > baseline ? 1 : -1;
+  const scores = entries.map((e) => e.score).filter((s) => Number.isFinite(s));
+  const bestParticipant = scores.length === 0
+    ? author
+    : direction > 0
+      ? Math.max(...scores)
+      : Math.min(...scores);
+  const anchor = direction > 0 ? Math.max(bestParticipant, author) : Math.min(bestParticipant, author);
+  const denominator = (anchor - baseline) || (author - baseline) || 1;
   return entries.map((entry) => {
     const raw = ((entry.score - baseline) / denominator) * 100;
     const points = Math.max(0, raw);
-    return {  
+    return {
       participantKey: entry.participantKey,
       nickname: entry.nickname,
       teamName: entry.teamName,

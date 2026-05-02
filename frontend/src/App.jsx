@@ -1270,11 +1270,13 @@ function AdminBoardsPage() {
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState(null);
 
-  function normalize(rawList) {
+  function normalize(rawList, knownSet) {
     return (rawList || []).map((b) => ({
       slug: b.slug || '',
       title: b.title || '',
-      taskSlugs: Array.isArray(b.taskSlugs) ? b.taskSlugs.slice() : [],
+      taskSlugs: Array.isArray(b.taskSlugs)
+        ? b.taskSlugs.filter((s) => !knownSet || knownSet.has(s))
+        : [],
       visible: b.visible !== false,
       order: b.order ?? 0,
     }));
@@ -1285,9 +1287,11 @@ function AdminBoardsPage() {
     setError(null);
     try {
       const [b, t] = await Promise.all([getAdminBoards(), getAdminTasks()]);
-      const list = normalize(b.boards);
+      const tasksList = t.tasks || [];
+      const known = new Set(tasksList.map((x) => x.slug));
+      const list = normalize(b.boards, known);
       setBoards(list);
-      setAllTasks(t.tasks || []);
+      setAllTasks(tasksList);
       setOriginal(JSON.stringify(list));
     } catch (err) {
       if (err instanceof AdminAuthError) navigate('/admin', { replace: true });
@@ -1336,7 +1340,8 @@ function AdminBoardsPage() {
     setError(null);
     try {
       const data = await saveAdminBoards(boards);
-      const list = normalize(data.boards);
+      const known = new Set(allTasks.map((x) => x.slug));
+      const list = normalize(data.boards, known);
       setBoards(list);
       setOriginal(JSON.stringify(list));
       setSavedAt(new Date());
