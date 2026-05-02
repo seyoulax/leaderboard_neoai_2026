@@ -137,7 +137,7 @@ function Layout({ children, tasks, boards }) {
       </header>
 
       <nav className="tabs">
-        <NavLink to="/" end className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
+        <NavLink to="/leaderboard" className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
           Общий ЛБ
         </NavLink>
         {visibleBoards.map((board) => (
@@ -816,12 +816,13 @@ function MainShell() {
       {tasksError ? <p className="status error">{tasksError}</p> : null}
 
       <Routes>
-        <Route path="/" element={<OverallPage />} />
+        <Route path="/" element={<Navigate to="/leaderboard" replace />} />
+        <Route path="/leaderboard" element={<OverallPage />} />
         <Route path="/cycle" element={<CyclingOverallPage />} />
         <Route path="/control" element={<Navigate to="/admin/card" replace />} />
         <Route path="/board/:slug" element={<BoardPage boards={boards} />} />
         <Route path="/task/:slug" element={<TaskPage />} />
-        <Route path="*" element={<p className="status">Страница не найдена. <Link to="/">Вернуться</Link></p>} />
+        <Route path="*" element={<p className="status">Страница не найдена. <Link to="/leaderboard">Вернуться</Link></p>} />
       </Routes>
     </Layout>
   );
@@ -1304,7 +1305,7 @@ function AdminShell() {
         <NavLink to="/admin/card" className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
           Карточка
         </NavLink>
-        <NavLink to="/" className="tab">← Лидерборд</NavLink>
+        <NavLink to="/leaderboard" className="tab">← Лидерборд</NavLink>
         <button onClick={logout} className="tab" style={{ marginLeft: 'auto' }}>
           Выйти
         </button>
