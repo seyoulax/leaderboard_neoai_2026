@@ -76,6 +76,16 @@ jobs:
           source: docker-compose.prod.yml
           target: ${{ secrets.DEPLOY_PATH }}
 
+      - name: Sync stackmorelayers static files
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: deploy/stackmorelayers/*
+          target: /home/student-dash/StackMoreLayers/
+          strip_components: 2
+
       - name: Pull and restart on host
         uses: appleboy/ssh-action@v1.0.3
         with:
