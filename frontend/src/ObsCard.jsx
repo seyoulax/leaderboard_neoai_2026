@@ -88,15 +88,6 @@ export default function ObsCard() {
             </div>
           </div>
 
-          {p.bio ? (
-            <>
-              <div className="obscard-divider" />
-              <div className="obscard-section">
-                <div className="obscard-section-label">О себе</div>
-                <div className="obscard-bio">{p.bio}</div>
-              </div>
-            </>
-          ) : null}
         </div>
       </div>
     </div>
