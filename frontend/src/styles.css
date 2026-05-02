@@ -563,3 +563,44 @@ tr.row-down > td {
   font-size: 13px;
   cursor: pointer;
 }
+
+/* Sitemap page */
+.sitemap {
+  padding: 16px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.sitemap-group h3 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.sitemap-group ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sitemap-group li {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.sitemap-group li a {
+  font-family: ui-monospace, monospace;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.sitemap-group li a:hover {
+  text-decoration: underline;
+}

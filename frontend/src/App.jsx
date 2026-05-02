@@ -781,6 +781,75 @@ function ControlPage() {
   );
 }
 
+function SitemapPage({ tasks, boards }) {
+  const visibleBoards = sortedVisibleBoards(boards);
+  const allBoards = (boards || []).slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+  return (
+    <section className="panel">
+      <div className="panel-head">
+        <h2>Все страницы</h2>
+        <span>динамический список по tasks/boards с бэка</span>
+      </div>
+
+      <div className="sitemap">
+        <div className="sitemap-group">
+          <h3>Публичные таблицы</h3>
+          <ul>
+            <li><Link to="/leaderboard">/leaderboard</Link> — общий лидерборд по сумме всех задач</li>
+            <li><Link to="/cycle">/cycle</Link> — общий ЛБ, циклически по 15 строк (для табло, скрыт из нав-меню)</li>
+            {allBoards.map((b) => (
+              <li key={b.slug}>
+                <Link to={`/board/${b.slug}`}>/board/{b.slug}</Link> — борд «{b.title}»
+                {b.visible === false ? ' (скрыт из навигации)' : ''}
+              </li>
+            ))}
+            {(tasks || []).map((t) => (
+              <li key={t.slug}>
+                <Link to={`/task/${t.slug}`}>/task/{t.slug}</Link> — задача «{t.title}»
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="sitemap-group">
+          <h3>Админка (нужен пароль)</h3>
+          <ul>
+            <li><Link to="/admin">/admin</Link> — вход</li>
+            <li><Link to="/admin/tasks">/admin/tasks</Link> — редактирование задач (slug, title, competition, baseline/author)</li>
+            <li><Link to="/admin/boards">/admin/boards</Link> — редактирование лидербордов (выборка задач + видимость + порядок)</li>
+            <li><Link to="/admin/card">/admin/card</Link> — выбор активной карточки участника для OBS</li>
+          </ul>
+        </div>
+
+        <div className="sitemap-group">
+          <h3>OBS-оверлеи</h3>
+          <p className="meta" style={{ padding: 0, border: 'none' }}>
+            Под Browser Source в OBS. Без шапки/нав, тёмный фон под chroma-key.
+          </p>
+          <ul>
+            <li><Link to="/obs/overall">/obs/overall</Link> — общий top-15 текстовыми строками</li>
+            <li><Link to="/obs/cycle">/obs/cycle</Link> — общий ЛБ, цикл по 15</li>
+            <li><Link to="/obs/card">/obs/card</Link> — карточка текущего активного участника</li>
+            {visibleBoards.map((b) => (
+              <li key={`obs-${b.slug}`}>
+                <Link to={`/obs/board/${b.slug}`}>/obs/board/{b.slug}</Link> — top-15 борда «{b.title}» (строки)
+                {' · '}
+                <Link to={`/obs/bar/board/${b.slug}`}>/obs/bar/board/{b.slug}</Link> — он же баром с per-task chip'ами
+              </li>
+            ))}
+            {(tasks || []).map((t) => (
+              <li key={`obs-task-${t.slug}`}>
+                <Link to={`/obs/task/${t.slug}`}>/obs/task/{t.slug}</Link> — задача «{t.title}»
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function MainShell() {
   const [tasks, setTasks] = useState([]);
   const [boards, setBoards] = useState([]);
@@ -822,6 +891,7 @@ function MainShell() {
         <Route path="/control" element={<Navigate to="/admin/card" replace />} />
         <Route path="/board/:slug" element={<BoardPage boards={boards} />} />
         <Route path="/task/:slug" element={<TaskPage />} />
+        <Route path="/routes" element={<SitemapPage tasks={tasks} boards={boards} />} />
         <Route path="*" element={<p className="status">Страница не найдена. <Link to="/leaderboard">Вернуться</Link></p>} />
       </Routes>
     </Layout>
