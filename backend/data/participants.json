@@ -1,0 +1,891 @@
+[
+    {
+        "id": "gordeeva-marija",
+        "name": "Гордеева Мария Денисовна",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Москва",
+        "grade": "10 класс",
+        "achievements": [
+            "ВсОШ ИИ: Призер",
+            "Всероссийская олимпиада по ИИ: Финалист",
+            "НТО ИИ: Победитель",
+            "НТО БДиМО: Финалист",
+            "DANO: Победитель"
+        ],
+        "bio": ""
+    },
+    {
+        "id": "lavrent'ev-vladislav",
+        "name": "Лаврентьев Владислав Евгеньевич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Москва",
+        "grade": "11 класс",
+        "achievements": [
+            "ВсОШ ИИ: Призер",
+            "Всероссийская олимпиада по ИИ: Финалист",
+            "НТО ИИ: Финалист",
+            "DANO: Финалист"
+        ],
+        "bio": "Победитель олимпиады Физтех по математике Призер осеннего тура Турнира городов Победитель олимпиады "
+    },
+    {
+        "id": "labzin-kirill",
+        "name": "Лабзин Кирилл Михайлович",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Сочи",
+        "grade": "11 класс",
+        "achievements": [
+            "ВсОШ ИИ: Победитель",
+            "Всероссийская олимпиада по ИИ: Призер",
+            "AI Challenge: Победитель",
+            "НТО ИИ: Победитель",
+            "FAIO: Призер",
+            "DANO: Победитель"
+        ],
+        "bio": ""
+    },
+    {
+        "id": "gorohov-artem",
+        "name": "Горохов Артём Станиславович",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Санкт-Петербург",
+        "grade": "10 класс",
+        "achievements": [
+            "ВсОШ ИИ: Призер",
+            "Yandex Cup: Финалист",
+            "Всероссийская олимпиада по ИИ: Призер",
+            "НТО ИИ: Финалист",
+            "НТО БДиМО: Финалист",
+            "FAIO: Финалист",
+            "DANO: Победитель"
+        ],
+        "bio": ""
+    },
+    {
+        "id": "efimov-egor",
+        "name": "Ефимов Егор Александрович",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Пенза",
+        "grade": "11 класс",
+        "achievements": [
+            "ВсОШ ИИ: Финалист",
+            "Всероссийская олимпиада по ИИ: Финалист"
+        ],
+        "bio": ""
+    },
+    {
+        "id": "kroha-konstantin",
+        "name": "Кроха Константин Владимирович",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Москва",
+        "grade": "10 класс",
+        "achievements": [
+            "ВсОШ ИИ: Финалист"
+        ],
+        "bio": ""
+    },
+    {
+        "id": "semenenko-sergej",
+        "name": "Семененко Сергей Сергеевич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Москва",
+        "grade": "11 класс",
+        "achievements": [
+            "ВсОШ ИИ: Финалист",
+            "НТО БДиМО: Призер"
+        ],
+        "bio": ""
+    },
+    {
+        "id": "shilovskij-dmitrij",
+        "name": "Шиловский Дмитрий Евгеньевич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Архангельск",
+        "grade": "10 класс",
+        "achievements": [
+            "Всероссийская олимпиада по ИИ: Финалист"
+        ],
+        "bio": "В 2025-м году во всероссийской олимпиаде по искусственному интеллекту такие результаты: - отборочный"
+    },
+    {
+        "id": "kirpichenko-elisej",
+        "name": "Кирпиченко Елисей Андреевич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Санкт-Петербург",
+        "grade": "11 класс",
+        "achievements": [
+            "ВсОШ ИИ: Финалист",
+            "Yandex Cup: Победитель",
+            "Всероссийская олимпиада по ИИ: Победитель",
+            "НТО ИИ: Финалист",
+            "НТО БДиМО: Финалист",
+            "DANO: Финалист"
+        ],
+        "bio": "Kaggle Competition Expert (x2): - Kaggle Gold Medalist | Deep Past Challenge - Translate Akkadian to"
+    },
+    {
+        "id": "plotnikov-jurij",
+        "name": "Плотников Юрий Сергеевич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Самара",
+        "grade": "9 класс",
+        "achievements": [
+            "DANO: Победитель"
+        ],
+        "bio": "Прошел майнор ИАД по машинному обучению в ВШЭ. Прошел MIT 18.01 на платформе OCW"
+    },
+    {
+        "id": "torovin-aleksandr",
+        "name": "Торовин Александр Алексеевич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Салават",
+        "grade": "11 класс",
+        "achievements": [
+            "ВсОШ ИИ: Призер",
+            "Всероссийская олимпиада по ИИ: Финалист",
+            "НТО ИИ: Финалист",
+            "НТО БДиМО: Финалист"
+        ],
+        "bio": ""
+    },
+    {
+        "id": "povarov-aleksandr",
+        "name": "Поваров Александр Григорьевич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Москва",
+        "grade": "11 класс",
+        "achievements": [
+            "IAIO: Финалист",
+            "ВсОШ ИИ: Победитель",
+            "Всероссийская олимпиада по ИИ: Финалист",
+            "FAIO: Финалист",
+            "DANO: Победитель"
+        ],
+        "bio": ""
+    },
+    {
+        "id": "bol'shakov-aleksandr",
+        "name": "Большаков Александр Алексеевич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Москва",
+        "grade": "11 класс",
+        "achievements": [
+            "ВсОШ ИИ: Финалист"
+        ],
+        "bio": ""
+    },
+    {
+        "id": "djadchenko-mark",
+        "name": "Дядченко Марк Юрьевич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Ростов-на-Дону",
+        "grade": "8 класс",
+        "achievements": [
+            "ВсОШ ИИ: Финалист",
+            "Yandex Cup: Победитель",
+            "Всероссийская олимпиада по ИИ: Победитель",
+            "НТО ИИ: Победитель"
+        ],
+        "bio": "топ 3 Yandex Cup ML Track, топ 2 НТО ИИ, Kaggle Master, всероссийская олимпиада по ИИ топ 4 и тд"
+    },
+    {
+        "id": "chistov-nikita",
+        "name": "Чистов Никита Леонидович",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Москва",
+        "grade": "10 класс",
+        "achievements": [
+            "ВсОШ ИИ: Финалист"
+        ],
+        "bio": "Ранее увлекался робототехникой, за счёт чего есть прикладные навыки работы с физическим железом, нем"
+    },
+    {
+        "id": "jakupov-el'dar",
+        "name": "Якупов Эльдар Филаретович",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Москва",
+        "grade": "9 класс",
+        "achievements": [
+            "ВсОШ ИИ: Финалист"
+        ],
+        "bio": ""
+    },
+    {
+        "id": "vershinin-mihail",
+        "name": "Вершинин Михаил Денисович",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Новосибирск",
+        "grade": "11 класс",
+        "achievements": [
+            "IOAI: Победитель",
+            "IAIO: Призер",
+            "ВсОШ ИИ: Призер",
+            "Всероссийская олимпиада по ИИ: Призер",
+            "FAIO: Призер",
+            "DANO: Победитель"
+        ],
+        "bio": "Люблю играть на пианино, хорошо лажу с людьми"
+    },
+    {
+        "id": "dzhalilov-artem",
+        "name": "Джалилов Артём Ильясович",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Сириус",
+        "grade": "11 класс",
+        "achievements": [
+            "IAIO: Призер",
+            "ВсОШ ИИ: Призер",
+            "Всероссийская олимпиада по ИИ: Призер",
+            "НТО ИИ: Призер",
+            "FAIO: Призер",
+            "DANO: Призер"
+        ],
+        "bio": ""
+    },
+    {
+        "id": "mastov-arsenij",
+        "name": "Мастов Арсений Викторович",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Новосибирск",
+        "grade": "11 класс",
+        "achievements": [
+            "ВсОШ ИИ: Призер",
+            "DANO: Финалист"
+        ],
+        "bio": ""
+    },
+    {
+        "id": "morgunov-evgenij",
+        "name": "Моргунов Евгений Георгиевич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Иркутск",
+        "grade": "10 класс",
+        "achievements": [
+            "ВсОШ ИИ: Победитель"
+        ],
+        "bio": ""
+    },
+    {
+        "id": "sokolov-il'ja",
+        "name": "Соколов Илья Андреевич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Ростов-на-Дону",
+        "grade": "11 класс",
+        "achievements": [
+            "ВсОШ Программирование: Призер",
+            "DANO: Призер"
+        ],
+        "bio": "Прошел курс deep learning school часть 1, прохожу AI track focus, курс по подготовке к всош ии от це"
+    },
+    {
+        "id": "kondrashov-mihail",
+        "name": "Кондрашов Михаил Николаевич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Химки",
+        "grade": "11 класс",
+        "achievements": [
+            "AI Challenge: Победитель",
+            "НТО ИИ: Призер",
+            "НТО БДиМО: Финалист"
+        ],
+        "bio": "Начал развиваться в ML около года назад, но несмотря на небольшой период смог обойти более опытных р"
+    },
+    {
+        "id": "bogdanov-al'bert",
+        "name": "Богданов Альберт Азатович",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Санкт-Петербург",
+        "grade": "11 класс",
+        "achievements": [
+            "IAIO: Финалист",
+            "ВсОШ ИИ: Призер",
+            "Всероссийская олимпиада по ИИ: Финалист",
+            "НТО ИИ: Финалист",
+            "НТО БДиМО: Финалист"
+        ],
+        "bio": "Докладчик Конгресса молодых ученых, \"Анализ и сравнение методов предобуславливания для оптимизации о"
+    },
+    {
+        "id": "erlykov-aleksandr",
+        "name": "Ерлыков Александр Антонович",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Москва",
+        "grade": "11 класс",
+        "achievements": [
+            "ВсОШ ИИ: Финалист",
+            "DANO: Победитель"
+        ],
+        "bio": "Финалист ВСОШ, Призер региона Победитель DANO"
+    },
+    {
+        "id": "apal'kov-vladislav",
+        "name": "Апальков Владислав Алексеевич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Ставрополь",
+        "grade": "11 класс",
+        "achievements": [
+            "ВсОШ ИИ: Финалист",
+            "НТО ИИ: Финалист",
+            "Innopolis: Финалист",
+            "DANO: Финалист"
+        ],
+        "bio": ""
+    },
+    {
+        "id": "ivahin-kirill",
+        "name": "Ивахин Кирилл Алексеевич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Пенза",
+        "grade": "10 класс",
+        "achievements": [
+            "ВсОШ ИИ: Финалист",
+            "Всероссийская олимпиада по ИИ: Финалист"
+        ],
+        "bio": "Участвовал в закле всероса и всоша по ии, выиграл хакатон культурный компас"
+    },
+    {
+        "id": "susljakov-semen",
+        "name": "Сусляков Семён Сергеевич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Новосибирск",
+        "grade": "11 класс",
+        "achievements": [
+            "ВсОШ ИИ: Призер",
+            "Всероссийская олимпиада по ИИ: Финалист",
+            "НТО ИИ: Финалист",
+            "НТО БДиМО: Финалист",
+            "DANO: Финалист"
+        ],
+        "bio": "Стажер-MLE в Sberdevices - июль 2025 - январь 2026"
+    },
+    {
+        "id": "mahan'kov-kirill",
+        "name": "Маханьков Кирилл Андреевич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Самара",
+        "grade": "10 класс",
+        "achievements": [
+            "НТО ИИ: Призер",
+            "НТО БДиМО: Победитель"
+        ],
+        "bio": "Тендерхак (Новосибирск) 2025/2026 - победитель"
+    },
+    {
+        "id": "potalov-mihail",
+        "name": "Поталов Михаил Сергеевич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Санкт-Петербург",
+        "grade": "11 класс",
+        "achievements": [
+            "ВсОШ ИИ: Победитель"
+        ],
+        "bio": ""
+    },
+    {
+        "id": "sungurov-vladislav",
+        "name": "Сунгуров Владислав Антонович",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Москва",
+        "grade": "10 класс",
+        "achievements": [
+            "ВсОШ ИИ: Призер",
+            "FAIO: Финалист",
+            "DANO: Призер"
+        ],
+        "bio": "Кроме ML неплохо разбираюсь в промышленной разработке, уверенно работаю с git, docker, умею полность"
+    },
+    {
+        "id": "goncharov-artem",
+        "name": "Гончаров Артём Максимович",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Новосибирск",
+        "grade": "10 класс",
+        "achievements": [
+            "ВсОШ ИИ: Финалист",
+            "Yandex Cup: Финалист",
+            "Всероссийская олимпиада по ИИ: Победитель",
+            "FAIO: Призер",
+            "DANO: Финалист"
+        ],
+        "bio": "шейкапнулся на Kaggle csiro image2biomass с 10 на 34 место на привате( основал feel the agi работал "
+    },
+    {
+        "id": "kuliev-el'mir",
+        "name": "Кулиев Эльмир Первиз Оглы",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Москва",
+        "grade": "11 класс",
+        "achievements": [
+            "НТО БДиМО: Призер"
+        ],
+        "bio": "Вот уже 2-й год познаю DS/ML, стараюсь активно практиковать навыки в данной области в реальных задач"
+    },
+    {
+        "id": "kuznetsov-nikita",
+        "name": "Кузнецов Никита Николаевич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Новосибирск",
+        "grade": "10 класс",
+        "achievements": [
+            "Всероссийская олимпиада по ИИ: Финалист",
+            "НТО ИИ: Финалист",
+            "НТО БДиМО: Финалист",
+            "DANO: Финалист"
+        ],
+        "bio": "С 3 апреля перестаю вайбкодить"
+    },
+    {
+        "id": "kolegov-aleksej",
+        "name": "Колегов Алексей Михайлович",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Ижевск",
+        "grade": "11 класс",
+        "achievements": [
+            "ВсОШ ИИ: Призер",
+            "Yandex Cup: Финалист",
+            "Всероссийская олимпиада по ИИ: Призер",
+            "DANO: Победитель"
+        ],
+        "bio": ""
+    },
+    {
+        "id": "bushin-andrej",
+        "name": "Бушин Андрей Евгеньевич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Москва",
+        "grade": "11 класс",
+        "achievements": [
+            "ВсОШ ИИ: Призер",
+            "DANO: Финалист"
+        ],
+        "bio": "В аири постажировался"
+    },
+    {
+        "id": "voropaev-jaroslav",
+        "name": "Воропаев Ярослав Александрович",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Орёл",
+        "grade": "11 класс",
+        "achievements": [
+            "ВсОШ ИИ: Призер",
+            "Всероссийская олимпиада по ИИ: Призер",
+            "НТО ИИ: Победитель",
+            "НТО БДиМО: Финалист",
+            "FAIO: Финалист"
+        ],
+        "bio": "Очень хочу написать научную статью по CS/AI/ML но не знаю как Топ 1% пользователей ChatGPT (подтверж"
+    },
+    {
+        "id": "nurullin-ruslan",
+        "name": "Нуруллин Руслан Николаевич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Казань",
+        "grade": "10 класс",
+        "achievements": [
+            "ВсОШ ИИ: Призер",
+            "DANO: Финалист"
+        ],
+        "bio": "серьёзно взялся за мл только после региона, очень рад, что смог войти в топ–25 второго тура всоша за"
+    },
+    {
+        "id": "atanov-andrej",
+        "name": "Атанов Андрей Андреевич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Санкт-Петербург",
+        "grade": "11 класс",
+        "achievements": [
+            "НТО БДиМО: Финалист",
+            "DANO: Финалист"
+        ],
+        "bio": ""
+    },
+    {
+        "id": "kattsyn-sergej",
+        "name": "Катцын Сергей Андреевич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Новосибирск",
+        "grade": "11 класс",
+        "achievements": [
+            "Всероссийская олимпиада по ИИ: Финалист",
+            "НТО ИИ: Призер",
+            "НТО БДиМО: Победитель"
+        ],
+        "bio": "Дополнительно особо нечего, все олимпиады и хакатоны указал выше, так-же приложу свой kaggle и githu"
+    },
+    {
+        "id": "rodionov-semen",
+        "name": "Родионов Семен",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Новосибирск",
+        "grade": "11 класс",
+        "achievements": [
+            "Всероссийская олимпиада по ИИ: Победитель",
+            "НТО ИИ: Финалист",
+            "НТО БДиМО: Призер",
+            "FAIO: Призер"
+        ],
+        "bio": "Если я захочу, я не сдамся"
+    },
+    {
+        "id": "scheglov-sergej",
+        "name": "Щеглов Сергей Денисович",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Москва",
+        "grade": "11 класс",
+        "achievements": [
+            "ВсОШ ИИ: Призер",
+            "DANO: Призер"
+        ],
+        "bio": "Член сборной Москвы по ИИ"
+    },
+    {
+        "id": "kokovkin-lev",
+        "name": "Коковкин Лев Алексеевич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Москва",
+        "grade": "11 класс",
+        "achievements": [
+            "Всероссийская олимпиада по ИИ: Финалист",
+            "НТО ИИ: Финалист"
+        ],
+        "bio": "Победитель DLS 3/501 Финалист Всеросса по ИИ 2 бронзы на Kaggle Отбирался на февральский межнар по и"
+    },
+    {
+        "id": "il'in-ivan",
+        "name": "Ильин Иван Ярославич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Санкт-Петербург",
+        "grade": "9 класс",
+        "achievements": [
+            "ВсОШ ИИ: Победитель"
+        ],
+        "bio": "-"
+    },
+    {
+        "id": "l'vov-stanislav",
+        "name": "Львов Станислав Александрович",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Чебоксары",
+        "grade": "11 класс",
+        "achievements": [
+            "ВсОШ ИИ: Финалист",
+            "НТО ИИ: Финалист"
+        ],
+        "bio": ""
+    },
+    {
+        "id": "okulov-nikita",
+        "name": "Окулов Никита Владимирович",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Верхняя Пышма",
+        "grade": "11 класс",
+        "achievements": [
+            "ВсОШ ИИ: Призер"
+        ],
+        "bio": "участие в сборах от ЦУ «подготовка к ВсОШу по ИИ», Прошел курс от Т-образования «подготовка к ВсОШу "
+    },
+    {
+        "id": "skazhutin-daniil",
+        "name": "Скажутин Даниил Андреевич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Москва",
+        "grade": "10 класс",
+        "achievements": [
+            "ВсОШ ИИ: Призер"
+        ],
+        "bio": "Также участвовал в командном проекте около ИИ-сферы и делаю индивидуальный проект напрямую связанный"
+    },
+    {
+        "id": "pudovkin-nikita",
+        "name": "Пудовкин Никита Олегович",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Волгоград",
+        "grade": "10 класс",
+        "achievements": [
+            "ВсОШ Программирование: Призер",
+            "НТО ИИ: Призер",
+            "Innopolis: Финалист",
+            "DANO: Победитель"
+        ],
+        "bio": ""
+    },
+    {
+        "id": "gasanov-zajnutdin",
+        "name": "Гасанов Зайнутдин Исламович",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Махачкала",
+        "grade": "9 класс",
+        "achievements": [
+            "Всероссийская олимпиада по ИИ: Финалист"
+        ],
+        "bio": ""
+    },
+    {
+        "id": "hachatrjan-sargis",
+        "name": "Хачатрян Саргис Каренович",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Москва",
+        "grade": "11 класс",
+        "achievements": [
+            "ВсОШ ИИ: Призер"
+        ],
+        "bio": ""
+    },
+    {
+        "id": "kuptsov-mihail",
+        "name": "Купцов Михаил Валерьевич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Набережные Челны",
+        "grade": "11 класс",
+        "achievements": [
+            "ВсОШ ИИ: Призер"
+        ],
+        "bio": ""
+    },
+    {
+        "id": "lempert-aleksej",
+        "name": "Лемперт Алексей Игоревич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Москва",
+        "grade": "11 класс",
+        "achievements": [
+            "ВсОШ ИИ: Финалист"
+        ],
+        "bio": ""
+    },
+    {
+        "id": "bykov-konstantin",
+        "name": "Быков Константин Эдуардович",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Новосибирск",
+        "grade": "11 класс",
+        "achievements": [
+            "ВсОШ ИИ: Призер",
+            "Всероссийская олимпиада по ИИ: Финалист",
+            "DANO: Призер"
+        ],
+        "bio": "Финалист: Всероссийская олимпиада по ИИ 2024; DANO 2024; НТО ИИ 2025; НТО БДиМО 2025; Всероссийская "
+    },
+    {
+        "id": "najmushin-andrej",
+        "name": "Наймушин Андрей Сергеевич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Пермь",
+        "grade": "9 класс",
+        "achievements": [
+            "AI Challenge: Призер",
+            "НТО ИИ: Призер"
+        ],
+        "bio": "3 место aijjc 2025 баланс белого в мобильных телефонах, призер нто ии 2026, призер региона по больши"
+    },
+    {
+        "id": "chetverjakov-andrej",
+        "name": "Четверяков Андрей Петрович",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Новосибирск",
+        "grade": "11 класс",
+        "achievements": [
+            "AI Challenge: Победитель",
+            "НТО ИИ: Финалист",
+            "НТО БДиМО: Победитель"
+        ],
+        "bio": ""
+    },
+    {
+        "id": "kireev-kirill",
+        "name": "Киреев Кирилл Андреевич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Москва",
+        "grade": "11 класс",
+        "achievements": [
+            "Всероссийская олимпиада по ИИ: Призер",
+            "НТО ИИ: Финалист",
+            "НТО БДиМО: Финалист"
+        ],
+        "bio": "Я люблю котов"
+    },
+    {
+        "id": "kulishov-egor",
+        "name": "Кулишов Егор Дмитриевич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Самара",
+        "grade": "10 класс",
+        "achievements": [
+            "ВсОШ ИИ: Финалист",
+            "Всероссийская олимпиада по ИИ: Финалист",
+            "НТО ИИ: Победитель",
+            "НТО БДиМО: Финалист",
+            "DANO: Финалист"
+        ],
+        "bio": ""
+    },
+    {
+        "id": "tamrazov-roman",
+        "name": "Тамразов Роман Каренович",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Санкт-Петербург",
+        "grade": "10 класс",
+        "achievements": [
+            "НТО БДиМО: Финалист"
+        ],
+        "bio": ""
+    },
+    {
+        "id": "nazemtsev-artem",
+        "name": "Наземцев Артём Дмитриевич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Санкт-Петербург",
+        "grade": "9 класс",
+        "achievements": [
+            "ВсОШ ИИ: Победитель",
+            "НТО ИИ: Финалист"
+        ],
+        "bio": "Финалист нто ии, 100 место на 2 этапа всероссийской олимпиады по ии, но после этого стал сильно бота"
+    },
+    {
+        "id": "talashkevich-kirill",
+        "name": "Талашкевич Кирилл Дмитриевич",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Казань",
+        "grade": "10 класс",
+        "achievements": [
+            "ВсОШ ИИ: Призер",
+            "DANO: Призер"
+        ],
+        "bio": "Был на мартовской смене Сириуса по информатике (ИИ) 2026 год"
+    },
+    {
+        "id": "kamyshan-evgenij",
+        "name": "Камышан Евгений Владиславович",
+        "kaggleId": "mhrzmmhrzm",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Луганск",
+        "grade": "11 класс",
+        "achievements": [
+            "ВсОШ ИИ: Призёр",
+            "Всероссийская олимпиада по ИИ: Финалист",
+            "НТО ИИ: Призёр",
+            "НТО БДиМО: Финалист"
+        ],
+        "bio": ""
+    }
+]

@@ -1,0 +1,473 @@
+@font-face {
+  font-family: 'Graphik';
+  src: url('/fonts/Graphik-Regular-Desktop.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Graphik';
+  src: url('/fonts/Graphik-Medium-Desktop.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Graphik';
+  src: url('/fonts/Graphik-Semibold-Desktop.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --bg: #0e0e0e;
+  --card: #161616;
+  --card-2: #1c1c1c;
+  --ink: #ffffff;
+  --muted: rgba(255, 255, 255, 0.55);
+  --muted-2: rgba(255, 255, 255, 0.35);
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.16);
+  --accent: #7d5fff;
+  --accent-soft: rgba(125, 95, 255, 0.18);
+  --accent-glow: rgba(125, 95, 255, 0.5);
+  --danger: #ff6b6b;
+  --danger-bg: rgba(255, 107, 107, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  font-family: 'Graphik', 'Inter', system-ui, sans-serif;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  background:
+    radial-gradient(circle at 80% -10%, rgba(125, 95, 255, 0.12) 0%, transparent 35%),
+    radial-gradient(circle at 10% 110%, rgba(125, 95, 255, 0.08) 0%, transparent 40%),
+    var(--bg);
+  min-height: 100vh;
+}
+
+.page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px 24px 48px;
+}
+
+.hero {
+  border: 1px solid var(--line);
+  background: linear-gradient(155deg, #1a1a1a 0%, #131313 100%);
+  border-radius: 22px;
+  padding: 32px 36px;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.hero h1 {
+  margin: 12px 0 6px;
+  font-size: clamp(40px, 5vw, 72px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 0.95;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 500;
+  max-width: 680px;
+}
+
+.tabs {
+  margin: 24px 0;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tab {
+  text-decoration: none;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  background: transparent;
+  transition: color 0.18s, border-color 0.18s, background 0.18s;
+}
+
+.tab:hover {
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+
+.tab.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.panel {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--card);
+  overflow: hidden;
+}
+
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-end;
+  padding: 22px 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.panel-head h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.panel-head span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.meta {
+  margin: 0;
+  padding: 14px 24px;
+  color: var(--muted);
+  font-size: 13px;
+  border-bottom: 1px solid var(--line);
+}
+
+.table-wrap {
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+}
+
+th {
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+tbody tr {
+  transition: background 0.18s;
+}
+
+tbody tr:hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+tbody tr:nth-child(1) {
+  background: var(--accent-soft);
+}
+
+tbody tr:nth-child(2) {
+  background: rgba(125, 95, 255, 0.10);
+}
+
+tbody tr:nth-child(3) {
+  background: rgba(125, 95, 255, 0.06);
+}
+
+tbody tr:nth-child(1) td:first-child,
+tbody tr:nth-child(2) td:first-child,
+tbody tr:nth-child(3) td:first-child {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.team {
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.mono {
+  font-family: 'Graphik', 'Inter', system-ui, sans-serif;
+  font-weight: 500;
+}
+
+.status {
+  border: 1px dashed var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  background: var(--card);
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.status.error {
+  border-color: rgba(255, 107, 107, 0.45);
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.error-box {
+  margin: 16px 24px;
+  border: 1px solid rgba(255, 107, 107, 0.35);
+  background: var(--danger-bg);
+  border-radius: 12px;
+  padding: 14px 16px;
+  color: var(--danger);
+  font-size: 13px;
+}
+
+.error-box strong {
+  font-weight: 600;
+}
+
+.error-box ul {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+
+a {
+  color: var(--accent);
+}
+
+.control-body {
+  padding: 20px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.control-current {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(125, 95, 255, 0.08);
+  border: 1px solid var(--line);
+}
+
+.control-current strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.control-label {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.control-input {
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-family: inherit;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.18s;
+}
+
+.control-input:focus {
+  border-color: var(--accent);
+}
+
+.control-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 8px;
+}
+
+.control-item {
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.18s, background 0.18s;
+}
+
+.control-item:hover {
+  border-color: var(--accent);
+  background: rgba(125, 95, 255, 0.06);
+}
+
+.control-item:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.control-item.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.control-item-name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.control-item-id {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: ui-monospace, monospace;
+}
+
+.control-item-badge {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: rgba(125, 95, 255, 0.18);
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+.control-btn {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.18s, color 0.18s;
+}
+
+.control-btn-ghost:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.control-btn:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+code {
+  font-family: ui-monospace, monospace;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.92em;
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: 16px;
+  }
+
+  .hero {
+    padding: 24px 20px;
+    border-radius: 16px;
+  }
+
+  .panel {
+    border-radius: 14px;
+  }
+
+  th,
+  td {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+}
+
+/* Admin */
+.admin-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 24px 24px;
+  max-width: 360px;
+}
+
+.admin-tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 24px 24px;
+}
+
+.admin-tasks-head,
+.admin-tasks-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-tasks-head {
+  padding: 0 4px 6px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.admin-tasks-row {
+  padding: 4px 0;
+}
+
+.admin-tasks-row .control-input {
+  height: 36px;
+  padding: 0 10px;
+}
+
+.admin-tasks-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  margin-top: 8px;
+}
+
+.muted {
+  color: var(--muted);
+}

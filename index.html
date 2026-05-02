@@ -1,0 +1,517 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Участники соревнования</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: transparent;
+      font-family: 'Inter', Arial, sans-serif;
+      color: #fff;
+    }
+
+    .overlay {
+      position: relative;
+      width: 1920px;
+      height: 1080px;
+    }
+
+    /* ── Card container ── */
+    .card-wrap {
+      position: absolute;
+      right: 40px;
+      top: 40px;
+      bottom: 40px;
+      width: 680px;
+      display: flex;
+      align-items: center;
+      opacity: 0;
+      transform: translateX(40px);
+      animation: cardIn 0.6s ease-out forwards;
+    }
+
+    @keyframes cardIn {
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* ── Card panel ── */
+    .card {
+      width: 100%;
+      min-height: 90%;
+      background: linear-gradient(160deg, #2d1656 0%, #1a0a3e 40%, #120730 100%);
+      border: 2px solid;
+      border-color: #b8860b;
+      border-radius: 24px;
+      padding: 0;
+      box-shadow:
+        0 0 40px rgba(100, 40, 200, 0.4),
+        0 0 80px rgba(60, 20, 120, 0.2),
+        inset 0 0 60px rgba(80, 30, 160, 0.15);
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Purple diagonal light streaks */
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(135deg, rgba(180, 100, 255, 0.08) 0%, transparent 40%),
+        linear-gradient(225deg, rgba(180, 100, 255, 0.06) 0%, transparent 35%),
+        linear-gradient(315deg, rgba(120, 60, 200, 0.1) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .card-inner {
+      position: relative;
+      z-index: 1;
+      padding: 0;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Top half: photo + name ── */
+    .card-top {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 36px 36px 24px;
+    }
+
+    .card-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      text-align: center;
+    }
+
+    /* ── Bottom half: achievements ── */
+    .card-bottom {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 0 36px 36px;
+    }
+
+    .avatar-wrap {
+      position: relative;
+      opacity: 0;
+      transform: scale(0.8);
+      animation: avatarIn 0.5s 0.15s ease-out forwards;
+    }
+
+    .avatar {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #ffd700;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Diamond frame around avatar */
+    .avatar-diamond {
+      position: absolute;
+      inset: -12px;
+      border: 2px solid rgba(255, 215, 0, 0.3);
+      transform: rotate(45deg);
+      border-radius: 8px;
+    }
+
+    @keyframes avatarIn {
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .info {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      opacity: 0;
+      transform: translateY(-12px);
+      animation: slideDown 0.4s 0.3s ease-out forwards;
+    }
+
+    @keyframes slideDown {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .name {
+      font-size: 34px;
+      font-weight: 900;
+      letter-spacing: 0.02em;
+      background: linear-gradient(180deg, #ffffff 0%, #d0c0ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .role {
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: #ffd700;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent 0%, rgba(255, 215, 0, 0.3) 50%, transparent 100%);
+      margin: 24px 0;
+      opacity: 0;
+      animation: fadeIn 0.4s 0.45s ease-out forwards;
+    }
+
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+
+    /* ── Achievements ── */
+    .achievements {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      opacity: 0;
+      transform: translateY(10px);
+      animation: slideUp 0.4s 0.55s ease-out forwards;
+    }
+
+    @keyframes slideUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .badge {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      background: linear-gradient(90deg, rgba(120, 50, 200, 0.25) 0%, rgba(80, 30, 160, 0.15) 100%);
+      border: 1px solid rgba(160, 100, 255, 0.15);
+    }
+
+    .badge-icon { font-size: 18px; }
+
+    /* Badge color variants */
+    .badge-gold {
+      background: linear-gradient(90deg, rgba(255, 195, 0, 0.2) 0%, rgba(180, 130, 0, 0.1) 100%);
+      border-color: rgba(255, 215, 0, 0.3);
+      color: #ffd54f;
+    }
+    .badge-purple {
+      background: linear-gradient(90deg, rgba(160, 100, 255, 0.2) 0%, rgba(120, 60, 200, 0.1) 100%);
+      border-color: rgba(160, 100, 255, 0.3);
+      color: #c9a0ff;
+    }
+    .badge-blue {
+      background: linear-gradient(90deg, rgba(60, 160, 255, 0.2) 0%, rgba(40, 100, 200, 0.1) 100%);
+      border-color: rgba(60, 160, 255, 0.3);
+      color: #7ec8ff;
+    }
+    .badge-green {
+      background: linear-gradient(90deg, rgba(50, 210, 130, 0.2) 0%, rgba(30, 140, 80, 0.1) 100%);
+      border-color: rgba(50, 210, 130, 0.3);
+      color: #6ee7a8;
+    }
+    .badge-red {
+      background: linear-gradient(90deg, rgba(255, 80, 80, 0.2) 0%, rgba(180, 40, 40, 0.1) 100%);
+      border-color: rgba(255, 80, 80, 0.3);
+      color: #ff8a8a;
+    }
+
+    /* ── Bio line ── */
+    .bio {
+      margin-top: 18px;
+      font-size: 15px;
+      line-height: 1.6;
+      color: rgba(255, 255, 255, 0.5);
+      opacity: 0;
+      animation: fadeIn 0.4s 0.7s ease-out forwards;
+    }
+
+    /* ── Navigation controls ── */
+    .nav {
+      position: absolute;
+      right: 40px;
+      bottom: 40px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      z-index: 10;
+    }
+
+    .nav.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .nav-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 215, 0, 0.25);
+      background: rgba(40, 15, 80, 0.85);
+      color: #ffd700;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .nav-btn:hover {
+      background: rgba(100, 50, 180, 0.5);
+      border-color: rgba(255, 215, 0, 0.5);
+    }
+
+    .dots {
+      display: flex;
+      gap: 8px;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 215, 0, 0.3);
+      background: rgba(160, 100, 255, 0.15);
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+    }
+
+    .dot:hover {
+      background: rgba(255, 215, 0, 0.3);
+    }
+
+    .dot.active {
+      background: #ffd700;
+      transform: scale(1.2);
+      box-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+    }
+
+    /* ── Exit animation ── */
+    .card-wrap.exit {
+      animation: cardOut 0.4s ease-in forwards;
+    }
+
+    @keyframes cardOut {
+      to { opacity: 0; transform: translateX(40px); }
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay">
+    <div class="card-wrap" id="cardWrap">
+      <!-- filled by JS -->
+    </div>
+    <div class="nav" id="nav">
+      <button class="nav-btn" id="prevBtn">&#8249;</button>
+      <div class="dots" id="dots"></div>
+      <button class="nav-btn" id="nextBtn">&#8250;</button>
+    </div>
+  </div>
+
+  <script>
+    const competitors = [
+      {
+        name: "Иван Петров",
+        role: "Участник",
+        photo: "photo1.jpg",
+        bio: "ML-инженер, специалист по компьютерному зрению. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+        achievements: [
+          { text: "Kaggle Master", icon: "🏅", color: "gold" },
+          { text: "Top-1% ImageNet", icon: "🎯", color: "purple" },
+          { text: "3 публикации", icon: "📄", color: "blue" },
+          { text: "CVPR 2024", icon: "🧠", color: "purple" },
+          { text: "PyTorch contributor", icon: "⭐", color: "green" },
+        ]
+      },
+      {
+        name: "Анна Смирнова",
+        role: "Участник",
+        photo: "photo2.jpg",
+        bio: "Data Scientist, NLP и генеративные модели. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+        achievements: [
+          { text: "Kaggle Grandmaster", icon: "🥇", color: "gold" },
+          { text: "NeurIPS 2024", icon: "🧠", color: "purple" },
+          { text: "5 соревнований", icon: "🏆", color: "green" },
+          { text: "HuggingFace Top-10", icon: "🤗", color: "blue" },
+          { text: "Stanford NLP Lab", icon: "🎓", color: "red" },
+        ]
+      },
+      {
+        name: "Максим Орлов",
+        role: "Участник",
+        photo: "photo3.jpg",
+        bio: "Research Engineer, reinforcement learning. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
+        achievements: [
+          { text: "Kaggle Expert", icon: "📊", color: "blue" },
+          { text: "ICML 2023", icon: "🧠", color: "purple" },
+          { text: "OpenSource", icon: "⭐", color: "green" },
+          { text: "DeepMind intern", icon: "🔬", color: "red" },
+          { text: "RL Benchmark #1", icon: "🎯", color: "gold" },
+        ]
+      },
+      {
+        name: "Артём Гончаров",
+        role: "Участник",
+        photo: "photo4.jpg",
+        bio: "Победитель олимпиад по ИИ и машинному обучению. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
+        achievements: [
+          { text: "1 место НТО", icon: "🏆", color: "gold" },
+          { text: "1 место ДАНО", icon: "🏆", color: "gold" },
+          { text: "1 место Всерос", icon: "🏆", color: "gold" },
+          { text: "МФТИ студент", icon: "🎓", color: "blue" },
+          { text: "AI Olympiad finalist", icon: "🎯", color: "purple" },
+        ]
+      },
+    ];
+
+    const AUTO_ROTATE = true;
+    const ROTATE_MS   = 10000;
+    const EXIT_MS     = 400;
+
+    let current = 0;
+    let timer = null;
+
+    const urlIdx = new URLSearchParams(location.search).get("index");
+    if (urlIdx !== null) current = Math.max(0, Math.min(+urlIdx, competitors.length - 1));
+
+    function buildDots() {
+      const dotsEl = document.getElementById("dots");
+      dotsEl.innerHTML = competitors
+        .map((_, i) => `<div class="dot${i === current ? ' active' : ''}" data-index="${i}"></div>`)
+        .join("");
+      dotsEl.querySelectorAll(".dot").forEach(dot => {
+        dot.addEventListener("click", () => {
+          const idx = +dot.dataset.index;
+          if (idx === current) return;
+          const wrap = document.getElementById("cardWrap");
+          wrap.classList.add("exit");
+          setTimeout(() => { current = idx; render(current); }, EXIT_MS);
+          resetTimer();
+        });
+      });
+    }
+
+    function updateDots() {
+      document.querySelectorAll(".dot").forEach((dot, i) => {
+        dot.classList.toggle("active", i === current);
+      });
+    }
+
+    function render(index) {
+      const wrap = document.getElementById("cardWrap");
+      const p = competitors[index];
+
+      const badges = p.achievements
+        .map(a => `<div class="badge badge-${a.color}"><span class="badge-icon">${a.icon}</span>${a.text}</div>`)
+        .join("");
+
+      wrap.className = "card-wrap";
+      wrap.innerHTML = `
+        <div class="card">
+          <div class="card-inner">
+            <div class="card-top">
+              <div class="card-header">
+                <div class="avatar-wrap">
+                  <img class="avatar" src="${p.photo}" alt="${p.name}">
+                  <div class="avatar-diamond"></div>
+                </div>
+                <div class="info">
+                  <div class="name">${p.name}</div>
+                  <div class="role">${p.role}</div>
+                </div>
+              </div>
+            </div>
+            <div class="divider"></div>
+            <div class="card-bottom">
+              <div class="achievements">${badges}</div>
+              ${p.bio ? `<div class="bio">${p.bio}</div>` : ""}
+            </div>
+          </div>
+        </div>
+      `;
+
+      updateDots();
+
+      void wrap.offsetWidth;
+      wrap.style.animation = "none";
+      void wrap.offsetWidth;
+      wrap.style.animation = "";
+    }
+
+    function showNext() {
+      const wrap = document.getElementById("cardWrap");
+      wrap.classList.add("exit");
+      setTimeout(() => {
+        current = (current + 1) % competitors.length;
+        render(current);
+      }, EXIT_MS);
+    }
+
+    function showPrev() {
+      const wrap = document.getElementById("cardWrap");
+      wrap.classList.add("exit");
+      setTimeout(() => {
+        current = (current - 1 + competitors.length) % competitors.length;
+        render(current);
+      }, EXIT_MS);
+    }
+
+    function resetTimer() {
+      if (timer) clearInterval(timer);
+      if (AUTO_ROTATE) timer = setInterval(showNext, ROTATE_MS);
+    }
+
+    document.addEventListener("keydown", e => {
+      if (e.key === "ArrowRight" || e.key === " ") { showNext(); resetTimer(); }
+      if (e.key === "ArrowLeft") { showPrev(); resetTimer(); }
+    });
+
+    window.addEventListener("obsSourceActiveChanged", e => {
+      if (e.detail.active) {
+        current = 0;
+        render(current);
+        resetTimer();
+      } else {
+        if (timer) clearInterval(timer);
+      }
+    });
+
+    document.getElementById("prevBtn").addEventListener("click", () => { showPrev(); resetTimer(); });
+    document.getElementById("nextBtn").addEventListener("click", () => { showNext(); resetTimer(); });
+
+    let navTimer = null;
+    document.addEventListener("mousemove", () => {
+      const nav = document.getElementById("nav");
+      nav.classList.add("visible");
+      if (navTimer) clearTimeout(navTimer);
+      navTimer = setTimeout(() => nav.classList.remove("visible"), 3000);
+    });
+
+    buildDots();
+    render(current);
+    resetTimer();
+  </script>
+</body>
+</html>

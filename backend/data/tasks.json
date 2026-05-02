@@ -1,0 +1,60 @@
+[
+  {
+    "slug": "task-1",
+    "title": "NEOAI Task 1",
+    "competition": "neoai-2025-tricy-table-data",
+    "higherIsBetter": false
+  },
+  {
+    "slug": "task-2",
+    "title": "NEOAI Task 2",
+    "competition": "neoai-2025-underfitting-cv",
+    "higherIsBetter": true
+  },
+  {
+    "slug": "task-3",
+    "title": "NEOAI Task 3",
+    "competition": "neoai-2025-evading-generated-text-detection",
+    "higherIsBetter": true
+  },
+  {
+    "slug": "task-4",
+    "title": "NEOAI Task 4",
+    "competition": "neoai-2025-cluster-pictures",
+    "higherIsBetter": true
+  }
+  ,
+  {
+    "slug": "task-5",
+    "title": "NEOAI Task 5",
+    "competition": "neoai-2025-broken-bert",
+    "higherIsBetter": true
+  }
+  ,
+  {
+    "slug": "task-6",
+    "title": "NEOAI Task 6",
+    "competition": "neoai-2025-hogspell-challenge",
+    "higherIsBetter": true
+  }
+  ,
+  {
+    "slug": "task-7",
+    "title": "NEOAI Task 7",
+    "competition": "neoai-2025-cuties-segmentation",
+    "higherIsBetter": true
+  }
+  ,
+  {
+    "slug": "task-8",
+    "title": "NEOAI Task 8",
+    "competition": "birdclef-2026",
+    "higherIsBetter": true
+  },
+  {
+    "slug": "task-9",
+    "title": "NEOAI Task 9",
+    "competition": "orbit-wars",
+    "higherIsBetter": true
+  }
+]

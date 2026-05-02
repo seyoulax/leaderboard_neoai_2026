@@ -1,0 +1,24 @@
+services:
+  backend:
+    image: ghcr.io/seyoulax/leaderboard_neoai_2026-backend:latest
+    pull_policy: always
+    container_name: neoai-lb-backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend/data/tasks.json:/app/data/tasks.json
+      - ./backend/data/participants.json:/app/data/participants.json
+      - /root/.kaggle:/root/.kaggle:ro
+    ports:
+      - "127.0.0.1:3001:3001"
+
+  frontend:
+    image: ghcr.io/seyoulax/leaderboard_neoai_2026-frontend:latest
+    pull_policy: always
+    container_name: neoai-lb-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "127.0.0.1:8080:80"

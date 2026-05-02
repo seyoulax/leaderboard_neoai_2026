@@ -1,0 +1,14 @@
+[
+  {
+    "slug": "task-1",
+    "title": "NEOAI Task 1",
+    "competition": "your-kaggle-competition-slug",
+    "higherIsBetter": true
+  },
+  {
+    "slug": "task-2",
+    "title": "NEOAI Task 2",
+    "competition": "another-competition-slug",
+    "higherIsBetter": true
+  }
+]
