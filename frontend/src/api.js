@@ -24,6 +24,14 @@ export async function getTasks() {
   return response.json();
 }
 
+export async function getBoards() {
+  const response = await fetch(`${API_BASE}/boards`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch boards: ${response.status}`);
+  }
+  return response.json();
+}
+
 export async function getParticipants() {
   const response = await fetch(`${API_BASE}/participants`);
   if (!response.ok) {
@@ -104,5 +112,16 @@ export async function saveAdminTasks(tasks) {
   return adminFetch('/admin/tasks', {
     method: 'PUT',
     body: JSON.stringify({ tasks }),
+  });
+}
+
+export async function getAdminBoards() {
+  return adminFetch('/admin/boards');
+}
+
+export async function saveAdminBoards(boards) {
+  return adminFetch('/admin/boards', {
+    method: 'PUT',
+    body: JSON.stringify({ boards }),
   });
 }

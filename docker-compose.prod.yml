@@ -8,6 +8,7 @@ services:
       - ./backend/.env
     volumes:
       - ./backend/data/tasks.json:/app/data/tasks.json
+      - ./backend/data/boards.json:/app/data/boards.json
       - ./backend/data/participants.json:/app/data/participants.json
       - /root/.kaggle:/root/.kaggle:ro
     ports:

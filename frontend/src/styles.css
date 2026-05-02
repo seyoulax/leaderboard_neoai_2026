@@ -496,3 +496,70 @@ tr.row-down > td {
 .delta-arrow.down {
   color: #ff6b6b;
 }
+
+/* Admin boards */
+.admin-boards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 24px 24px;
+}
+
+.admin-board-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: var(--card-2);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-board-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+
+.admin-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 0 0 160px;
+}
+
+.admin-field-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.admin-field-check {
+  flex: 0 0 70px;
+  align-items: center;
+}
+
+.admin-field-check input[type="checkbox"] {
+  margin-bottom: 8px;
+}
+
+.admin-board-tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-board-tasks-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+}
+
+.admin-board-task-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}

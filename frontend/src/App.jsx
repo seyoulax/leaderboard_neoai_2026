@@ -4,6 +4,7 @@ import {
   getOverallLeaderboard,
   getTaskLeaderboard,
   getTasks,
+  getBoards,
   getParticipants,
   getCurrentCard,
   setCurrentCard,
@@ -12,6 +13,8 @@ import {
   adminPing,
   getAdminTasks,
   saveAdminTasks,
+  getAdminBoards,
+  saveAdminBoards,
   AdminAuthError,
 } from './api';
 import ObsView from './ObsView';
@@ -20,12 +23,6 @@ import ObsCycle from './ObsCycle';
 import ObsCard from './ObsCard';
 
 const REFRESH_MS = 30_000;
-
-const GROUPS = {
-  '1': { title: '1 тур', slugs: ['task-1', 'task-2', 'task-3'] },
-  '2': { title: '2 тур', slugs: ['task-4', 'task-5', 'task-6'] },
-  '3': { title: '3 тур', slugs: ['task-7', 'task-8', 'task-9'] },
-};
 
 const DELTA_EPS = 0.01;
 
@@ -91,7 +88,15 @@ function usePolling(loader, deps = []) {
   return state;
 }
 
-function Layout({ children, tasks }) {
+function sortedVisibleBoards(boards) {
+  return (boards || [])
+    .filter((b) => b.visible !== false)
+    .slice()
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+}
+
+function Layout({ children, tasks, boards }) {
+  const visibleBoards = sortedVisibleBoards(boards);
   return (
     <div className="page">
       <header className="hero">
@@ -107,9 +112,9 @@ function Layout({ children, tasks }) {
         <NavLink to="/cycle" className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
           По 15 (цикл)
         </NavLink>
-        {Object.entries(GROUPS).map(([id, group]) => (
-          <NavLink key={id} to={`/group/${id}`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
-            {group.title}
+        {visibleBoards.map((board) => (
+          <NavLink key={board.slug} to={`/board/${board.slug}`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
+            {board.title}
           </NavLink>
         ))}
         {tasks.map((task) => (
@@ -268,16 +273,16 @@ function CyclingOverallPage() {
   );
 }
 
-function GroupPage() {
-  const { groupId } = useParams();
-  const group = GROUPS[groupId];
+function BoardPage({ boards }) {
+  const { slug } = useParams();
+  const board = (boards || []).find((b) => b.slug === slug);
   const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
 
-  if (!group) return <p className="status error">Группа '{groupId}' не найдена.</p>;
-  if (loading) return <p className="status">Загрузка ЛБ группы...</p>;
+  if (!board) return <p className="status error">Лидерборд '{slug}' не найден.</p>;
+  if (loading) return <p className="status">Загрузка лидерборда...</p>;
   if (error) return <p className="status error">{error}</p>;
 
-  const presentSlugs = group.slugs.filter((slug) => data.tasks.some((t) => t.slug === slug));
+  const presentSlugs = board.taskSlugs.filter((s) => data.tasks.some((t) => t.slug === s));
   const groupTasks = data.tasks.filter((t) => presentSlugs.includes(t.slug));
 
   const ranked = data.overall
@@ -307,7 +312,7 @@ function GroupPage() {
   return (
     <section className="panel">
       <div className="panel-head">
-        <h2>{group.title}</h2>
+        <h2>{board.title}</h2>
         <span>Updated: {new Date(data.updatedAt).toLocaleString()}</span>
       </div>
 
@@ -320,7 +325,7 @@ function GroupPage() {
               <th>#</th>
               <th>Nickname</th>
               <th>Team Name</th>
-              <th>Group points</th>
+              <th>Board points</th>
               {groupTasks.map((task) => (
                 <th key={task.slug}>{task.title}</th>
               ))}
@@ -423,17 +428,21 @@ function ObsOverall() {
   );
 }
 
-function ObsGroup() {
-  const { groupId } = useParams();
-  const group = GROUPS[groupId];
+function ObsBoard() {
+  const { slug } = useParams();
+  const boardsState = usePolling(() => getBoards(), []);
+  const board = (boardsState.data?.boards || []).find((b) => b.slug === slug);
   const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
 
-  if (!group) {
-    return <ObsView contextLabel="Группа не найдена" rows={[]} loading={false} error={`Группа '${groupId}' не найдена`} />;
+  if (!boardsState.loading && !board) {
+    return <ObsView contextLabel="Лидерборд не найден" rows={[]} loading={false} error={`Лидерборд '${slug}' не найден`} />;
+  }
+  if (boardsState.loading) {
+    return <ObsView contextLabel="Загрузка..." rows={[]} loading={true} />;
   }
 
   const presentSlugs = (data?.tasks || [])
-    .filter((t) => group.slugs.includes(t.slug))
+    .filter((t) => board.taskSlugs.includes(t.slug))
     .map((t) => t.slug);
 
   const rows = (data?.overall || [])
@@ -463,7 +472,7 @@ function ObsGroup() {
 
   return (
     <ObsView
-      contextLabel={`${groupId} тур`}
+      contextLabel={board.title}
       rows={rows}
       updatedAt={data?.updatedAt}
       loading={loading}
@@ -501,16 +510,20 @@ function ObsTask() {
   );
 }
 
-function ObsBarGroup() {
-  const { groupId } = useParams();
-  const group = GROUPS[groupId];
+function ObsBoardBar() {
+  const { slug } = useParams();
+  const boardsState = usePolling(() => getBoards(), []);
+  const board = (boardsState.data?.boards || []).find((b) => b.slug === slug);
   const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
 
-  if (!group) {
-    return <ObsBar contextLabel="—" rows={[]} loading={false} error={`Группа '${groupId}' не найдена`} />;
+  if (!boardsState.loading && !board) {
+    return <ObsBar contextLabel="—" rows={[]} loading={false} error={`Лидерборд '${slug}' не найден`} />;
+  }
+  if (boardsState.loading) {
+    return <ObsBar contextLabel="Загрузка..." rows={[]} loading={true} />;
   }
 
-  const groupTasks = (data?.tasks || []).filter((t) => group.slugs.includes(t.slug));
+  const groupTasks = (data?.tasks || []).filter((t) => board.taskSlugs.includes(t.slug));
   const presentSlugs = groupTasks.map((t) => t.slug);
 
   const taskLabels = groupTasks.map((t, i) => {
@@ -552,7 +565,7 @@ function ObsBarGroup() {
 
   return (
     <ObsBar
-      contextLabel={`${groupId} тур`}
+      contextLabel={board.title}
       rows={rows}
       updatedAt={data?.updatedAt}
       loading={loading}
@@ -672,6 +685,7 @@ function ControlPage() {
 
 function MainShell() {
   const [tasks, setTasks] = useState([]);
+  const [boards, setBoards] = useState([]);
   const [tasksError, setTasksError] = useState(null);
 
   useEffect(() => {
@@ -679,9 +693,10 @@ function MainShell() {
 
     async function load() {
       try {
-        const response = await getTasks();
+        const [t, b] = await Promise.all([getTasks(), getBoards()]);
         if (!active) return;
-        setTasks(response.tasks || []);
+        setTasks(t.tasks || []);
+        setBoards(b.boards || []);
         setTasksError(null);
       } catch (error) {
         if (!active) return;
@@ -699,14 +714,14 @@ function MainShell() {
   }, []);
 
   return (
-    <Layout tasks={tasks}>
+    <Layout tasks={tasks} boards={boards}>
       {tasksError ? <p className="status error">{tasksError}</p> : null}
 
       <Routes>
         <Route path="/" element={<OverallPage />} />
         <Route path="/cycle" element={<CyclingOverallPage />} />
         <Route path="/control" element={<Navigate to="/admin/card" replace />} />
-        <Route path="/group/:groupId" element={<GroupPage />} />
+        <Route path="/board/:slug" element={<BoardPage boards={boards} />} />
         <Route path="/task/:slug" element={<TaskPage />} />
         <Route path="*" element={<p className="status">Страница не найдена. <Link to="/">Вернуться</Link></p>} />
       </Routes>
@@ -943,6 +958,199 @@ function AdminTasksPage() {
   );
 }
 
+function AdminBoardsPage() {
+  const navigate = useNavigate();
+  const [boards, setBoards] = useState([]);
+  const [allTasks, setAllTasks] = useState([]);
+  const [original, setOriginal] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [savedAt, setSavedAt] = useState(null);
+
+  function normalize(rawList) {
+    return (rawList || []).map((b) => ({
+      slug: b.slug || '',
+      title: b.title || '',
+      taskSlugs: Array.isArray(b.taskSlugs) ? b.taskSlugs.slice() : [],
+      visible: b.visible !== false,
+      order: b.order ?? 0,
+    }));
+  }
+
+  async function load() {
+    setLoading(true);
+    setError(null);
+    try {
+      const [b, t] = await Promise.all([getAdminBoards(), getAdminTasks()]);
+      const list = normalize(b.boards);
+      setBoards(list);
+      setAllTasks(t.tasks || []);
+      setOriginal(JSON.stringify(list));
+    } catch (err) {
+      if (err instanceof AdminAuthError) navigate('/admin', { replace: true });
+      else setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  function update(idx, patch) {
+    setBoards((prev) => prev.map((b, i) => (i === idx ? { ...b, ...patch } : b)));
+  }
+
+  function toggleTask(idx, slug) {
+    setBoards((prev) =>
+      prev.map((b, i) => {
+        if (i !== idx) return b;
+        const has = b.taskSlugs.includes(slug);
+        return {
+          ...b,
+          taskSlugs: has ? b.taskSlugs.filter((s) => s !== slug) : [...b.taskSlugs, slug],
+        };
+      })
+    );
+  }
+
+  function remove(idx) {
+    if (!confirm('Удалить лидерборд?')) return;
+    setBoards((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  function add() {
+    const nextOrder = boards.reduce((m, b) => Math.max(m, b.order ?? 0), 0) + 1;
+    setBoards((prev) => [
+      ...prev,
+      { slug: '', title: '', taskSlugs: [], visible: true, order: nextOrder },
+    ]);
+  }
+
+  async function save() {
+    setSaving(true);
+    setError(null);
+    try {
+      const data = await saveAdminBoards(boards);
+      const list = normalize(data.boards);
+      setBoards(list);
+      setOriginal(JSON.stringify(list));
+      setSavedAt(new Date());
+    } catch (err) {
+      if (err instanceof AdminAuthError) navigate('/admin', { replace: true });
+      else setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const dirty = JSON.stringify(boards) !== original;
+
+  if (loading) return <p className="status">Загрузка лидербордов...</p>;
+
+  const sorted = boards
+    .map((b, i) => ({ b, i }))
+    .sort((a, b) => (a.b.order ?? 0) - (b.b.order ?? 0));
+
+  return (
+    <section className="panel">
+      <div className="panel-head">
+        <h2>Лидерборды (boards.json)</h2>
+        <span>
+          {dirty ? 'есть несохранённые изменения' : savedAt ? `сохранено ${savedAt.toLocaleTimeString()}` : 'без изменений'}
+        </span>
+      </div>
+
+      {error ? <div className="error-box">{error}</div> : null}
+
+      <div className="admin-boards">
+        {sorted.length === 0 ? (
+          <p className="meta">Пока ни одного лидерборда. Создай первый.</p>
+        ) : null}
+
+        {sorted.map(({ b: board, i: idx }) => (
+          <div key={idx} className="admin-board-card">
+            <div className="admin-board-row">
+              <label className="admin-field">
+                <span className="admin-field-label">slug</span>
+                <input
+                  className="control-input"
+                  value={board.slug}
+                  onChange={(e) => update(idx, { slug: e.target.value })}
+                  placeholder="round-1"
+                />
+              </label>
+              <label className="admin-field" style={{ flex: 1 }}>
+                <span className="admin-field-label">название</span>
+                <input
+                  className="control-input"
+                  value={board.title}
+                  onChange={(e) => update(idx, { title: e.target.value })}
+                  placeholder="1 тур"
+                />
+              </label>
+              <label className="admin-field" style={{ flex: '0 0 90px' }}>
+                <span className="admin-field-label">order</span>
+                <input
+                  className="control-input"
+                  type="number"
+                  value={board.order}
+                  onChange={(e) => update(idx, { order: Number(e.target.value) || 0 })}
+                />
+              </label>
+              <label className="admin-field admin-field-check">
+                <span className="admin-field-label">visible</span>
+                <input
+                  type="checkbox"
+                  checked={board.visible}
+                  onChange={(e) => update(idx, { visible: e.target.checked })}
+                />
+              </label>
+              <button className="control-btn control-btn-ghost" onClick={() => remove(idx)}>×</button>
+            </div>
+
+            <div className="admin-board-tasks">
+              <div className="admin-field-label">задачи в лидерборде</div>
+              <div className="admin-board-tasks-list">
+                {allTasks.length === 0 ? (
+                  <span className="meta">Нет задач — создай их во вкладке «Задачи»</span>
+                ) : (
+                  allTasks.map((t) => (
+                    <label key={t.slug} className="admin-board-task-pick">
+                      <input
+                        type="checkbox"
+                        checked={board.taskSlugs.includes(t.slug)}
+                        onChange={() => toggleTask(idx, t.slug)}
+                      />
+                      <span>{t.title}</span>
+                      <span className="muted"> ({t.slug})</span>
+                    </label>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+
+        <div className="admin-tasks-actions">
+          <button className="control-btn control-btn-ghost" onClick={add}>+ лидерборд</button>
+          <button className="control-btn control-btn-ghost" onClick={load} disabled={saving}>Откатить</button>
+          <button className="control-btn" onClick={save} disabled={!dirty || saving}>
+            {saving ? 'Сохранение...' : 'Сохранить'}
+          </button>
+        </div>
+
+        <p className="meta">
+          Видимые лидерборды появятся вкладками в публичной навигации. URL: <code>/board/&lt;slug&gt;</code>;
+          OBS: <code>/obs/board/&lt;slug&gt;</code> и <code>/obs/bar/board/&lt;slug&gt;</code>.
+        </p>
+      </div>
+    </section>
+  );
+}
+
 function AdminShell() {
   const navigate = useNavigate();
   const [authed, setAuthed] = useState(() => Boolean(getAdminToken()));
@@ -992,6 +1200,9 @@ function AdminShell() {
         <NavLink to="/admin/tasks" className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
           Задачи
         </NavLink>
+        <NavLink to="/admin/boards" className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
+          Лидерборды
+        </NavLink>
         <NavLink to="/admin/card" className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
           Карточка
         </NavLink>
@@ -1005,6 +1216,7 @@ function AdminShell() {
         <Routes>
           <Route path="/" element={<Navigate to="/admin/tasks" replace />} />
           <Route path="tasks" element={<AdminTasksPage />} />
+          <Route path="boards" element={<AdminBoardsPage />} />
           <Route path="card" element={<ControlPage />} />
           <Route path="*" element={<Navigate to="/admin/tasks" replace />} />
         </Routes>
@@ -1017,9 +1229,9 @@ export default function App() {
   return (
     <Routes>
       <Route path="/obs/overall" element={<ObsOverall />} />
-      <Route path="/obs/group/:groupId" element={<ObsGroup />} />
+      <Route path="/obs/board/:slug" element={<ObsBoard />} />
       <Route path="/obs/task/:slug" element={<ObsTask />} />
-      <Route path="/obs/bar/group/:groupId" element={<ObsBarGroup />} />
+      <Route path="/obs/bar/board/:slug" element={<ObsBoardBar />} />
       <Route path="/obs/cycle" element={<ObsCycle />} />
       <Route path="/obs/card" element={<ObsCard />} />
       <Route path="/admin/*" element={<AdminShell />} />

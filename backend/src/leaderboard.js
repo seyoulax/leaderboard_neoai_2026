@@ -95,11 +95,13 @@ export function buildLeaderboards(tasksWithRows) {
       authorScore: task.authorScore,
       updatedAt: task.updatedAt,
       entries: normalized
-        .sort(
-          (a, b) =>
-            b.points - a.points ||
-            (a.nickname || a.teamName || '').localeCompare(b.nickname || b.teamName || '')
-        )
+        .sort((a, b) => {
+          const ar = Number.isFinite(a.rank) && a.rank > 0 ? a.rank : Number.POSITIVE_INFINITY;
+          const br = Number.isFinite(b.rank) && b.rank > 0 ? b.rank : Number.POSITIVE_INFINITY;
+          if (ar !== br) return ar - br;
+          if (a.points !== b.points) return b.points - a.points;
+          return (a.nickname || a.teamName || '').localeCompare(b.nickname || b.teamName || '');
+        })
         .map((entry, i) => ({
           place: i + 1,
           ...entry,

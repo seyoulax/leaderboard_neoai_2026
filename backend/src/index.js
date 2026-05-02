@@ -16,6 +16,7 @@ const PORT = Number(process.env.PORT || 3001);
 const REFRESH_MS = Number(process.env.REFRESH_MS || 60000);
 const KAGGLE_CMD = process.env.KAGGLE_CMD || 'kaggle';
 const TASKS_FILE = path.resolve(__dirname, '..', process.env.TASKS_FILE || './data/tasks.json');
+const BOARDS_FILE = path.resolve(__dirname, '..', process.env.BOARDS_FILE || './data/boards.json');
 const PARTICIPANTS_FILE = path.resolve(__dirname, '..', process.env.PARTICIPANTS_FILE || './data/participants.json');
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || '';
 const REQUEST_GAP_MS = Number(process.env.REQUEST_GAP_MS || 3000);
@@ -78,6 +79,65 @@ async function loadTasks() {
 async function saveTasks(tasks) {
   const body = JSON.stringify(tasks, null, 2) + '\n';
   await fs.writeFile(TASKS_FILE, body, 'utf8');
+}
+
+function validateBoards(input, knownTaskSlugs) {
+  if (!Array.isArray(input)) throw new Error('boards must be an array');
+  const seen = new Set();
+  return input.map((board, idx) => {
+    if (!board || typeof board !== 'object') {
+      throw new Error(`board #${idx + 1}: must be an object`);
+    }
+    const slug = typeof board.slug === 'string' ? board.slug.trim() : '';
+    const title = typeof board.title === 'string' ? board.title.trim() : '';
+    if (!slug) throw new Error(`board #${idx + 1}: slug is required`);
+    if (!/^[a-z0-9][a-z0-9-]*$/i.test(slug)) {
+      throw new Error(`board #${idx + 1}: slug must be alphanumeric/hyphens`);
+    }
+    if (!title) throw new Error(`board #${idx + 1}: title is required`);
+    if (seen.has(slug)) throw new Error(`duplicate board slug: ${slug}`);
+    seen.add(slug);
+
+    const taskSlugs = Array.isArray(board.taskSlugs) ? board.taskSlugs : [];
+    const cleanTaskSlugs = [];
+    for (const ts of taskSlugs) {
+      if (typeof ts !== 'string' || !ts.trim()) {
+        throw new Error(`board ${slug}: taskSlugs must be non-empty strings`);
+      }
+      const t = ts.trim();
+      if (knownTaskSlugs && !knownTaskSlugs.has(t)) {
+        throw new Error(`board ${slug}: unknown task slug '${t}'`);
+      }
+      cleanTaskSlugs.push(t);
+    }
+    if (cleanTaskSlugs.length === 0) {
+      throw new Error(`board ${slug}: taskSlugs must contain at least one task`);
+    }
+
+    const order = Number.isFinite(Number(board.order)) ? Number(board.order) : 0;
+    const visible = board.visible !== false;
+
+    return { slug, title, taskSlugs: cleanTaskSlugs, visible, order };
+  });
+}
+
+async function loadBoards() {
+  try {
+    const raw = await fs.readFile(BOARDS_FILE, 'utf8');
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    const tasks = await loadTasks();
+    const known = new Set(tasks.map((t) => t.slug));
+    return validateBoards(parsed, known);
+  } catch (e) {
+    if (e.code === 'ENOENT') return [];
+    throw e;
+  }
+}
+
+async function saveBoards(boards) {
+  const body = JSON.stringify(boards, null, 2) + '\n';
+  await fs.writeFile(BOARDS_FILE, body, 'utf8');
 }
 
 async function loadParticipants() {
@@ -290,6 +350,39 @@ app.put('/api/admin/tasks', requireAdmin, async (req, res) => {
     await saveTasks(tasks);
     res.json({ ok: true, tasks });
     refreshCache().catch((e) => console.error('[refresh after save] FAILED', e));
+  } catch (e) {
+    res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+app.get('/api/boards', async (_req, res) => {
+  try {
+    const boards = await loadBoards();
+    res.json({ boards });
+  } catch (e) {
+    res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+app.get('/api/admin/boards', requireAdmin, async (_req, res) => {
+  try {
+    const raw = await fs.readFile(BOARDS_FILE, 'utf8').catch((e) => {
+      if (e.code === 'ENOENT') return '[]';
+      throw e;
+    });
+    res.json({ boards: JSON.parse(raw) });
+  } catch (e) {
+    res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+app.put('/api/admin/boards', requireAdmin, async (req, res) => {
+  try {
+    const tasks = await loadTasks();
+    const known = new Set(tasks.map((t) => t.slug));
+    const boards = validateBoards(req.body?.boards, known);
+    await saveBoards(boards);
+    res.json({ ok: true, boards });
   } catch (e) {
     res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
   }

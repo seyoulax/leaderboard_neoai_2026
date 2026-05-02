@@ -1,0 +1,23 @@
+[
+  {
+    "slug": "round-1",
+    "title": "1 тур",
+    "taskSlugs": ["task-1", "task-2", "task-3"],
+    "visible": true,
+    "order": 1
+  },
+  {
+    "slug": "round-2",
+    "title": "2 тур",
+    "taskSlugs": ["task-4", "task-5", "task-6"],
+    "visible": true,
+    "order": 2
+  },
+  {
+    "slug": "round-3",
+    "title": "3 тур",
+    "taskSlugs": ["task-7", "task-8", "task-9"],
+    "visible": true,
+    "order": 3
+  }
+]
