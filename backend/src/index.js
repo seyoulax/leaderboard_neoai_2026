@@ -18,6 +18,7 @@ const KAGGLE_CMD = process.env.KAGGLE_CMD || 'kaggle';
 const TASKS_FILE = path.resolve(__dirname, '..', process.env.TASKS_FILE || './data/tasks.json');
 const PARTICIPANTS_FILE = path.resolve(__dirname, '..', process.env.PARTICIPANTS_FILE || './data/participants.json');
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || '';
+const REQUEST_GAP_MS = Number(process.env.REQUEST_GAP_MS || 1500);
 
 function validateTasks(input) {
   if (!Array.isArray(input) || input.length === 0) {
@@ -117,20 +118,43 @@ async function refreshCache() {
   try {
     const tasks = await loadTasks();
 
-    const taskRows = await Promise.all(
-      tasks.map(async (task) => {
+    const previousByTask = cache.byTask || {};
+    const taskRows = [];
+    const errors = [];
+
+    for (const task of tasks) {
+      try {
         const rows = await fetchCompetitionLeaderboard({
           competition: task.competition,
           kaggleCmd: KAGGLE_CMD,
         });
-
-        return {
+        taskRows.push({
           ...task,
           updatedAt: new Date().toISOString(),
           rows,
-        };
-      })
-    );
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        const short = `${task.slug}: ${message.split('\n')[0]}`;
+        console.error(`[refresh] task ${task.slug} failed: ${message}`);
+        errors.push({ message: short, at: new Date().toISOString() });
+        const prev = previousByTask[task.slug];
+        if (prev && Array.isArray(prev.entries)) {
+          taskRows.push({
+            ...task,
+            updatedAt: prev.updatedAt || cache.updatedAt,
+            rows: prev.entries.map((e) => ({
+              participantKey: e.participantKey,
+              nickname: e.nickname,
+              teamName: e.teamName,
+              rank: e.rank,
+              score: e.score,
+            })),
+          });
+        }
+      }
+      await sleep(REQUEST_GAP_MS);
+    }
 
     const result = buildLeaderboards(taskRows);
 
@@ -140,11 +164,11 @@ async function refreshCache() {
       tasks,
       overall: result.overall,
       byTask: result.byTask,
-      errors: [],
+      errors,
       isRefreshing: false,
     };
 
-    console.log(`[refresh] OK ${cache.updatedAt}`);
+    console.log(`[refresh] OK ${cache.updatedAt}${errors.length ? ` (${errors.length} task errors)` : ''}`);
   } catch (error) {
     cache = {
       ...cache,
@@ -159,6 +183,10 @@ async function refreshCache() {
 
     console.error('[refresh] FAILED', error);
   }
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 app.get('/api/health', (_req, res) => {
