@@ -52,10 +52,8 @@ async function loadTasks() {
 }
 
 async function saveTasks(tasks) {
-  const tmp = `${TASKS_FILE}.tmp`;
   const body = JSON.stringify(tasks, null, 2) + '\n';
-  await fs.writeFile(tmp, body, 'utf8');
-  await fs.rename(tmp, TASKS_FILE);
+  await fs.writeFile(TASKS_FILE, body, 'utf8');
 }
 
 async function loadParticipants() {
