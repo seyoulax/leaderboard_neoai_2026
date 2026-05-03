@@ -667,60 +667,185 @@ app.post('/api/competitions/:competitionSlug/card', async (req, res) => {
   res.json({ ok: true, currentId: id, current: found });
 });
 
-app.get('/api/admin/tasks', requireAdmin, async (_req, res) => {
+app.get('/api/admin/competitions', requireAdmin, async (_req, res) => {
   try {
-    const raw = await fs.readFile(TASKS_FILE, 'utf8');
-    res.json({ tasks: JSON.parse(raw) });
+    const list = await loadCompetitions(COMPETITIONS_FILE);
+    res.json({ competitions: list });
   } catch (e) {
     res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
   }
 });
 
-app.put('/api/admin/tasks', requireAdmin, async (req, res) => {
+app.put('/api/admin/competitions', requireAdmin, async (req, res) => {
   try {
-    const tasks = validateTasks(req.body?.tasks);
-    await saveTasks(tasks);
-    res.json({ ok: true, tasks });
-    refreshCache().catch((e) => console.error('[refresh after save] FAILED', e));
+    const validated = validateCompetitions(req.body?.competitions);
+    await saveCompetitions(COMPETITIONS_FILE, validated);
+    for (const c of validated) {
+      await fs.mkdir(competitionDir(c.slug), { recursive: true });
+    }
+    cache.competitionsIndex = validated;
+    res.json({ ok: true, competitions: validated });
+    refreshAll().catch((e) => console.error('[refresh after admin save] FAILED', e));
   } catch (e) {
     res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
   }
 });
 
-app.get('/api/admin/boards', requireAdmin, async (_req, res) => {
+app.post('/api/admin/competitions', requireAdmin, async (req, res) => {
   try {
-    const raw = await fs.readFile(BOARDS_FILE, 'utf8').catch((e) => {
-      if (e.code === 'ENOENT') return '[]';
-      throw e;
-    });
-    res.json({ boards: JSON.parse(raw) });
+    const next = req.body?.competition;
+    if (!next || typeof next !== 'object') {
+      res.status(400).json({ error: 'competition object required in body' });
+      return;
+    }
+    const list = await loadCompetitions(COMPETITIONS_FILE);
+    if (list.some((c) => c.slug === String(next.slug || '').trim().toLowerCase())) {
+      res.status(400).json({ error: `slug '${next.slug}' already exists` });
+      return;
+    }
+    const validated = validateCompetitions([...list, next]);
+    await saveCompetitions(COMPETITIONS_FILE, validated);
+    const created = validated[validated.length - 1];
+    await fs.mkdir(competitionDir(created.slug), { recursive: true });
+    cache.competitionsIndex = validated;
+    res.json({ ok: true, competition: created });
+    refreshAll().catch((e) => console.error('[refresh after admin create] FAILED', e));
+  } catch (e) {
+    res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+app.delete('/api/admin/competitions/:competitionSlug', requireAdmin, async (req, res) => {
+  try {
+    const slug = String(req.params.competitionSlug || '').toLowerCase();
+    const list = await loadCompetitions(COMPETITIONS_FILE);
+    const idx = list.findIndex((c) => c.slug === slug);
+    if (idx < 0) {
+      res.status(404).json({ error: `competition '${slug}' not found` });
+      return;
+    }
+    const remaining = list.filter((c) => c.slug !== slug);
+    await saveCompetitions(COMPETITIONS_FILE, remaining);
+    const ts = new Date().toISOString().replace(/[:.]/g, '-');
+    const dir = competitionDir(slug);
+    const deletedDir = path.join(COMPETITIONS_DIR, `${slug}.deleted-${ts}`);
+    try {
+      await fs.rename(dir, deletedDir);
+    } catch (e) {
+      if (e.code !== 'ENOENT') throw e;
+    }
+    cache.competitionsIndex = remaining;
+    cache.byCompetition.delete(slug);
+    res.json({ ok: true, deleted: slug, archivedAs: deletedDir });
+  } catch (e) {
+    res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+function ensureKnownSlug(req, res) {
+  const slug = String(req.params.competitionSlug || '').toLowerCase();
+  const known = cache.competitionsIndex.some((c) => c.slug === slug);
+  if (!known) {
+    res.status(404).json({ error: `competition '${slug}' not found` });
+    return null;
+  }
+  return slug;
+}
+
+app.get('/api/admin/competitions/:competitionSlug/tasks', requireAdmin, async (req, res) => {
+  const slug = ensureKnownSlug(req, res); if (!slug) return;
+  try {
+    const tasks = await loadTasksFor(slug);
+    res.json({ tasks });
   } catch (e) {
     res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
   }
 });
 
-app.get('/api/admin/tasks/:slug/private', requireAdmin, async (req, res) => {
+app.put('/api/admin/competitions/:competitionSlug/tasks', requireAdmin, async (req, res) => {
+  const slug = ensureKnownSlug(req, res); if (!slug) return;
   try {
-    const file = await readPrivateFile(PRIVATE_DIR, req.params.slug);
-    if (!file) {
-      res.json({ exists: false });
+    const tasks = validateTasks(req.body?.tasks);
+    await saveTasksFor(slug, tasks);
+    res.json({ ok: true, tasks });
+    refreshCompetition(slug).catch((e) =>
+      console.error(`[refresh after admin tasks save ${slug}] FAILED`, e)
+    );
+  } catch (e) {
+    res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+app.get('/api/admin/competitions/:competitionSlug/boards', requireAdmin, async (req, res) => {
+  const slug = ensureKnownSlug(req, res); if (!slug) return;
+  try {
+    const boards = await loadBoardsFor(slug);
+    res.json({ boards });
+  } catch (e) {
+    res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+app.put('/api/admin/competitions/:competitionSlug/boards', requireAdmin, async (req, res) => {
+  const slug = ensureKnownSlug(req, res); if (!slug) return;
+  try {
+    const tasks = await loadTasksFor(slug);
+    const known = new Set(tasks.map((t) => t.slug));
+    const boards = validateBoards(req.body?.boards, known);
+    await saveBoardsFor(slug, boards);
+    res.json({ ok: true, boards });
+  } catch (e) {
+    res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+app.get('/api/admin/competitions/:competitionSlug/participants', requireAdmin, async (req, res) => {
+  const slug = ensureKnownSlug(req, res); if (!slug) return;
+  try {
+    const participants = await loadParticipantsFor(slug);
+    res.json({ participants });
+  } catch (e) {
+    res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+app.put('/api/admin/competitions/:competitionSlug/participants', requireAdmin, async (req, res) => {
+  const slug = ensureKnownSlug(req, res); if (!slug) return;
+  try {
+    const participants = req.body?.participants;
+    if (!Array.isArray(participants)) {
+      res.status(400).json({ error: 'participants must be an array' });
       return;
     }
+    await saveParticipantsFor(slug, participants);
+    res.json({ ok: true, count: participants.length });
+    refreshCompetition(slug).catch((e) =>
+      console.error(`[refresh after participants save ${slug}] FAILED`, e)
+    );
+  } catch (e) {
+    res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+app.get('/api/admin/competitions/:competitionSlug/tasks/:taskSlug/private', requireAdmin, async (req, res) => {
+  const slug = ensureKnownSlug(req, res); if (!slug) return;
+  try {
+    const file = await readPrivateFile(privateDirFor(slug), req.params.taskSlug);
+    if (!file) { res.json({ exists: false }); return; }
     let count = 0;
-    try {
-      count = parsePrivateCsv(file.raw).length;
-    } catch {}
+    try { count = parsePrivateCsv(file.raw).length; } catch {}
     res.json({ exists: true, csv: file.raw, updatedAt: file.updatedAt, count });
   } catch (e) {
     res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
   }
 });
 
-app.put('/api/admin/tasks/:slug/private', requireAdmin, async (req, res) => {
+app.put('/api/admin/competitions/:competitionSlug/tasks/:taskSlug/private', requireAdmin, async (req, res) => {
+  const slug = ensureKnownSlug(req, res); if (!slug) return;
   try {
-    const tasks = await loadTasks();
-    if (!tasks.find((t) => t.slug === req.params.slug)) {
-      res.status(404).json({ error: `task '${req.params.slug}' not found` });
+    const tasks = await loadTasksFor(slug);
+    if (!tasks.find((t) => t.slug === req.params.taskSlug)) {
+      res.status(404).json({ error: `task '${req.params.taskSlug}' not found in '${slug}'` });
       return;
     }
     const csv = typeof req.body?.csv === 'string' ? req.body.csv : '';
@@ -729,33 +854,26 @@ app.put('/api/admin/tasks/:slug/private', requireAdmin, async (req, res) => {
       res.status(400).json({ error: 'no valid rows parsed (need columns kaggle_id and raw_score)' });
       return;
     }
-    await writePrivateFile(PRIVATE_DIR, req.params.slug, csv);
+    await writePrivateFile(privateDirFor(slug), req.params.taskSlug, csv);
     res.json({ ok: true, count: records.length });
-    refreshCache().catch((e) => console.error('[refresh after private upload] FAILED', e));
+    refreshCompetition(slug).catch((e) =>
+      console.error(`[refresh after private upload ${slug}/${req.params.taskSlug}] FAILED`, e)
+    );
   } catch (e) {
     res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
   }
 });
 
-app.delete('/api/admin/tasks/:slug/private', requireAdmin, async (req, res) => {
+app.delete('/api/admin/competitions/:competitionSlug/tasks/:taskSlug/private', requireAdmin, async (req, res) => {
+  const slug = ensureKnownSlug(req, res); if (!slug) return;
   try {
-    await deletePrivateFile(PRIVATE_DIR, req.params.slug);
+    await deletePrivateFile(privateDirFor(slug), req.params.taskSlug);
     res.json({ ok: true });
-    refreshCache().catch((e) => console.error('[refresh after private delete] FAILED', e));
+    refreshCompetition(slug).catch((e) =>
+      console.error(`[refresh after private delete ${slug}/${req.params.taskSlug}] FAILED`, e)
+    );
   } catch (e) {
     res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
-  }
-});
-
-app.put('/api/admin/boards', requireAdmin, async (req, res) => {
-  try {
-    const tasks = await loadTasks();
-    const known = new Set(tasks.map((t) => t.slug));
-    const boards = validateBoards(req.body?.boards, known);
-    await saveBoards(boards);
-    res.json({ ok: true, boards });
-  } catch (e) {
-    res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
   }
 });
 
