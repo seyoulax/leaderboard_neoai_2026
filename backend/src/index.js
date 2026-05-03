@@ -365,17 +365,35 @@ app.get('/api/tasks/:slug', (req, res) => {
   const privateKey = findKey(cache.privateByTask);
   const task = taskKey ? cache.byTask[taskKey] : null;
   const privateTask = privateKey ? cache.privateByTask[privateKey] : null;
+  const meta = (cache.tasks || []).find((t) => t.slug.toLowerCase() === wanted);
 
-  if (!task && !privateTask) {
+  if (!task && !privateTask && !meta) {
     res.status(404).json({ error: `Task '${req.params.slug}' not found` });
     return;
   }
 
+  const fallback = meta
+    ? {
+        slug: meta.slug,
+        title: meta.title,
+        competition: meta.competition,
+        higherIsBetter: meta.higherIsBetter,
+        baselineScore: meta.baselineScore,
+        authorScore: meta.authorScore,
+        updatedAt: cache.updatedAt,
+        entries: [],
+      }
+    : { ...privateTask, entries: [] };
+
+  const taskErrors = (cache.errors || []).filter((e) =>
+    typeof e.message === 'string' && e.message.toLowerCase().startsWith(`${wanted}:`)
+  );
+
   res.json({
     updatedAt: cache.updatedAt,
-    task: task || { ...privateTask, entries: [] },
+    task: task || fallback,
     privateTask,
-    errors: cache.errors,
+    errors: taskErrors.length ? taskErrors : cache.errors,
   });
 });
 
