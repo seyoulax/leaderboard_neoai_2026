@@ -712,3 +712,9 @@ tr.row-down > td {
 .admin-comp-table th, .admin-comp-table td { padding: 8px 12px; border-bottom: 1px solid var(--line); text-align: left; }
 .admin-comp-table input { width: 100%; padding: 4px 8px; background: transparent; color: var(--ink); border: 1px solid transparent; border-radius: 4px; }
 .admin-comp-table input:focus { border-color: var(--accent); outline: none; }
+
+.admin-pp-upload { padding: 16px; display: flex; gap: 12px; align-items: center; }
+.admin-pp-textarea { width: calc(100% - 32px); margin: 0 16px; font-family: ui-monospace, monospace; font-size: 12px; padding: 12px; background: transparent; color: var(--text); border: 1px solid var(--border); border-radius: 8px; }
+.admin-pp-preview { padding: 8px 16px; }
+.admin-pp-table { width: 100%; border-collapse: collapse; }
+.admin-pp-table th, .admin-pp-table td { padding: 6px 16px; border-bottom: 1px solid var(--border); text-align: left; }
