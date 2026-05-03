@@ -13,7 +13,7 @@
 | `/` | Список видимых соревнований |
 | `/competitions/<slug>` | Редирект на `leaderboard` |
 | `/competitions/<slug>/leaderboard` | Общий ЛБ |
-| `/competitions/<slug>/cycle` | Циклическая показ по 15 строк |
+| `/competitions/<slug>/cycle` | Циклическая показ по 15 строк (по прямому URL, без таба в навигации) |
 | `/competitions/<slug>/board/<b>` | Лидерборд борда |
 | `/competitions/<slug>/task/<t>` | Лидерборд задачи |
 
