@@ -887,5 +887,16 @@
             "НТО БДиМО: Финалист"
         ],
         "bio": ""
+    },
+    {
+        "id": "andronhl",
+        "name": "56",
+        "kaggleId": "andronhl",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "",
+        "grade": "",
+        "achievements": [],
+        "bio": ""
     }
 ]
