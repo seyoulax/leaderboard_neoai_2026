@@ -1,9 +1,8 @@
-import { Link, NavLink, Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom';
+import { Link, NavLink, Navigate, Outlet, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import {
   getOverallLeaderboard,
   getTaskLeaderboard,
-  getTasks,
   getBoards,
   getParticipants,
   getCurrentCard,
@@ -24,6 +23,17 @@ import ObsView from './ObsView';
 import ObsBar from './ObsBar';
 import ObsCycle from './ObsCycle';
 import ObsCard from './ObsCard';
+import CompetitionsListPage from './CompetitionsListPage';
+import AdminCompetitionsPage from './AdminCompetitionsPage';
+import AdminParticipantsPage from './AdminParticipantsPage';
+import {
+  LEGACY_REDIRECTS,
+  LegacyBoardRedirect,
+  LegacyTaskRedirect,
+  LegacyObsBoardRedirect,
+  LegacyObsBoardBarRedirect,
+  LegacyObsTaskRedirect,
+} from './legacyRedirects';
 
 const REFRESH_MS = 30_000;
 
@@ -185,27 +195,31 @@ function sortedVisibleBoards(boards) {
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 }
 
-function Layout({ children, tasks, boards }) {
+function Layout({ children, tasks, boards, competitionSlug }) {
   const visibleBoards = sortedVisibleBoards(boards);
+  const base = `/competitions/${encodeURIComponent(competitionSlug)}`;
   return (
     <div className="page">
       <header className="hero">
-        <p className="eyebrow">Northern Eurasia Olympiad in Artificial Intelligence 2026</p>
+        <p className="eyebrow"><Link to="/" className="eyebrow-link">← все соревнования</Link></p>
         <h1>NEOAI</h1>
         <p className="subtitle">Live Leaderboard · нормализация: top1 = 100, last = 0. Общий балл = сумма по всем задачам.</p>
       </header>
 
       <nav className="tabs">
-        <NavLink to="/leaderboard" className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
+        <NavLink to={`${base}/leaderboard`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
           Общий ЛБ
         </NavLink>
+        <NavLink to={`${base}/cycle`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
+          По 15 (цикл)
+        </NavLink>
         {visibleBoards.map((board) => (
-          <NavLink key={board.slug} to={`/board/${board.slug}`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
+          <NavLink key={board.slug} to={`${base}/board/${board.slug}`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
             {board.title}
           </NavLink>
         ))}
         {tasks.map((task) => (
-          <NavLink key={task.slug} to={`/task/${task.slug}`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
+          <NavLink key={task.slug} to={`${base}/task/${task.slug}`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
             {task.title}
           </NavLink>
         ))}
@@ -234,7 +248,8 @@ function ErrorBanner({ errors }) {
 }
 
 function OverallPage() {
-  const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
+  const { competitionSlug } = useParams();
+  const { data, loading, error } = usePolling(() => getOverallLeaderboard(competitionSlug), [competitionSlug]);
   const [mode, setMode] = useState('public');
   const [filter, setFilter] = useState('all');
   const [query, setQuery] = useState('');
@@ -331,7 +346,8 @@ function CyclingOverallPage() {
   const PAGE_SIZE = 15;
   const PAGE_MS = 20_000;
 
-  const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
+  const { competitionSlug } = useParams();
+  const { data, loading, error } = usePolling(() => getOverallLeaderboard(competitionSlug), [competitionSlug]);
   const [pageIdx, setPageIdx] = useState(0);
   const [filter, setFilter] = useState('all');
 
@@ -423,9 +439,9 @@ function CyclingOverallPage() {
 }
 
 function BoardPage({ boards }) {
-  const { slug } = useParams();
+  const { competitionSlug, slug } = useParams();
   const board = (boards || []).find((b) => b.slug === slug);
-  const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
+  const { data, loading, error } = usePolling(() => getOverallLeaderboard(competitionSlug), [competitionSlug]);
   const [mode, setMode] = useState('public');
   const [filter, setFilter] = useState('all');
   const [query, setQuery] = useState('');
@@ -549,8 +565,8 @@ function BoardPage({ boards }) {
 }
 
 function TaskPage() {
-  const { slug } = useParams();
-  const { data, loading, error } = usePolling(() => getTaskLeaderboard(slug), [slug]);
+  const { competitionSlug, slug } = useParams();
+  const { data, loading, error } = usePolling(() => getTaskLeaderboard(competitionSlug, slug), [competitionSlug, slug]);
   const [mode, setMode] = useState('public');
   const [filter, setFilter] = useState('all');
   const [query, setQuery] = useState('');
@@ -630,7 +646,8 @@ function TaskPage() {
 }
 
 function ObsOverall() {
-  const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
+  const { competitionSlug } = useParams();
+  const { data, loading, error } = usePolling(() => getOverallLeaderboard(competitionSlug), [competitionSlug]);
   const rows = (data?.oursOverall || []).map((r) => ({
     key: r.participantKey,
     name: r.nickname || r.teamName || '-',
@@ -649,10 +666,10 @@ function ObsOverall() {
 }
 
 function ObsBoard() {
-  const { slug } = useParams();
-  const boardsState = usePolling(() => getBoards(), []);
+  const { competitionSlug, slug } = useParams();
+  const boardsState = usePolling(() => getBoards(competitionSlug), [competitionSlug]);
   const board = (boardsState.data?.boards || []).find((b) => b.slug === slug);
-  const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
+  const { data, loading, error } = usePolling(() => getOverallLeaderboard(competitionSlug), [competitionSlug]);
 
   if (!boardsState.loading && !board) {
     return <ObsView contextLabel="Лидерборд не найден" rows={[]} loading={false} error={`Лидерборд '${slug}' не найден`} />;
@@ -708,8 +725,8 @@ function formatRawScore(score) {
 }
 
 function ObsTask() {
-  const { slug } = useParams();
-  const { data, loading, error } = usePolling(() => getTaskLeaderboard(slug), [slug]);
+  const { competitionSlug, slug } = useParams();
+  const { data, loading, error } = usePolling(() => getTaskLeaderboard(competitionSlug, slug), [competitionSlug, slug]);
 
   const task = data?.task;
   const rows = (data?.oursTask?.entries || []).map((r) => ({
@@ -731,10 +748,10 @@ function ObsTask() {
 }
 
 function ObsBoardBar() {
-  const { slug } = useParams();
-  const boardsState = usePolling(() => getBoards(), []);
+  const { competitionSlug, slug } = useParams();
+  const boardsState = usePolling(() => getBoards(competitionSlug), [competitionSlug]);
   const board = (boardsState.data?.boards || []).find((b) => b.slug === slug);
-  const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
+  const { data, loading, error } = usePolling(() => getOverallLeaderboard(competitionSlug), [competitionSlug]);
 
   if (!boardsState.loading && !board) {
     return <ObsBar contextLabel="—" rows={[]} loading={false} error={`Лидерборд '${slug}' не найден`} />;
@@ -795,6 +812,7 @@ function ObsBoardBar() {
 }
 
 function ControlPage() {
+  const { slug: competitionSlug } = useParams();
   const [list, setList] = useState([]);
   const [currentId, setCurrentId] = useState(null);
   const [query, setQuery] = useState('');
@@ -803,7 +821,7 @@ function ControlPage() {
 
   async function refresh() {
     try {
-      const data = await getParticipants();
+      const data = await getParticipants(competitionSlug);
       setList(data.participants || []);
       setCurrentId(data.currentId);
       setError(null);
@@ -816,13 +834,13 @@ function ControlPage() {
     refresh();
     const t = setInterval(refresh, 5000);
     return () => clearInterval(t);
-  }, []);
+  }, [competitionSlug]);
 
   async function pick(id) {
     setBusy(true);
     setError(null);
     try {
-      const data = await setCurrentCard(id);
+      const data = await setCurrentCard(competitionSlug, id);
       setCurrentId(data.currentId);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -903,121 +921,63 @@ function ControlPage() {
   );
 }
 
-function SitemapPage({ tasks, boards }) {
-  const visibleBoards = sortedVisibleBoards(boards);
-  const allBoards = (boards || []).slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+function CompetitionShell() {
+  const { competitionSlug } = useParams();
+  const tasksState = usePolling(() => getOverallLeaderboard(competitionSlug), [competitionSlug]);
+  const boardsState = usePolling(() => getBoards(competitionSlug), [competitionSlug]);
 
+  if (tasksState.loading || boardsState.loading) {
+    return <p className="status">Загрузка...</p>;
+  }
+  if (tasksState.error) {
+    return <p className="status error">{tasksState.error}</p>;
+  }
   return (
-    <section className="panel">
-      <div className="panel-head">
-        <h2>Все страницы</h2>
-        <span>динамический список по tasks/boards с бэка</span>
-      </div>
-
-      <div className="sitemap">
-        <div className="sitemap-group">
-          <h3>Публичные таблицы</h3>
-          <ul>
-            <li><Link to="/leaderboard">/leaderboard</Link> — общий лидерборд по сумме всех задач</li>
-            <li><Link to="/cycle">/cycle</Link> — общий ЛБ, циклически по 15 строк (для табло, скрыт из нав-меню)</li>
-            {allBoards.map((b) => (
-              <li key={b.slug}>
-                <Link to={`/board/${b.slug}`}>/board/{b.slug}</Link> — борд «{b.title}»
-                {b.visible === false ? ' (скрыт из навигации)' : ''}
-              </li>
-            ))}
-            {(tasks || []).map((t) => (
-              <li key={t.slug}>
-                <Link to={`/task/${t.slug}`}>/task/{t.slug}</Link> — задача «{t.title}»
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="sitemap-group">
-          <h3>Админка (нужен пароль)</h3>
-          <ul>
-            <li><Link to="/admin">/admin</Link> — вход</li>
-            <li><Link to="/admin/tasks">/admin/tasks</Link> — редактирование задач (slug, title, competition, baseline/author)</li>
-            <li><Link to="/admin/boards">/admin/boards</Link> — редактирование лидербордов (выборка задач + видимость + порядок)</li>
-            <li><Link to="/admin/card">/admin/card</Link> — выбор активной карточки участника для OBS</li>
-          </ul>
-        </div>
-
-        <div className="sitemap-group">
-          <h3>OBS-оверлеи</h3>
-          <p className="meta" style={{ padding: 0, border: 'none' }}>
-            Под Browser Source в OBS. Без шапки/нав, тёмный фон под chroma-key.
-          </p>
-          <ul>
-            <li><Link to="/obs/overall">/obs/overall</Link> — общий top-15 текстовыми строками</li>
-            <li><Link to="/obs/cycle">/obs/cycle</Link> — общий ЛБ, цикл по 15</li>
-            <li><Link to="/obs/card">/obs/card</Link> — карточка текущего активного участника</li>
-            {visibleBoards.map((b) => (
-              <li key={`obs-${b.slug}`}>
-                <Link to={`/obs/board/${b.slug}`}>/obs/board/{b.slug}</Link> — top-15 борда «{b.title}» (строки)
-                {' · '}
-                <Link to={`/obs/bar/board/${b.slug}`}>/obs/bar/board/{b.slug}</Link> — он же баром с per-task chip'ами
-              </li>
-            ))}
-            {(tasks || []).map((t) => (
-              <li key={`obs-task-${t.slug}`}>
-                <Link to={`/obs/task/${t.slug}`}>/obs/task/{t.slug}</Link> — задача «{t.title}»
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    </section>
+    <Layout
+      tasks={tasksState.data?.tasks || []}
+      boards={boardsState.data?.boards || []}
+      competitionSlug={competitionSlug}
+    >
+      <Outlet />
+    </Layout>
   );
 }
 
-function MainShell() {
-  const [tasks, setTasks] = useState([]);
-  const [boards, setBoards] = useState([]);
-  const [tasksError, setTasksError] = useState(null);
+function BoardPageWrapper() {
+  const { competitionSlug } = useParams();
+  const { data, loading, error } = usePolling(() => getBoards(competitionSlug), [competitionSlug]);
+  if (loading) return <p className="status">Загрузка...</p>;
+  if (error) return <p className="status error">{error}</p>;
+  return <BoardPage boards={data?.boards || []} />;
+}
+
+function AdminAuthGate() {
+  const [authenticated, setAuthenticated] = useState(!!getAdminToken());
+  const [checking, setChecking] = useState(!!getAdminToken());
 
   useEffect(() => {
-    let active = true;
-
-    async function load() {
-      try {
-        const [t, b] = await Promise.all([getTasks(), getBoards()]);
-        if (!active) return;
-        setTasks(t.tasks || []);
-        setBoards(b.boards || []);
-        setTasksError(null);
-      } catch (error) {
-        if (!active) return;
-        setTasksError(error instanceof Error ? error.message : String(error));
-      }
+    if (!getAdminToken()) {
+      setChecking(false);
+      return;
     }
-
-    load();
-    const timer = setInterval(load, REFRESH_MS);
-
-    return () => {
-      active = false;
-      clearInterval(timer);
-    };
+    let active = true;
+    adminPing()
+      .then(() => { if (active) { setAuthenticated(true); setChecking(false); } })
+      .catch(() => {
+        if (!active) return;
+        setAdminToken('');
+        setAuthenticated(false);
+        setChecking(false);
+      });
+    return () => { active = false; };
   }, []);
 
-  return (
-    <Layout tasks={tasks} boards={boards}>
-      {tasksError ? <p className="status error">{tasksError}</p> : null}
+  if (checking) return <p className="status">Проверка авторизации...</p>;
+  if (!authenticated) {
+    return <AdminLogin onSuccess={() => setAuthenticated(true)} />;
+  }
 
-      <Routes>
-        <Route path="/" element={<Navigate to="/leaderboard" replace />} />
-        <Route path="/leaderboard" element={<OverallPage />} />
-        <Route path="/cycle" element={<CyclingOverallPage />} />
-        <Route path="/control" element={<Navigate to="/admin/card" replace />} />
-        <Route path="/board/:slug" element={<BoardPage boards={boards} />} />
-        <Route path="/task/:slug" element={<TaskPage />} />
-        <Route path="/routes" element={<SitemapPage tasks={tasks} boards={boards} />} />
-        <Route path="*" element={<p className="status">Страница не найдена. <Link to="/leaderboard">Вернуться</Link></p>} />
-      </Routes>
-    </Layout>
-  );
+  return <Outlet />;
 }
 
 function AdminLogin({ onSuccess }) {
@@ -1065,7 +1025,7 @@ function AdminLogin({ onSuccess }) {
   );
 }
 
-function PrivateRow({ slug }) {
+function PrivateRow({ slug, competitionSlug }) {
   const [info, setInfo] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -1074,7 +1034,7 @@ function PrivateRow({ slug }) {
     if (!slug) return;
     setError(null);
     try {
-      const data = await getAdminPrivate(slug);
+      const data = await getAdminPrivate(competitionSlug, slug);
       setInfo(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -1093,7 +1053,7 @@ function PrivateRow({ slug }) {
     setError(null);
     try {
       const text = await file.text();
-      const r = await uploadAdminPrivate(slug, text);
+      const r = await uploadAdminPrivate(competitionSlug, slug, text);
       setInfo({ exists: true, count: r.count, updatedAt: new Date().toISOString() });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -1107,7 +1067,7 @@ function PrivateRow({ slug }) {
     setBusy(true);
     setError(null);
     try {
-      await deleteAdminPrivate(slug);
+      await deleteAdminPrivate(competitionSlug, slug);
       setInfo({ exists: false });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -1139,6 +1099,7 @@ function PrivateRow({ slug }) {
 }
 
 function AdminTasksPage() {
+  const { slug: competitionSlug } = useParams();
   const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
   const [original, setOriginal] = useState('');
@@ -1172,7 +1133,7 @@ function AdminTasksPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await getAdminTasks();
+      const data = await getAdminTasks(competitionSlug);
       const list = normalize(data.tasks);
       setTasks(list);
       setOriginal(JSON.stringify(list));
@@ -1217,7 +1178,7 @@ function AdminTasksPage() {
     setSaving(true);
     setError(null);
     try {
-      const data = await saveAdminTasks(tasks);
+      const data = await saveAdminTasks(competitionSlug, tasks);
       const list = normalize(data.tasks);
       setTasks(list);
       setOriginal(JSON.stringify(list));
@@ -1333,7 +1294,7 @@ function AdminTasksPage() {
               <button className="control-btn control-btn-ghost" onClick={() => remove(idx)}>×</button>
             </span>
           </div>
-          <PrivateRow slug={task.slug} />
+          <PrivateRow slug={task.slug} competitionSlug={competitionSlug} />
           </div>
         ))}
 
@@ -1356,6 +1317,7 @@ function AdminTasksPage() {
 }
 
 function AdminBoardsPage() {
+  const { slug: competitionSlug } = useParams();
   const navigate = useNavigate();
   const [boards, setBoards] = useState([]);
   const [allTasks, setAllTasks] = useState([]);
@@ -1381,7 +1343,7 @@ function AdminBoardsPage() {
     setLoading(true);
     setError(null);
     try {
-      const [b, t] = await Promise.all([getAdminBoards(), getAdminTasks()]);
+      const [b, t] = await Promise.all([getAdminBoards(competitionSlug), getAdminTasks(competitionSlug)]);
       const tasksList = t.tasks || [];
       const known = new Set(tasksList.map((x) => x.slug));
       const list = normalize(b.boards, known);
@@ -1434,7 +1396,7 @@ function AdminBoardsPage() {
     setSaving(true);
     setError(null);
     try {
-      const data = await saveAdminBoards(boards);
+      const data = await saveAdminBoards(competitionSlug, boards);
       const known = new Set(allTasks.map((x) => x.slug));
       const list = normalize(data.boards, known);
       setBoards(list);
@@ -1554,75 +1516,23 @@ function AdminBoardsPage() {
 }
 
 function AdminShell() {
-  const navigate = useNavigate();
-  const [authed, setAuthed] = useState(() => Boolean(getAdminToken()));
-
-  useEffect(() => {
-    function onStorage() {
-      setAuthed(Boolean(getAdminToken()));
-    }
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
-
-  function logout() {
-    setAdminToken('');
-    setAuthed(false);
-    navigate('/admin', { replace: true });
-  }
-
-  if (!authed) {
-    const login = <AdminLogin onSuccess={() => setAuthed(true)} />;
-    return (
-      <div className="page">
-        <header className="hero">
-          <p className="eyebrow">NEOAI · admin</p>
-          <h1>Вход</h1>
-        </header>
-        <main>
-          <Routes>
-            <Route path="/" element={login} />
-            <Route path="tasks" element={login} />
-            <Route path="card" element={login} />
-            <Route path="*" element={<Navigate to="/admin" replace />} />
-          </Routes>
-        </main>
-      </div>
-    );
-  }
-
+  const { slug: competitionSlug } = useParams();
+  const base = competitionSlug ? `/admin/competitions/${encodeURIComponent(competitionSlug)}` : '';
   return (
-    <div className="page">
+    <div className="admin-page">
       <header className="hero">
-        <p className="eyebrow">NEOAI · admin</p>
-        <h1>Админка</h1>
+        <h1>NEOAI Admin</h1>
+        <Link to="/admin/competitions" className="eyebrow-link">← все соревнования</Link>
       </header>
-
-      <nav className="tabs">
-        <NavLink to="/admin/tasks" className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
-          Задачи
-        </NavLink>
-        <NavLink to="/admin/boards" className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
-          Лидерборды
-        </NavLink>
-        <NavLink to="/admin/card" className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
-          Карточка
-        </NavLink>
-        <NavLink to="/leaderboard" className="tab">← Лидерборд</NavLink>
-        <button onClick={logout} className="tab" style={{ marginLeft: 'auto' }}>
-          Выйти
-        </button>
-      </nav>
-
-      <main>
-        <Routes>
-          <Route path="/" element={<Navigate to="/admin/tasks" replace />} />
-          <Route path="tasks" element={<AdminTasksPage />} />
-          <Route path="boards" element={<AdminBoardsPage />} />
-          <Route path="card" element={<ControlPage />} />
-          <Route path="*" element={<Navigate to="/admin/tasks" replace />} />
-        </Routes>
-      </main>
+      {competitionSlug ? (
+        <nav className="tabs">
+          <NavLink to={`${base}/tasks`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Tasks</NavLink>
+          <NavLink to={`${base}/boards`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Boards</NavLink>
+          <NavLink to={`${base}/participants`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Participants</NavLink>
+          <NavLink to={`${base}/card`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Card</NavLink>
+        </nav>
+      ) : null}
+      <Outlet />
     </div>
   );
 }
@@ -1630,14 +1540,55 @@ function AdminShell() {
 export default function App() {
   return (
     <Routes>
-      <Route path="/obs/overall" element={<ObsOverall />} />
-      <Route path="/obs/board/:slug" element={<ObsBoard />} />
-      <Route path="/obs/task/:slug" element={<ObsTask />} />
-      <Route path="/obs/bar/board/:slug" element={<ObsBoardBar />} />
-      <Route path="/obs/cycle" element={<ObsCycle />} />
-      <Route path="/obs/card" element={<ObsCard />} />
-      <Route path="/admin/*" element={<AdminShell />} />
-      <Route path="*" element={<MainShell />} />
+      {/* Public root: list of competitions */}
+      <Route path="/" element={<CompetitionsListPage />} />
+
+      {/* Public per-competition routes */}
+      <Route path="/competitions/:competitionSlug" element={<CompetitionShell />}>
+        <Route index element={<Navigate to="leaderboard" replace />} />
+        <Route path="leaderboard" element={<OverallPage />} />
+        <Route path="cycle" element={<CyclingOverallPage />} />
+        <Route path="board/:slug" element={<BoardPageWrapper />} />
+        <Route path="task/:slug" element={<TaskPage />} />
+      </Route>
+
+      {/* Admin */}
+      <Route path="/admin" element={<AdminAuthGate />}>
+        <Route index element={<Navigate to="competitions" replace />} />
+        <Route path="competitions" element={<AdminCompetitionsPage />} />
+        <Route path="competitions/:slug" element={<AdminShell />}>
+          <Route index element={<Navigate to="tasks" replace />} />
+          <Route path="tasks" element={<AdminTasksPage />} />
+          <Route path="boards" element={<AdminBoardsPage />} />
+          <Route path="participants" element={<AdminParticipantsPage />} />
+          <Route path="card" element={<ControlPage />} />
+        </Route>
+      </Route>
+
+      {/* OBS (no header/nav) */}
+      <Route path="/obs/competitions/:competitionSlug/overall" element={<ObsOverall />} />
+      <Route path="/obs/competitions/:competitionSlug/cycle" element={<ObsCycle />} />
+      <Route path="/obs/competitions/:competitionSlug/board/:slug" element={<ObsBoard />} />
+      <Route path="/obs/competitions/:competitionSlug/bar/board/:slug" element={<ObsBoardBar />} />
+      <Route path="/obs/competitions/:competitionSlug/task/:slug" element={<ObsTask />} />
+      <Route path="/obs/competitions/:competitionSlug/card" element={<ObsCard />} />
+
+      {/* Legacy URL redirects */}
+      {LEGACY_REDIRECTS.map((r) => (
+        <Route key={r.from} path={r.from} element={<Navigate to={r.to} replace />} />
+      ))}
+      <Route path="/board/:slug" element={<LegacyBoardRedirect />} />
+      <Route path="/task/:slug" element={<LegacyTaskRedirect />} />
+      <Route path="/obs/board/:slug" element={<LegacyObsBoardRedirect />} />
+      <Route path="/obs/bar/board/:slug" element={<LegacyObsBoardBarRedirect />} />
+      <Route path="/obs/task/:slug" element={<LegacyObsTaskRedirect />} />
+
+      {/* 404 */}
+      <Route path="*" element={
+        <p className="status" style={{ padding: 24 }}>
+          Страница не найдена. <Link to="/">На главную</Link>
+        </p>
+      } />
     </Routes>
   );
 }

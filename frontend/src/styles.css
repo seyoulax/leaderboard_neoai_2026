@@ -671,3 +671,50 @@ tr.row-down > td {
   letter-spacing: 0.06em;
   color: var(--muted);
 }
+
+.competitions-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  padding: 24px;
+}
+
+.competition-card {
+  display: block;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 120ms ease, transform 120ms ease;
+}
+
+.competition-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.competition-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.competition-subtitle {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.admin-comp-create { padding: 16px; border-bottom: 1px solid var(--line); }
+.admin-comp-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.admin-comp-row input { padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--ink); }
+.admin-comp-table { width: 100%; border-collapse: collapse; }
+.admin-comp-table th, .admin-comp-table td { padding: 8px 12px; border-bottom: 1px solid var(--line); text-align: left; }
+.admin-comp-table input { width: 100%; padding: 4px 8px; background: transparent; color: var(--ink); border: 1px solid transparent; border-radius: 4px; }
+.admin-comp-table input:focus { border-color: var(--accent); outline: none; }
+
+.admin-pp-upload { padding: 16px; display: flex; gap: 12px; align-items: center; }
+.admin-pp-textarea { width: calc(100% - 32px); margin: 0 16px; font-family: ui-monospace, monospace; font-size: 12px; padding: 12px; background: transparent; color: var(--text); border: 1px solid var(--border); border-radius: 8px; }
+.admin-pp-preview { padding: 8px 16px; }
+.admin-pp-table { width: 100%; border-collapse: collapse; }
+.admin-pp-table th, .admin-pp-table td { padding: 6px 16px; border-bottom: 1px solid var(--border); text-align: left; }

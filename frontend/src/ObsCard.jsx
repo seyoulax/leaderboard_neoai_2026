@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { getCurrentCard } from './api';
 import './obs.css';
 
 const POLL_MS = 2000;
 
 export default function ObsCard() {
+  const { competitionSlug } = useParams();
+
   useEffect(() => {
     document.documentElement.classList.add('obs');
     return () => document.documentElement.classList.remove('obs');
@@ -18,7 +21,7 @@ export default function ObsCard() {
 
     async function fetchCard() {
       try {
-        const data = await getCurrentCard();
+        const data = await getCurrentCard(competitionSlug);
         if (!active) return;
         setParticipant(data.current);
         setStats(data.kaggleStats);
@@ -33,7 +36,7 @@ export default function ObsCard() {
       active = false;
       clearInterval(timer);
     };
-  }, []);
+  }, [competitionSlug]);
 
   if (!participant) return null;
 
