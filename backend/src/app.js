@@ -379,8 +379,8 @@ async function refreshCompetition(slug) {
       });
       taskRows.push({
         ...task,
-        baselineScorePublic: fetched.anchors.baselineScore,
-        authorScorePublic: fetched.anchors.authorScore,
+        baselineScorePublic: fetched.anchors.baselineScore ?? task.baselineScorePublic,
+        authorScorePublic: fetched.anchors.authorScore ?? task.authorScorePublic,
         updatedAt: new Date().toISOString(),
         rows: fetched.rows,
       });
@@ -393,8 +393,8 @@ async function refreshCompetition(slug) {
       if (prev && Array.isArray(prev.entries)) {
         taskRows.push({
           ...task,
-          baselineScorePublic: prev.baselineScore,
-          authorScorePublic: prev.authorScore,
+          baselineScorePublic: prev.baselineScore ?? task.baselineScorePublic,
+          authorScorePublic: prev.authorScore ?? task.authorScorePublic,
           updatedAt: prev.updatedAt || compCache.updatedAt,
           rows: prev.entries.map((e) => ({
             participantKey: e.participantKey,
@@ -439,8 +439,8 @@ async function refreshCompetition(slug) {
     const rows = buildPrivateRows({ records: participantRecords, higherIsBetter: task.higherIsBetter, participants });
     privateTaskRows.push({
       ...task,
-      baselineScorePrivate: anchors.baselineScore,
-      authorScorePrivate: anchors.authorScore,
+      baselineScorePrivate: anchors.baselineScore ?? task.baselineScorePrivate,
+      authorScorePrivate: anchors.authorScore ?? task.authorScorePrivate,
       updatedAt: file.updatedAt,
       rows,
     });
@@ -550,7 +550,7 @@ export function createApp() {
   const app = express();
   app.set('trust proxy', true);
   app.use(cors());
-  app.use(express.json());
+  app.use(express.json({ limit: '50mb' }));
 
   app.get('/api/health', (_req, res) => {
     const competitions = cache.competitionsIndex.map((c) => {
