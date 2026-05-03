@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { getOverallLeaderboard } from './api';
 import './obs.css';
 
@@ -40,12 +41,14 @@ function usePolling(loader) {
 }
 
 export default function ObsCycle() {
+  const { competitionSlug } = useParams();
+
   useEffect(() => {
     document.documentElement.classList.add('obs');
     return () => document.documentElement.classList.remove('obs');
   }, []);
 
-  const { data, loading, error } = usePolling(() => getOverallLeaderboard());
+  const { data, loading, error } = usePolling(() => getOverallLeaderboard(competitionSlug));
   const [pageIdx, setPageIdx] = useState(0);
 
   useEffect(() => {

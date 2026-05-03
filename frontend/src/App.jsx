@@ -185,27 +185,31 @@ function sortedVisibleBoards(boards) {
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 }
 
-function Layout({ children, tasks, boards }) {
+function Layout({ children, tasks, boards, competitionSlug }) {
   const visibleBoards = sortedVisibleBoards(boards);
+  const base = `/competitions/${encodeURIComponent(competitionSlug)}`;
   return (
     <div className="page">
       <header className="hero">
-        <p className="eyebrow">Northern Eurasia Olympiad in Artificial Intelligence 2026</p>
+        <p className="eyebrow"><Link to="/" className="eyebrow-link">← все соревнования</Link></p>
         <h1>NEOAI</h1>
         <p className="subtitle">Live Leaderboard · нормализация: top1 = 100, last = 0. Общий балл = сумма по всем задачам.</p>
       </header>
 
       <nav className="tabs">
-        <NavLink to="/leaderboard" className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
+        <NavLink to={`${base}/leaderboard`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
           Общий ЛБ
         </NavLink>
+        <NavLink to={`${base}/cycle`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
+          По 15 (цикл)
+        </NavLink>
         {visibleBoards.map((board) => (
-          <NavLink key={board.slug} to={`/board/${board.slug}`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
+          <NavLink key={board.slug} to={`${base}/board/${board.slug}`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
             {board.title}
           </NavLink>
         ))}
         {tasks.map((task) => (
-          <NavLink key={task.slug} to={`/task/${task.slug}`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
+          <NavLink key={task.slug} to={`${base}/task/${task.slug}`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
             {task.title}
           </NavLink>
         ))}
@@ -234,7 +238,8 @@ function ErrorBanner({ errors }) {
 }
 
 function OverallPage() {
-  const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
+  const { competitionSlug } = useParams();
+  const { data, loading, error } = usePolling(() => getOverallLeaderboard(competitionSlug), [competitionSlug]);
   const [mode, setMode] = useState('public');
   const [filter, setFilter] = useState('all');
   const [query, setQuery] = useState('');
@@ -331,7 +336,8 @@ function CyclingOverallPage() {
   const PAGE_SIZE = 15;
   const PAGE_MS = 20_000;
 
-  const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
+  const { competitionSlug } = useParams();
+  const { data, loading, error } = usePolling(() => getOverallLeaderboard(competitionSlug), [competitionSlug]);
   const [pageIdx, setPageIdx] = useState(0);
   const [filter, setFilter] = useState('all');
 
@@ -423,9 +429,9 @@ function CyclingOverallPage() {
 }
 
 function BoardPage({ boards }) {
-  const { slug } = useParams();
+  const { competitionSlug, slug } = useParams();
   const board = (boards || []).find((b) => b.slug === slug);
-  const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
+  const { data, loading, error } = usePolling(() => getOverallLeaderboard(competitionSlug), [competitionSlug]);
   const [mode, setMode] = useState('public');
   const [filter, setFilter] = useState('all');
   const [query, setQuery] = useState('');
@@ -549,8 +555,8 @@ function BoardPage({ boards }) {
 }
 
 function TaskPage() {
-  const { slug } = useParams();
-  const { data, loading, error } = usePolling(() => getTaskLeaderboard(slug), [slug]);
+  const { competitionSlug, slug } = useParams();
+  const { data, loading, error } = usePolling(() => getTaskLeaderboard(competitionSlug, slug), [competitionSlug, slug]);
   const [mode, setMode] = useState('public');
   const [filter, setFilter] = useState('all');
   const [query, setQuery] = useState('');
@@ -630,7 +636,8 @@ function TaskPage() {
 }
 
 function ObsOverall() {
-  const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
+  const { competitionSlug } = useParams();
+  const { data, loading, error } = usePolling(() => getOverallLeaderboard(competitionSlug), [competitionSlug]);
   const rows = (data?.oursOverall || []).map((r) => ({
     key: r.participantKey,
     name: r.nickname || r.teamName || '-',
@@ -649,10 +656,10 @@ function ObsOverall() {
 }
 
 function ObsBoard() {
-  const { slug } = useParams();
-  const boardsState = usePolling(() => getBoards(), []);
+  const { competitionSlug, slug } = useParams();
+  const boardsState = usePolling(() => getBoards(competitionSlug), [competitionSlug]);
   const board = (boardsState.data?.boards || []).find((b) => b.slug === slug);
-  const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
+  const { data, loading, error } = usePolling(() => getOverallLeaderboard(competitionSlug), [competitionSlug]);
 
   if (!boardsState.loading && !board) {
     return <ObsView contextLabel="Лидерборд не найден" rows={[]} loading={false} error={`Лидерборд '${slug}' не найден`} />;
@@ -708,8 +715,8 @@ function formatRawScore(score) {
 }
 
 function ObsTask() {
-  const { slug } = useParams();
-  const { data, loading, error } = usePolling(() => getTaskLeaderboard(slug), [slug]);
+  const { competitionSlug, slug } = useParams();
+  const { data, loading, error } = usePolling(() => getTaskLeaderboard(competitionSlug, slug), [competitionSlug, slug]);
 
   const task = data?.task;
   const rows = (data?.oursTask?.entries || []).map((r) => ({
@@ -731,10 +738,10 @@ function ObsTask() {
 }
 
 function ObsBoardBar() {
-  const { slug } = useParams();
-  const boardsState = usePolling(() => getBoards(), []);
+  const { competitionSlug, slug } = useParams();
+  const boardsState = usePolling(() => getBoards(competitionSlug), [competitionSlug]);
   const board = (boardsState.data?.boards || []).find((b) => b.slug === slug);
-  const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
+  const { data, loading, error } = usePolling(() => getOverallLeaderboard(competitionSlug), [competitionSlug]);
 
   if (!boardsState.loading && !board) {
     return <ObsBar contextLabel="—" rows={[]} loading={false} error={`Лидерборд '${slug}' не найден`} />;
