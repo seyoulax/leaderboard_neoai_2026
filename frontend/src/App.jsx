@@ -1109,14 +1109,24 @@ function AdminTasksPage() {
   const [savedAt, setSavedAt] = useState(null);
 
   function normalize(rawList) {
-    return (rawList || []).map((t) => ({
-      slug: t.slug || '',
-      title: t.title || '',
-      competition: t.competition || '',
-      higherIsBetter: t.higherIsBetter !== false,
-      baselineScore: t.baselineScore == null ? '' : String(t.baselineScore),
-      authorScore: t.authorScore == null ? '' : String(t.authorScore),
-    }));
+    return (rawList || []).map((t) => {
+      const fallbackBase = t.baselineScore;
+      const fallbackAuthor = t.authorScore;
+      const pick = (v, fb) => {
+        const x = v ?? fb;
+        return x == null ? '' : String(x);
+      };
+      return {
+        slug: t.slug || '',
+        title: t.title || '',
+        competition: t.competition || '',
+        higherIsBetter: t.higherIsBetter !== false,
+        baselineScorePublic: pick(t.baselineScorePublic, fallbackBase),
+        authorScorePublic: pick(t.authorScorePublic, fallbackAuthor),
+        baselineScorePrivate: pick(t.baselineScorePrivate, fallbackBase),
+        authorScorePrivate: pick(t.authorScorePrivate, fallbackAuthor),
+      };
+    });
   }
 
   async function load() {
@@ -1160,7 +1170,7 @@ function AdminTasksPage() {
   function add() {
     setTasks((prev) => [
       ...prev,
-      { slug: '', title: '', competition: '', higherIsBetter: true, baselineScore: '', authorScore: '' },
+      { slug: '', title: '', competition: '', higherIsBetter: true, baselineScorePublic: '', authorScorePublic: '', baselineScorePrivate: '', authorScorePrivate: '' },
     ]);
   }
 
@@ -1203,8 +1213,10 @@ function AdminTasksPage() {
           <span style={{ flex: '0 0 220px' }}>title</span>
           <span style={{ flex: 1 }}>competition</span>
           <span style={{ flex: '0 0 110px', textAlign: 'center' }}>higherIsBetter</span>
-          <span style={{ flex: '0 0 100px' }}>baseline</span>
-          <span style={{ flex: '0 0 100px' }}>author</span>
+          <span style={{ flex: '0 0 90px' }}>pub baseline</span>
+          <span style={{ flex: '0 0 90px' }}>pub author</span>
+          <span style={{ flex: '0 0 90px' }}>priv baseline</span>
+          <span style={{ flex: '0 0 90px' }}>priv author</span>
           <span style={{ flex: '0 0 140px' }}></span>
         </div>
 
@@ -1242,20 +1254,38 @@ function AdminTasksPage() {
             </label>
             <input
               className="control-input"
-              style={{ flex: '0 0 100px' }}
+              style={{ flex: '0 0 90px' }}
               type="number"
               step="any"
-              value={task.baselineScore}
-              onChange={(e) => update(idx, { baselineScore: e.target.value })}
+              value={task.baselineScorePublic}
+              onChange={(e) => update(idx, { baselineScorePublic: e.target.value })}
               placeholder=""
             />
             <input
               className="control-input"
-              style={{ flex: '0 0 100px' }}
+              style={{ flex: '0 0 90px' }}
               type="number"
               step="any"
-              value={task.authorScore}
-              onChange={(e) => update(idx, { authorScore: e.target.value })}
+              value={task.authorScorePublic}
+              onChange={(e) => update(idx, { authorScorePublic: e.target.value })}
+              placeholder=""
+            />
+            <input
+              className="control-input"
+              style={{ flex: '0 0 90px' }}
+              type="number"
+              step="any"
+              value={task.baselineScorePrivate}
+              onChange={(e) => update(idx, { baselineScorePrivate: e.target.value })}
+              placeholder=""
+            />
+            <input
+              className="control-input"
+              style={{ flex: '0 0 90px' }}
+              type="number"
+              step="any"
+              value={task.authorScorePrivate}
+              onChange={(e) => update(idx, { authorScorePrivate: e.target.value })}
               placeholder=""
             />
             <span style={{ flex: '0 0 140px', display: 'flex', gap: 4, justifyContent: 'flex-end' }}>

@@ -82,16 +82,18 @@ function normalizeTaskScores(entries, higherIsBetter, baselineScore, authorScore
   });
 }
 
-export function buildLeaderboards(tasksWithRows) {
+export function buildLeaderboards(tasksWithRows, { variant = 'public' } = {}) {
   const byTask = {};
   const teams = new Map();
 
   for (const task of tasksWithRows) {
+    const baselineScore = variant === 'private' ? task.baselineScorePrivate : task.baselineScorePublic;
+    const authorScore = variant === 'private' ? task.authorScorePrivate : task.authorScorePublic;
     const normalized = normalizeTaskScores(
       task.rows,
       task.higherIsBetter,
-      task.baselineScore,
-      task.authorScore
+      baselineScore,
+      authorScore
     );
 
     byTask[task.slug] = {
@@ -99,8 +101,8 @@ export function buildLeaderboards(tasksWithRows) {
       title: task.title,
       competition: task.competition,
       higherIsBetter: task.higherIsBetter,
-      baselineScore: task.baselineScore,
-      authorScore: task.authorScore,
+      baselineScore,
+      authorScore,
       updatedAt: task.updatedAt,
       entries: normalized
         .sort((a, b) => {
