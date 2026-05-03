@@ -4,24 +4,29 @@
     "title": "Day 1 NLP",
     "competition": "neoai-2026-day-1-nlp",
     "higherIsBetter": false,
-    "baselineScore": 0.06106,
-    "authorScore": 0.17381
+    "baselineScorePublic": 0.06106,
+    "authorScorePublic": 0.17381,
+    "baselineScorePrivate": 0.06106,
+    "authorScorePrivate": 0.17381
   },
   {
     "slug": "task-2",
     "title": "Day 2 CV",
     "competition": "neoai-2026-day-1-cv",
     "higherIsBetter": true,
-    "baselineScore": 0.81254,
-    "authorScore": 0.15591
+    "baselineScorePublic": 0.81254,
+    "authorScorePublic": 0.15591,
+    "baselineScorePrivate": 0.81254,
+    "authorScorePrivate": 0.15591
   },
   {
     "slug": "task-3",
     "title": "Day 1 KaggleForcing",
     "competition": "neoai-2026-day-1-kaggleforces",
     "higherIsBetter": true,
-    "baselineScore": 0.54662,
-    "authorScore": 0.80723
+    "baselineScorePublic": 0.54662,
+    "authorScorePublic": 0.80723,
+    "baselineScorePrivate": 0.54662,
+    "authorScorePrivate": 0.80723
   }
-  
 ]

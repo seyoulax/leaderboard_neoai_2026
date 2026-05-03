@@ -50,14 +50,35 @@ function validateTasks(input) {
     if (seen.has(normSlug)) throw new Error(`duplicate slug: ${normSlug}`);
     seen.add(normSlug);
 
-    const baselineScore = parseOptionalNumber(task.baselineScore, `task #${idx + 1}: baselineScore`);
-    const authorScore = parseOptionalNumber(task.authorScore, `task #${idx + 1}: authorScore`);
+    const baselineScorePublic = parseOptionalNumber(
+      task.baselineScorePublic ?? task.baselineScore,
+      `task #${idx + 1}: baselineScorePublic`
+    );
+    const authorScorePublic = parseOptionalNumber(
+      task.authorScorePublic ?? task.authorScore,
+      `task #${idx + 1}: authorScorePublic`
+    );
+    const baselineScorePrivate = parseOptionalNumber(
+      task.baselineScorePrivate ?? task.baselineScore,
+      `task #${idx + 1}: baselineScorePrivate`
+    );
+    const authorScorePrivate = parseOptionalNumber(
+      task.authorScorePrivate ?? task.authorScore,
+      `task #${idx + 1}: authorScorePrivate`
+    );
     if (
-      baselineScore !== null &&
-      authorScore !== null &&
-      baselineScore === authorScore
+      baselineScorePublic !== null &&
+      authorScorePublic !== null &&
+      baselineScorePublic === authorScorePublic
     ) {
-      throw new Error(`task #${idx + 1}: baselineScore and authorScore must differ`);
+      throw new Error(`task #${idx + 1}: baselineScorePublic and authorScorePublic must differ`);
+    }
+    if (
+      baselineScorePrivate !== null &&
+      authorScorePrivate !== null &&
+      baselineScorePrivate === authorScorePrivate
+    ) {
+      throw new Error(`task #${idx + 1}: baselineScorePrivate and authorScorePrivate must differ`);
     }
 
     const result = {
@@ -66,8 +87,10 @@ function validateTasks(input) {
       competition,
       higherIsBetter: task.higherIsBetter !== false,
     };
-    if (baselineScore !== null) result.baselineScore = baselineScore;
-    if (authorScore !== null) result.authorScore = authorScore;
+    if (baselineScorePublic !== null) result.baselineScorePublic = baselineScorePublic;
+    if (authorScorePublic !== null) result.authorScorePublic = authorScorePublic;
+    if (baselineScorePrivate !== null) result.baselineScorePrivate = baselineScorePrivate;
+    if (authorScorePrivate !== null) result.authorScorePrivate = authorScorePrivate;
     return result;
   });
 }
@@ -294,10 +317,10 @@ async function refreshCache() {
       await sleep(REQUEST_GAP_MS);
     }
 
-    const result = buildLeaderboards(taskRows);
+    const result = buildLeaderboards(taskRows, { variant: 'public' });
     annotateWithDeltas(result, { byTask: cache.byTask, overall: cache.overall });
 
-    const oursResult = buildLeaderboards(projectTaskRowsToOurs(taskRows, oursSet));
+    const oursResult = buildLeaderboards(projectTaskRowsToOurs(taskRows, oursSet), { variant: 'public' });
     applyDisplayNames(oursResult, oursDisplayMap);
     annotateWithDeltas(oursResult, { byTask: cache.oursByTask, overall: cache.oursOverall });
 
@@ -319,10 +342,10 @@ async function refreshCache() {
       privateTaskSlugs.push(task.slug);
     }
 
-    const privateResult = buildLeaderboards(privateTaskRows);
+    const privateResult = buildLeaderboards(privateTaskRows, { variant: 'private' });
     annotateWithDeltas(privateResult, { byTask: cache.privateByTask, overall: cache.privateOverall });
 
-    const oursPrivateResult = buildLeaderboards(projectTaskRowsToOurs(privateTaskRows, oursSet));
+    const oursPrivateResult = buildLeaderboards(projectTaskRowsToOurs(privateTaskRows, oursSet), { variant: 'private' });
     applyDisplayNames(oursPrivateResult, oursDisplayMap);
     annotateWithDeltas(oursPrivateResult, {
       byTask: cache.oursPrivateByTask,
@@ -451,8 +474,8 @@ app.get('/api/tasks/:slug', (req, res) => {
         title: meta.title,
         competition: meta.competition,
         higherIsBetter: meta.higherIsBetter,
-        baselineScore: meta.baselineScore,
-        authorScore: meta.authorScore,
+        baselineScore: meta.baselineScorePublic,
+        authorScore: meta.authorScorePublic,
         updatedAt: cache.updatedAt,
         entries: [],
       }
