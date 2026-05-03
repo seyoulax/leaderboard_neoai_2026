@@ -1,90 +1,104 @@
 # Routes
 
-Все фронт-маршруты обслуживает SPA (`react-router-dom`). API живёт под `/api/*` (в проде проксируется системным nginx → backend-контейнер).
+Все фронт-маршруты обслуживает SPA. API живёт под `/api/*`.
 
-`<slug>` ниже — это slug задачи (из `tasks.json`) или борда (из `boards.json`) в зависимости от контекста.
+## Multi-tenant
 
-## Публичные страницы (Layout с навигацией)
+Главная `/` — список соревнований. Каждое соревнование живёт под `/competitions/<slug>/...` со своим набором задач/бордов/участников.
 
-| URL | Что показывает | Источник данных |
-| --- | --- | --- |
-| `/` | Общий лидерборд по всем задачам, сумма баллов | `GET /api/leaderboard` |
-| `/cycle` | Тот же общий ЛБ, циклически по 15 строк (для табло) | `GET /api/leaderboard` |
-| `/board/<slug>` | Лидерборд по подмножеству задач (борд) | `GET /api/leaderboard` + `GET /api/boards` |
-| `/task/<slug>` | Лидерборд одной задачи (отсортирован по Kaggle rank) | `GET /api/tasks/<slug>` |
-| `/control` | Редирект → `/admin/card` (для старых закладок) | — |
+## Публичные страницы
 
-Вкладки слева направо: «Общий ЛБ», «По 15 (цикл)», далее видимые борды (по `order` ASC), далее все задачи.
-
-## Админка (Layout с отдельной навигацией)
-
-Доступ — пароль (`ADMIN_TOKEN` в `backend/.env`). Токен в браузере хранится в `localStorage[neoai_admin_token]`.
-
-| URL | Что делает |
+| URL | Что |
 | --- | --- |
-| `/admin` | Логин (если не авторизован — редирект сюда отовсюду) |
-| `/admin/tasks` | CRUD задач: slug, title, competition, higherIsBetter, baselineScore, authorScore |
-| `/admin/boards` | CRUD лидербордов: slug, title, taskSlugs, visible, order |
-| `/admin/card` | Выбор активной карточки участника для OBS (бывший `/control`) |
+| `/` | Список видимых соревнований |
+| `/competitions/<slug>` | Редирект на `leaderboard` |
+| `/competitions/<slug>/leaderboard` | Общий ЛБ |
+| `/competitions/<slug>/cycle` | Циклическая показ по 15 строк |
+| `/competitions/<slug>/board/<b>` | Лидерборд борда |
+| `/competitions/<slug>/task/<t>` | Лидерборд задачи |
 
-## OBS-оверлеи (без шапки/навигации, для chroma-key)
+## OBS
 
-Каждый — отдельная страница, оптимизированная для захвата в OBS Browser Source.
+| URL |
+| --- |
+| `/obs/competitions/<slug>/overall` |
+| `/obs/competitions/<slug>/cycle` |
+| `/obs/competitions/<slug>/board/<b>` |
+| `/obs/competitions/<slug>/bar/board/<b>` |
+| `/obs/competitions/<slug>/task/<t>` |
+| `/obs/competitions/<slug>/card` |
 
-| URL | Что показывает |
+## Админ
+
+| URL | Что |
 | --- | --- |
-| `/obs/overall` | Общий top-15 текстовыми строками |
-| `/obs/cycle` | Общий ЛБ — цикл по 15 строк |
-| `/obs/board/<slug>` | Текстовые строки top-15 для одного борда |
-| `/obs/bar/board/<slug>` | Тот же борд, но «бар»-визуализация с chip'ами по задачам |
-| `/obs/task/<slug>` | Top-15 одной задачи |
-| `/obs/card` | Карточка текущего активного участника (выбирается в `/admin/card`) |
+| `/admin` | Логин |
+| `/admin/competitions` | CRUD соревнований |
+| `/admin/competitions/<slug>/tasks` | CRUD задач (scoped) |
+| `/admin/competitions/<slug>/boards` | CRUD бордов (scoped) |
+| `/admin/competitions/<slug>/participants` | JSON paste/upload |
+| `/admin/competitions/<slug>/card` | OBS-карточка (scoped) |
+
+## Legacy redirects
+
+Поддерживаются временно (1-2 недели после раскатки):
+
+`/leaderboard`, `/cycle`, `/board/<s>`, `/task/<s>`, `/control`, `/admin/tasks`, `/admin/boards`, `/admin/card`, `/obs/{overall,cycle,board/<s>,bar/board/<s>,task/<s>,card}` → редиректят на эквивалент с `competitions/neoai-2026/`.
 
 ## Backend API
 
-### Публичные
+### Глобальные
 
-| Method | Path | Назначение |
+| Method | Path | Что |
 | --- | --- | --- |
-| GET | `/api/health` | Статус кеша + последние ошибки рефреша |
-| GET | `/api/tasks` | Список задач из `tasks.json` |
-| GET | `/api/boards` | Список бордов из `boards.json` |
-| GET | `/api/leaderboard` | Общий рейтинг (overall + tasks meta) |
-| GET | `/api/tasks/<slug>` | Лидерборд одной задачи |
-| POST | `/api/refresh` | Принудительный pull с Kaggle |
-| GET | `/api/participants` | Список участников + `currentId` |
-| GET | `/api/card` | Текущий участник + его свежие kaggle-stats |
-| POST | `/api/card` | Установить активного (`{id}` или `{id: null}`) |
+| GET | `/api/health` | Статус, состояние всех соревнований |
+| GET | `/api/competitions` | Видимые соревнования |
 
-### Админские (заголовок `x-admin-token: <ADMIN_TOKEN>`)
+### Per-competition (публично)
 
-Если `ADMIN_TOKEN` пуст на бэке — все вернут `503 admin disabled`.
+| Method | Path |
+| --- | --- |
+| GET | `/api/competitions/<slug>` |
+| GET | `/api/competitions/<slug>/leaderboard` |
+| GET | `/api/competitions/<slug>/tasks/<t>` |
+| GET | `/api/competitions/<slug>/boards` |
+| GET | `/api/competitions/<slug>/participants` |
+| POST | `/api/competitions/<slug>/refresh` |
+| GET | `/api/competitions/<slug>/card` |
+| POST | `/api/competitions/<slug>/card` |
 
-| Method | Path | Назначение |
-| --- | --- | --- |
-| GET | `/api/admin/tasks` | Сырой `tasks.json` |
-| PUT | `/api/admin/tasks` | Перезаписать `tasks.json` (тело: `{tasks: [...]}`); после успеха вызывает рефреш кеша |
-| GET | `/api/admin/boards` | Сырой `boards.json` |
-| PUT | `/api/admin/boards` | Перезаписать `boards.json` (тело: `{boards: [...]}`); валидация: уникальный slug, taskSlugs ⊂ tasks |
+### Админ (заголовок `x-admin-token`)
 
-## Файлы данных (примонтированы в backend-контейнер)
+| Method | Path |
+| --- | --- |
+| GET/PUT | `/api/admin/competitions` |
+| POST | `/api/admin/competitions` |
+| DELETE | `/api/admin/competitions/<slug>` |
+| GET/PUT | `/api/admin/competitions/<slug>/tasks` |
+| GET/PUT | `/api/admin/competitions/<slug>/boards` |
+| GET/PUT | `/api/admin/competitions/<slug>/participants` |
+| GET/PUT/DELETE | `/api/admin/competitions/<slug>/tasks/<t>/private` |
 
-| Контейнерный путь | Хост (prod) | Что |
-| --- | --- | --- |
-| `/app/data/tasks.json` | `/opt/neoai-lb/backend/data/tasks.json` | Конфиг задач |
-| `/app/data/boards.json` | `/opt/neoai-lb/backend/data/boards.json` | Конфиг бордов |
-| `/app/data/participants.json` | `/opt/neoai-lb/backend/data/participants.json` | Список участников + их kaggleId/photo/etc. |
-| `/root/.kaggle/` | `/root/.kaggle/` | `kaggle.json` + `access_token` для Kaggle CLI |
+## Файлы данных
+
+```
+data/
+  competitions.json             # индекс
+  competitions/<slug>/
+    tasks.json
+    boards.json
+    participants.json
+    state.json                  # currentParticipantId
+  private/<slug>/<task>.csv
+```
 
 ## ENV-переменные backend
 
 | Переменная | Дефолт | Что |
 | --- | --- | --- |
-| `PORT` | `3001` | На каком порту слушать |
-| `REFRESH_MS` | `60000` | Интервал между обновлениями с Kaggle |
-| `REQUEST_GAP_MS` | `3000` | Пауза между задачами внутри одного refresh-цикла |
-| `KAGGLE_CMD` | `kaggle` | Имя бинаря kaggle CLI |
-| `TASKS_FILE` | `./data/tasks.json` | Путь к tasks |
-| `BOARDS_FILE` | `./data/boards.json` | Путь к boards |
-| `PARTICIPANTS_FILE` | `./data/participants.json` | Путь к участникам |
-| `ADMIN_TOKEN` | (пусто) | Пароль для `/api/admin/*` (пусто = админка отключена) |
+| `PORT` | `3001` | Порт |
+| `REFRESH_MS` | `60000` | Интервал sweep'а всех соревнований |
+| `REQUEST_GAP_MS` | `3000` | Пауза между Kaggle-запросами |
+| `KAGGLE_CMD` | `kaggle` | Бинарь Kaggle CLI |
+| `DATA_DIR` | `./data` | Корень data |
+| `ADMIN_TOKEN` | (пусто) | Токен админки |
