@@ -292,8 +292,8 @@ async function refreshCache() {
         });
         taskRows.push({
           ...task,
-          baselineScorePublic: result.anchors.baselineScore,
-          authorScorePublic: result.anchors.authorScore,
+          baselineScorePublic: result.anchors.baselineScore ?? task.baselineScorePublic,
+          authorScorePublic: result.anchors.authorScore ?? task.authorScorePublic,
           updatedAt: new Date().toISOString(),
           rows: result.rows,
         });
@@ -306,8 +306,8 @@ async function refreshCache() {
         if (prev && Array.isArray(prev.entries)) {
           taskRows.push({
             ...task,
-            baselineScorePublic: prev.baselineScore,
-            authorScorePublic: prev.authorScore,
+            baselineScorePublic: prev.baselineScore ?? task.baselineScorePublic,
+            authorScorePublic: prev.authorScore ?? task.authorScorePublic,
             updatedAt: prev.updatedAt || cache.updatedAt,
             rows: prev.entries.map((e) => ({
               participantKey: e.participantKey,
@@ -346,8 +346,8 @@ async function refreshCache() {
       const rows = buildPrivateRows({ records: participantRecords, higherIsBetter: task.higherIsBetter, participants });
       privateTaskRows.push({
         ...task,
-        baselineScorePrivate: anchors.baselineScore,
-        authorScorePrivate: anchors.authorScore,
+        baselineScorePrivate: anchors.baselineScore ?? task.baselineScorePrivate,
+        authorScorePrivate: anchors.authorScore ?? task.authorScorePrivate,
         updatedAt: file.updatedAt,
         rows,
       });
