@@ -26,6 +26,14 @@ import ObsCard from './ObsCard';
 import CompetitionsListPage from './CompetitionsListPage';
 import AdminCompetitionsPage from './AdminCompetitionsPage';
 import AdminParticipantsPage from './AdminParticipantsPage';
+import {
+  LEGACY_REDIRECTS,
+  LegacyBoardRedirect,
+  LegacyTaskRedirect,
+  LegacyObsBoardRedirect,
+  LegacyObsBoardBarRedirect,
+  LegacyObsTaskRedirect,
+} from './legacyRedirects';
 
 const REFRESH_MS = 30_000;
 
@@ -1534,6 +1542,16 @@ export default function App() {
       <Route path="/obs/competitions/:competitionSlug/bar/board/:slug" element={<ObsBoardBar />} />
       <Route path="/obs/competitions/:competitionSlug/task/:slug" element={<ObsTask />} />
       <Route path="/obs/competitions/:competitionSlug/card" element={<ObsCard />} />
+
+      {/* Legacy URL redirects */}
+      {LEGACY_REDIRECTS.map((r) => (
+        <Route key={r.from} path={r.from} element={<Navigate to={r.to} replace />} />
+      ))}
+      <Route path="/board/:slug" element={<LegacyBoardRedirect />} />
+      <Route path="/task/:slug" element={<LegacyTaskRedirect />} />
+      <Route path="/obs/board/:slug" element={<LegacyObsBoardRedirect />} />
+      <Route path="/obs/bar/board/:slug" element={<LegacyObsBoardBarRedirect />} />
+      <Route path="/obs/task/:slug" element={<LegacyObsTaskRedirect />} />
 
       {/* 404 */}
       <Route path="*" element={
