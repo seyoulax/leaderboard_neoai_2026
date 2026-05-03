@@ -127,37 +127,6 @@ function FilterToggle({ value, onChange }) {
   );
 }
 
-function useOurKaggleSet() {
-  const [set, setSet] = useState(null);
-  useEffect(() => {
-    let active = true;
-    async function load() {
-      try {
-        const data = await getParticipants();
-        if (!active) return;
-        const ids = (data.participants || [])
-          .map((p) => (p.kaggleId || '').toString().trim().toLowerCase())
-          .filter(Boolean);
-        setSet(new Set(ids));
-      } catch {
-        if (active) setSet(new Set());
-      }
-    }
-    load();
-    return () => { active = false; };
-  }, []);
-  return set;
-}
-
-function applyFilter(rows, ourSet, enabled) {
-  if (!enabled || !ourSet) return rows;
-  return rows.filter((r) => ourSet.has((r.nickname || '').toLowerCase()));
-}
-
-function reseatPlaces(rows) {
-  return rows.map((r, i) => ({ ...r, place: i + 1 }));
-}
-
 function usePolling(loader, deps = []) {
   const [state, setState] = useState({
     data: null,
@@ -250,15 +219,17 @@ function OverallPage() {
   const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
   const [mode, setMode] = useState('public');
   const [filter, setFilter] = useState('all');
-  const ourSet = useOurKaggleSet();
 
   if (loading) return <p className="status">Загрузка общего ЛБ...</p>;
   if (error) return <p className="status error">{error}</p>;
   if (!data?.updatedAt) return <p className="status">Бэк прогревается — идёт первое обновление с Kaggle, попробуй через минуту…</p>;
 
   const isPrivate = mode === 'private';
-  const overallSrc = isPrivate ? (data.privateOverall || []) : data.overall;
-  const overall = reseatPlaces(applyFilter(overallSrc, ourSet, filter === 'ours'));
+  const isOurs = filter === 'ours';
+  const overallSrc = isPrivate
+    ? (isOurs ? (data.oursPrivateOverall || []) : (data.privateOverall || []))
+    : (isOurs ? (data.oursOverall || []) : data.overall);
+  const overall = overallSrc;
   const privateAvailable = (data.privateTaskSlugs || []).length > 0;
 
   function exportCSV() {
@@ -343,7 +314,6 @@ function CyclingOverallPage() {
   const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
   const [pageIdx, setPageIdx] = useState(0);
   const [filter, setFilter] = useState('all');
-  const ourSet = useOurKaggleSet();
 
   useEffect(() => {
     const timer = setInterval(() => setPageIdx((p) => p + 1), PAGE_MS);
@@ -354,7 +324,7 @@ function CyclingOverallPage() {
   if (error) return <p className="status error">{error}</p>;
   if (!data?.updatedAt) return <p className="status">Бэк прогревается — идёт первое обновление с Kaggle…</p>;
 
-  const filteredOverall = reseatPlaces(applyFilter(data.overall, ourSet, filter === 'ours'));
+  const filteredOverall = filter === 'ours' ? (data.oursOverall || []) : (data.overall || []);
   const total = filteredOverall.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const currentPage = pageIdx % totalPages;
@@ -438,7 +408,6 @@ function BoardPage({ boards }) {
   const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
   const [mode, setMode] = useState('public');
   const [filter, setFilter] = useState('all');
-  const ourSet = useOurKaggleSet();
 
   if (!board) return <p className="status error">Лидерборд '{slug}' не найден.</p>;
   if (loading) return <p className="status">Загрузка лидерборда...</p>;
@@ -446,8 +415,10 @@ function BoardPage({ boards }) {
   if (!data?.updatedAt) return <p className="status">Бэк прогревается — идёт первое обновление с Kaggle…</p>;
 
   const isPrivate = mode === 'private';
-  const overallRaw = isPrivate ? (data.privateOverall || []) : data.overall;
-  const overallSrc = applyFilter(overallRaw, ourSet, filter === 'ours');
+  const isOurs = filter === 'ours';
+  const overallSrc = isPrivate
+    ? (isOurs ? (data.oursPrivateOverall || []) : (data.privateOverall || []))
+    : (isOurs ? (data.oursOverall || []) : data.overall);
   const privateTaskSlugs = new Set(data.privateTaskSlugs || []);
   const boardHasPrivate = board.taskSlugs.some((s) => privateTaskSlugs.has(s));
 
@@ -558,15 +529,17 @@ function TaskPage() {
   const { data, loading, error } = usePolling(() => getTaskLeaderboard(slug), [slug]);
   const [mode, setMode] = useState('public');
   const [filter, setFilter] = useState('all');
-  const ourSet = useOurKaggleSet();
 
   if (loading) return <p className="status">Загрузка ЛБ задачи...</p>;
   if (error) return <p className="status error">{error}</p>;
 
   const isPrivate = mode === 'private';
+  const isOurs = filter === 'ours';
   const task = isPrivate ? (data.privateTask || data.task) : data.task;
-  const entriesRaw = isPrivate ? (data.privateTask?.entries || []) : data.task.entries;
-  const entries = reseatPlaces(applyFilter(entriesRaw, ourSet, filter === 'ours'));
+  const entriesRaw = isOurs
+    ? (isPrivate ? (data.oursPrivateTask?.entries || []) : (data.oursTask?.entries || []))
+    : (isPrivate ? (data.privateTask?.entries || []) : data.task.entries);
+  const entries = entriesRaw;
   const privateAvailable = !!data.privateTask;
 
   function exportCSV() {
@@ -632,8 +605,7 @@ function TaskPage() {
 
 function ObsOverall() {
   const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
-  const ourSet = useOurKaggleSet();
-  const rows = applyFilter(data?.overall || [], ourSet, true).map((r) => ({
+  const rows = (data?.oursOverall || []).map((r) => ({
     key: r.participantKey,
     name: r.nickname || r.teamName || '-',
     score: r.totalPoints.toFixed(2),
@@ -655,7 +627,6 @@ function ObsBoard() {
   const boardsState = usePolling(() => getBoards(), []);
   const board = (boardsState.data?.boards || []).find((b) => b.slug === slug);
   const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
-  const ourSet = useOurKaggleSet();
 
   if (!boardsState.loading && !board) {
     return <ObsView contextLabel="Лидерборд не найден" rows={[]} loading={false} error={`Лидерборд '${slug}' не найден`} />;
@@ -668,7 +639,7 @@ function ObsBoard() {
     .filter((t) => board.taskSlugs.includes(t.slug))
     .map((t) => t.slug);
 
-  const rows = applyFilter(data?.overall || [], ourSet, true)
+  const rows = (data?.oursOverall || [])
     .map((r) => {
       const total = presentSlugs.reduce((sum, slug) => sum + (r.tasks?.[slug]?.points ?? 0), 0);
       const hasAnyPrev = presentSlugs.some((slug) => r.tasks?.[slug]?.previousPoints != null);
@@ -713,10 +684,9 @@ function formatRawScore(score) {
 function ObsTask() {
   const { slug } = useParams();
   const { data, loading, error } = usePolling(() => getTaskLeaderboard(slug), [slug]);
-  const ourSet = useOurKaggleSet();
 
   const task = data?.task;
-  const rows = applyFilter(task?.entries || [], ourSet, true).map((r) => ({
+  const rows = (data?.oursTask?.entries || []).map((r) => ({
     key: r.participantKey,
     name: r.nickname || r.teamName || '-',
     score: formatRawScore(r.score),
@@ -739,7 +709,6 @@ function ObsBoardBar() {
   const boardsState = usePolling(() => getBoards(), []);
   const board = (boardsState.data?.boards || []).find((b) => b.slug === slug);
   const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
-  const ourSet = useOurKaggleSet();
 
   if (!boardsState.loading && !board) {
     return <ObsBar contextLabel="—" rows={[]} loading={false} error={`Лидерборд '${slug}' не найден`} />;
@@ -757,7 +726,7 @@ function ObsBoardBar() {
     return { slug: t.slug, short };
   });
 
-  const rows = applyFilter(data?.overall || [], ourSet, true)
+  const rows = (data?.oursOverall || [])
     .map((r) => {
       const total = presentSlugs.reduce((sum, slug) => sum + (r.tasks?.[slug]?.points ?? 0), 0);
       const hasAnyPrev = presentSlugs.some((slug) => r.tasks?.[slug]?.previousPoints != null);

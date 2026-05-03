@@ -191,10 +191,32 @@ let cache = {
   privateOverall: [],
   privateByTask: {},
   privateTaskSlugs: [],
+  oursOverall: [],
+  oursByTask: {},
+  oursPrivateOverall: [],
+  oursPrivateByTask: {},
   tasks: [],
   errors: [],
   isRefreshing: false,
 };
+
+function buildOursKaggleSet(list) {
+  const set = new Set();
+  for (const p of list || []) {
+    const id = (p && p.kaggleId ? String(p.kaggleId) : '').trim().toLowerCase();
+    if (id) set.add(id);
+  }
+  return set;
+}
+
+function filterRowsByOurs(rows, oursSet) {
+  if (!oursSet || oursSet.size === 0) return [];
+  return (rows || []).filter((r) => oursSet.has((r.nickname || '').toLowerCase()));
+}
+
+function projectTaskRowsToOurs(taskRows, oursSet) {
+  return taskRows.map((t) => ({ ...t, rows: filterRowsByOurs(t.rows, oursSet) }));
+}
 
 async function refreshCache() {
   if (cache.isRefreshing) {
@@ -205,6 +227,8 @@ async function refreshCache() {
 
   try {
     const tasks = await loadTasks();
+    participants = await loadParticipants();
+    const oursSet = buildOursKaggleSet(participants);
 
     const previousByTask = cache.byTask || {};
     const taskRows = [];
@@ -247,6 +271,9 @@ async function refreshCache() {
     const result = buildLeaderboards(taskRows);
     annotateWithDeltas(result, { byTask: cache.byTask, overall: cache.overall });
 
+    const oursResult = buildLeaderboards(projectTaskRowsToOurs(taskRows, oursSet));
+    annotateWithDeltas(oursResult, { byTask: cache.oursByTask, overall: cache.oursOverall });
+
     const privateTaskRows = [];
     const privateTaskSlugs = [];
     for (const task of tasks) {
@@ -268,6 +295,12 @@ async function refreshCache() {
     const privateResult = buildLeaderboards(privateTaskRows);
     annotateWithDeltas(privateResult, { byTask: cache.privateByTask, overall: cache.privateOverall });
 
+    const oursPrivateResult = buildLeaderboards(projectTaskRowsToOurs(privateTaskRows, oursSet));
+    annotateWithDeltas(oursPrivateResult, {
+      byTask: cache.oursPrivateByTask,
+      overall: cache.oursPrivateOverall,
+    });
+
     cache = {
       ...cache,
       updatedAt: new Date().toISOString(),
@@ -277,6 +310,10 @@ async function refreshCache() {
       privateOverall: privateResult.overall,
       privateByTask: privateResult.byTask,
       privateTaskSlugs,
+      oursOverall: oursResult.overall,
+      oursByTask: oursResult.byTask,
+      oursPrivateOverall: oursPrivateResult.overall,
+      oursPrivateByTask: oursPrivateResult.byTask,
       errors,
       isRefreshing: false,
     };
@@ -353,6 +390,10 @@ app.get('/api/leaderboard', (_req, res) => {
     privateOverall: cache.privateOverall,
     privateByTask: cache.privateByTask,
     privateTaskSlugs: cache.privateTaskSlugs,
+    oursOverall: cache.oursOverall,
+    oursByTask: cache.oursByTask,
+    oursPrivateOverall: cache.oursPrivateOverall,
+    oursPrivateByTask: cache.oursPrivateByTask,
     errors: cache.errors,
   });
 });
@@ -363,8 +404,12 @@ app.get('/api/tasks/:slug', (req, res) => {
     Object.keys(map).find((k) => k.toLowerCase() === wanted);
   const taskKey = findKey(cache.byTask);
   const privateKey = findKey(cache.privateByTask);
+  const oursKey = findKey(cache.oursByTask);
+  const oursPrivateKey = findKey(cache.oursPrivateByTask);
   const task = taskKey ? cache.byTask[taskKey] : null;
   const privateTask = privateKey ? cache.privateByTask[privateKey] : null;
+  const oursTask = oursKey ? cache.oursByTask[oursKey] : null;
+  const oursPrivateTask = oursPrivateKey ? cache.oursPrivateByTask[oursPrivateKey] : null;
   const meta = (cache.tasks || []).find((t) => t.slug.toLowerCase() === wanted);
 
   if (!task && !privateTask && !meta) {
@@ -393,6 +438,8 @@ app.get('/api/tasks/:slug', (req, res) => {
     updatedAt: cache.updatedAt,
     task: task || fallback,
     privateTask,
+    oursTask,
+    oursPrivateTask,
     errors: taskErrors.length ? taskErrors : cache.errors,
   });
 });
