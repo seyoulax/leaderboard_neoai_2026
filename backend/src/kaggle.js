@@ -25,37 +25,50 @@ function toNumber(value) {
 function parseLeaderboardRows(csvRaw) {
   const rows = parse(csvRaw, { columns: true, skip_empty_lines: true, bom: true });
 
-  return rows
-    .map((row) => {
-      const teamId = pickValue(row, ['teamId', 'TeamId']);
-      const teamName = pickValue(row, ['teamName', 'TeamName', 'team_name', 'Team']);
-      const teamMemberUserNames = pickValue(row, ['teamMemberUserNames', 'TeamMemberUserNames']);
-      const scoreRaw = pickValue(row, ['score', 'Score']);
-      const rankRaw = pickValue(row, ['rank', 'Rank']);
+  const entries = [];
+  let baselineScore = null;
+  let authorScore = null;
 
-      const score = toNumber(scoreRaw);
-      const rank = toNumber(rankRaw);
-      const nickname = teamMemberUserNames
-        ? String(teamMemberUserNames)
-            .split(',')[0]
-            .trim()
-        : null;
-      const participantKey = nickname || (teamId ? `team-${teamId}` : String(teamName || 'unknown-team'));
+  for (const row of rows) {
+    const teamId = pickValue(row, ['teamId', 'TeamId']);
+    const teamName = pickValue(row, ['teamName', 'TeamName', 'team_name', 'Team']);
+    const teamMemberUserNames = pickValue(row, ['teamMemberUserNames', 'TeamMemberUserNames']);
+    const scoreRaw = pickValue(row, ['score', 'Score']);
+    const rankRaw = pickValue(row, ['rank', 'Rank']);
 
-      if (score === null) {
-        return null;
+    const score = toNumber(scoreRaw);
+    const rank = toNumber(rankRaw);
+
+    if (score === null) continue;
+
+    if (rank === 0) {
+      const tn = String(teamName || '').toLowerCase();
+      if (tn.includes('baseline')) {
+        if (baselineScore === null) baselineScore = score;
+        continue;
       }
+      if (tn.includes('author')) {
+        if (authorScore === null) authorScore = score;
+        continue;
+      }
+    }
 
-      return {
-        participantKey,
-        nickname,
-        teamId: teamId ? String(teamId) : null,
-        teamName: teamName ? String(teamName) : null,
-        score,
-        rank,
-      };
-    })
-    .filter(Boolean);
+    const nickname = teamMemberUserNames
+      ? String(teamMemberUserNames).split(',')[0].trim()
+      : null;
+    const participantKey = nickname || (teamId ? `team-${teamId}` : String(teamName || 'unknown-team'));
+
+    entries.push({
+      participantKey,
+      nickname,
+      teamId: teamId ? String(teamId) : null,
+      teamName: teamName ? String(teamName) : null,
+      score,
+      rank,
+    });
+  }
+
+  return { rows: entries, anchors: { baselineScore, authorScore } };
 }
 
 function pickPublicCsvEntry(entries) {

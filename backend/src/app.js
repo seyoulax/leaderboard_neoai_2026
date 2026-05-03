@@ -11,6 +11,7 @@ import { buildLeaderboards } from './leaderboard.js';
 import {
   parsePrivateCsv,
   buildPrivateRows,
+  extractPrivateAnchors,
   readPrivateFile,
   writePrivateFile,
   deletePrivateFile,
@@ -372,11 +373,17 @@ async function refreshCompetition(slug) {
 
   for (const task of tasks) {
     try {
-      const rows = await fetchCompetitionLeaderboard({
+      const fetched = await fetchCompetitionLeaderboard({
         competition: task.competition,
         kaggleCmd: KAGGLE_CMD,
       });
-      taskRows.push({ ...task, updatedAt: new Date().toISOString(), rows });
+      taskRows.push({
+        ...task,
+        baselineScorePublic: fetched.anchors.baselineScore,
+        authorScorePublic: fetched.anchors.authorScore,
+        updatedAt: new Date().toISOString(),
+        rows: fetched.rows,
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       const short = `${task.slug}: ${message.split('\n')[0]}`;
@@ -386,6 +393,8 @@ async function refreshCompetition(slug) {
       if (prev && Array.isArray(prev.entries)) {
         taskRows.push({
           ...task,
+          baselineScorePublic: prev.baselineScore,
+          authorScorePublic: prev.authorScore,
           updatedAt: prev.updatedAt || compCache.updatedAt,
           rows: prev.entries.map((e) => ({
             participantKey: e.participantKey,
@@ -420,14 +429,21 @@ async function refreshCompetition(slug) {
     if (!file) continue;
     let records;
     try {
-      records = parsePrivateCsv(file.raw);
+      records = parsePrivateCsv(file.raw, { higherIsBetter: task.higherIsBetter });
     } catch (e) {
       console.warn(`[private] parse failed for ${slug}/${task.slug}: ${e.message}`);
       continue;
     }
     if (!records.length) continue;
-    const rows = buildPrivateRows({ records, higherIsBetter: task.higherIsBetter, participants });
-    privateTaskRows.push({ ...task, updatedAt: file.updatedAt, rows });
+    const { records: participantRecords, anchors } = extractPrivateAnchors(records);
+    const rows = buildPrivateRows({ records: participantRecords, higherIsBetter: task.higherIsBetter, participants });
+    privateTaskRows.push({
+      ...task,
+      baselineScorePrivate: anchors.baselineScore,
+      authorScorePrivate: anchors.authorScore,
+      updatedAt: file.updatedAt,
+      rows,
+    });
     privateTaskSlugs.push(task.slug);
   }
 
@@ -888,14 +904,15 @@ export function createApp() {
     const slug = ensureKnownSlug(req, res); if (!slug) return;
     try {
       const tasks = await loadTasksFor(slug);
-      if (!tasks.find((t) => t.slug === req.params.taskSlug)) {
+      const task = tasks.find((t) => t.slug === req.params.taskSlug);
+      if (!task) {
         res.status(404).json({ error: `task '${req.params.taskSlug}' not found in '${slug}'` });
         return;
       }
       const csv = typeof req.body?.csv === 'string' ? req.body.csv : '';
-      const records = parsePrivateCsv(csv);
+      const records = parsePrivateCsv(csv, { higherIsBetter: task.higherIsBetter });
       if (!records.length) {
-        res.status(400).json({ error: 'no valid rows parsed (need columns kaggle_id and raw_score)' });
+        res.status(400).json({ error: 'no valid rows parsed (need either Kaggle all-submissions columns UserName/IsSelected/PublicScore/PrivateScore or kaggle_id/raw_score)' });
         return;
       }
       await writePrivateFile(privateDirFor(slug), req.params.taskSlug, csv);

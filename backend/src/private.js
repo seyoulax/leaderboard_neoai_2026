@@ -20,9 +20,76 @@ function toNumber(value) {
   return Number.isFinite(n) ? n : null;
 }
 
-export function parsePrivateCsv(raw) {
+function isAllSubmissionsFormat(records) {
+  if (!records.length) return false;
+  const r = records[0];
+  return (
+    Object.prototype.hasOwnProperty.call(r, 'UserName') &&
+    Object.prototype.hasOwnProperty.call(r, 'IsSelected') &&
+    Object.prototype.hasOwnProperty.call(r, 'PublicScore') &&
+    Object.prototype.hasOwnProperty.call(r, 'PrivateScore')
+  );
+}
+
+// Mirrors calc_scores.py:get_final_score
+function pickFinalPrivate(subs, higherIsBetter) {
+  const cmp = higherIsBetter ? (a, b) => a - b : (a, b) => b - a;
+  const best = (arr) => arr.reduce((acc, v) => (acc === null || cmp(v, acc) > 0 ? v : acc), null);
+
+  const selected = subs.filter((s) => s.selected);
+  const nonSelected = subs.filter((s) => !s.selected);
+
+  if (selected.length === 2) {
+    return best(selected.map((s) => s.private));
+  }
+  if (selected.length === 1) {
+    const cand = [selected[0]];
+    if (nonSelected.length) {
+      let bestNon = nonSelected[0];
+      for (const s of nonSelected) {
+        if (cmp(s.public, bestNon.public) > 0) bestNon = s;
+      }
+      cand.push(bestNon);
+    }
+    return best(cand.map((c) => c.private));
+  }
+  const sorted = subs.slice().sort((a, b) => cmp(b.public, a.public));
+  const top2 = sorted.slice(0, 2);
+  return best(top2.map((s) => s.private));
+}
+
+function processAllSubmissions(records, higherIsBetter) {
+  const byUser = new Map();
+  for (const r of records) {
+    const user = String(r.UserName || '').trim();
+    if (!user) continue;
+    const pub = Number(r.PublicScore);
+    const priv = Number(r.PrivateScore);
+    if (!Number.isFinite(pub) || !Number.isFinite(priv)) continue;
+    if (!byUser.has(user)) byUser.set(user, []);
+    byUser.get(user).push({
+      selected: String(r.IsSelected).toLowerCase() === 'true',
+      public: pub,
+      private: priv,
+    });
+  }
+
+  const out = [];
+  for (const [user, subs] of byUser) {
+    const score = pickFinalPrivate(subs, higherIsBetter);
+    if (Number.isFinite(score)) out.push({ kaggleId: user, score });
+  }
+  return out;
+}
+
+export function parsePrivateCsv(raw, { higherIsBetter = true } = {}) {
   if (!raw || !raw.trim()) return [];
   const records = parse(raw, { columns: true, skip_empty_lines: true, bom: true, trim: true });
+
+  if (isAllSubmissionsFormat(records)) {
+    return processAllSubmissions(records, higherIsBetter);
+  }
+
   const out = [];
   for (const r of records) {
     const id = pickValue(r, ['kaggle_id', 'kaggleId', 'kaggle', 'username', 'nickname', 'user']);
@@ -31,6 +98,25 @@ export function parsePrivateCsv(raw) {
     out.push({ kaggleId: String(id).trim(), score });
   }
   return out;
+}
+
+export function extractPrivateAnchors(records) {
+  let baselineScore = null;
+  let authorScore = null;
+  const filtered = [];
+  for (const r of records) {
+    const id = String(r.kaggleId || '').toLowerCase();
+    if (id.includes('baseline')) {
+      if (baselineScore === null) baselineScore = r.score;
+      continue;
+    }
+    if (id.includes('author')) {
+      if (authorScore === null) authorScore = r.score;
+      continue;
+    }
+    filtered.push(r);
+  }
+  return { records: filtered, anchors: { baselineScore, authorScore } };
 }
 
 export function buildPrivateRows({ records, higherIsBetter, participants }) {
