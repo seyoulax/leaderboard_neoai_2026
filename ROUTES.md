@@ -34,6 +34,7 @@
 | --- | --- |
 | `/admin` | Логин |
 | `/admin/competitions` | CRUD соревнований |
+| `/admin/competitions/<slug>` | Редирект на `tasks` |
 | `/admin/competitions/<slug>/tasks` | CRUD задач (scoped) |
 | `/admin/competitions/<slug>/boards` | CRUD бордов (scoped) |
 | `/admin/competitions/<slug>/participants` | JSON paste/upload |
@@ -69,28 +70,43 @@
 
 ### Админ (заголовок `x-admin-token`)
 
-| Method | Path |
-| --- | --- |
-| GET/PUT | `/api/admin/competitions` |
-| POST | `/api/admin/competitions` |
-| DELETE | `/api/admin/competitions/<slug>` |
-| GET/PUT | `/api/admin/competitions/<slug>/tasks` |
-| GET/PUT | `/api/admin/competitions/<slug>/boards` |
-| GET/PUT | `/api/admin/competitions/<slug>/participants` |
-| GET/PUT/DELETE | `/api/admin/competitions/<slug>/tasks/<t>/private` |
+| Method | Path | Что |
+| --- | --- | --- |
+| GET/PUT | `/api/admin/competitions` | Список / replace всего индекса |
+| POST | `/api/admin/competitions` | Создать одно (`{competition: {...}}`); создаёт пустую директорию |
+| DELETE | `/api/admin/competitions/<slug>` | Soft-delete: директория переименовывается в `<slug>.deleted-<ts>/` |
+| GET/PUT | `/api/admin/competitions/<slug>/tasks` | Tasks scoped |
+| GET/PUT | `/api/admin/competitions/<slug>/boards` | Boards scoped |
+| GET/PUT | `/api/admin/competitions/<slug>/participants` | Participants — bulk replace через JSON |
+| GET/PUT/DELETE | `/api/admin/competitions/<slug>/tasks/<t>/private` | Private CSV (поддерживает Kaggle all-submissions и legacy `kaggle_id,raw_score`) |
+
+JSON body limit для админских PUT — **50 MB** (нужно для больших Kaggle all-submissions CSV).
 
 ## Файлы данных
 
 ```
 data/
-  competitions.json             # индекс
+  competitions.json             # индекс соревнований
   competitions/<slug>/
     tasks.json
     boards.json
     participants.json
-    state.json                  # currentParticipantId
-  private/<slug>/<task>.csv
+    state.json                  # currentParticipantId (для /obs/card)
+  private/<slug>/<task>.csv     # выгрузки приватного ЛБ
+  _legacy-backup-<ts>/          # snapshot пред-миграционных файлов
 ```
+
+При первом старте бэка после раскатки multi-tenant: если есть legacy `data/{tasks,boards,participants}.json` — миграция автоматически перенесёт их в `data/competitions/neoai-2026/` и создаст `competitions.json` с одной записью. Snapshot пред-миграционных файлов — в `_legacy-backup-<ISO-ts>/`.
+
+**Mount в docker-compose** — целиком директория `./backend/data:/app/data` (не отдельные файлы), чтобы `fs.rename` работал во время миграции.
+
+## Score anchors (baseline / author)
+
+У каждой задачи 4 опциональных поля скоров: `baselineScorePublic`, `authorScorePublic`, `baselineScorePrivate`, `authorScorePrivate`. Источники (в порядке приоритета):
+
+1. **Auto-extract из Kaggle CSV.** При refresh бэк ищет в leaderboard CSV строки с `Rank=0`, чьё имя команды содержит `baseline` или `author` (case-insensitive), и подставляет их score в соответствующие поля. Для приватного — то же самое в private CSV (через `extractPrivateAnchors`).
+2. **Fallback к admin-полям.** Если auto-extract вернул `null` (анкер не найден в CSV), берётся значение из `tasks.json`, заданное в админке.
+3. **Если оба null** — задача нормализуется без якорей (по rank=1/last).
 
 ## ENV-переменные backend
 
