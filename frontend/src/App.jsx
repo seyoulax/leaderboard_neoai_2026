@@ -108,6 +108,24 @@ function ModeToggle({ mode, onChange }) {
   );
 }
 
+function SearchBox({ value, onChange, placeholder = 'Поиск по nickname…' }) {
+  return (
+    <input
+      type="search"
+      className="search-box"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+    />
+  );
+}
+
+function matchesNickname(row, query) {
+  const q = (query || '').trim().toLowerCase();
+  if (!q) return true;
+  return (row.nickname || '').toLowerCase().includes(q);
+}
+
 function FilterToggle({ value, onChange }) {
   return (
     <div className="mode-toggle">
@@ -219,6 +237,7 @@ function OverallPage() {
   const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
   const [mode, setMode] = useState('public');
   const [filter, setFilter] = useState('all');
+  const [query, setQuery] = useState('');
 
   if (loading) return <p className="status">Загрузка общего ЛБ...</p>;
   if (error) return <p className="status error">{error}</p>;
@@ -229,7 +248,7 @@ function OverallPage() {
   const overallSrc = isPrivate
     ? (isOurs ? (data.oursPrivateOverall || []) : (data.privateOverall || []))
     : (isOurs ? (data.oursOverall || []) : data.overall);
-  const overall = overallSrc;
+  const overall = (overallSrc || []).filter((r) => matchesNickname(r, query));
   const privateAvailable = (data.privateTaskSlugs || []).length > 0;
 
   function exportCSV() {
@@ -252,6 +271,7 @@ function OverallPage() {
       <div className="panel-head">
         <h2>Общий рейтинг</h2>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <SearchBox value={query} onChange={setQuery} />
           <FilterToggle value={filter} onChange={setFilter} />
           <ModeToggle mode={mode} onChange={setMode} />
           <DownloadButton onClick={exportCSV} />
@@ -408,6 +428,7 @@ function BoardPage({ boards }) {
   const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
   const [mode, setMode] = useState('public');
   const [filter, setFilter] = useState('all');
+  const [query, setQuery] = useState('');
 
   if (!board) return <p className="status error">Лидерборд '{slug}' не найден.</p>;
   if (loading) return <p className="status">Загрузка лидерборда...</p>;
@@ -449,9 +470,11 @@ function BoardPage({ boards }) {
     )
     .map((row, i) => ({ ...row, place: i + 1 }));
 
+  const visible = ranked.filter((r) => matchesNickname(r, query));
+
   function exportCSV() {
     const headers = ['#', 'Nickname', 'Team Name', 'Board points', ...groupTasks.map((t) => t.title)];
-    const rows = ranked.map((row) => [
+    const rows = visible.map((row) => [
       row.place,
       row.nickname || '',
       row.teamName || '',
@@ -469,6 +492,7 @@ function BoardPage({ boards }) {
       <div className="panel-head">
         <h2>{board.title}</h2>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <SearchBox value={query} onChange={setQuery} />
           <FilterToggle value={filter} onChange={setFilter} />
           <ModeToggle mode={mode} onChange={setMode} />
           <DownloadButton onClick={exportCSV} />
@@ -495,7 +519,7 @@ function BoardPage({ boards }) {
             </tr>
           </thead>
           <tbody>
-            {ranked.map((row) => (
+            {visible.map((row) => (
               <tr key={row.participantKey} className={rowDirClass(getDir(row.groupPoints, row.previousGroupPoints))}>
                 <td>{row.place}</td>
                 <td className="team">{row.nickname || '-'}</td>
@@ -529,6 +553,7 @@ function TaskPage() {
   const { data, loading, error } = usePolling(() => getTaskLeaderboard(slug), [slug]);
   const [mode, setMode] = useState('public');
   const [filter, setFilter] = useState('all');
+  const [query, setQuery] = useState('');
 
   if (loading) return <p className="status">Загрузка ЛБ задачи...</p>;
   if (error) return <p className="status error">{error}</p>;
@@ -539,7 +564,7 @@ function TaskPage() {
   const entriesRaw = isOurs
     ? (isPrivate ? (data.oursPrivateTask?.entries || []) : (data.oursTask?.entries || []))
     : (isPrivate ? (data.privateTask?.entries || []) : data.task.entries);
-  const entries = entriesRaw;
+  const entries = (entriesRaw || []).filter((r) => matchesNickname(r, query));
   const privateAvailable = !!data.privateTask;
 
   function exportCSV() {
@@ -560,6 +585,7 @@ function TaskPage() {
       <div className="panel-head">
         <h2>{task.title}</h2>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <SearchBox value={query} onChange={setQuery} />
           <FilterToggle value={filter} onChange={setFilter} />
           <ModeToggle mode={mode} onChange={setMode} />
           <DownloadButton onClick={exportCSV} />
