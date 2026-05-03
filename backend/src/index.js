@@ -10,6 +10,7 @@ import { buildLeaderboards } from './leaderboard.js';
 import {
   parsePrivateCsv,
   buildPrivateRows,
+  extractPrivateAnchors,
   readPrivateFile,
   writePrivateFile,
   deletePrivateFile,
@@ -285,14 +286,16 @@ async function refreshCache() {
 
     for (const task of tasks) {
       try {
-        const rows = await fetchCompetitionLeaderboard({
+        const result = await fetchCompetitionLeaderboard({
           competition: task.competition,
           kaggleCmd: KAGGLE_CMD,
         });
         taskRows.push({
           ...task,
+          baselineScorePublic: result.anchors.baselineScore,
+          authorScorePublic: result.anchors.authorScore,
           updatedAt: new Date().toISOString(),
-          rows,
+          rows: result.rows,
         });
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
@@ -303,6 +306,8 @@ async function refreshCache() {
         if (prev && Array.isArray(prev.entries)) {
           taskRows.push({
             ...task,
+            baselineScorePublic: prev.baselineScore,
+            authorScorePublic: prev.authorScore,
             updatedAt: prev.updatedAt || cache.updatedAt,
             rows: prev.entries.map((e) => ({
               participantKey: e.participantKey,
@@ -337,8 +342,15 @@ async function refreshCache() {
         continue;
       }
       if (!records.length) continue;
-      const rows = buildPrivateRows({ records, higherIsBetter: task.higherIsBetter, participants });
-      privateTaskRows.push({ ...task, updatedAt: file.updatedAt, rows });
+      const { records: participantRecords, anchors } = extractPrivateAnchors(records);
+      const rows = buildPrivateRows({ records: participantRecords, higherIsBetter: task.higherIsBetter, participants });
+      privateTaskRows.push({
+        ...task,
+        baselineScorePrivate: anchors.baselineScore,
+        authorScorePrivate: anchors.authorScore,
+        updatedAt: file.updatedAt,
+        rows,
+      });
       privateTaskSlugs.push(task.slug);
     }
 
