@@ -97,8 +97,12 @@ export async function fetchCompetitionLeaderboard({ competition, kaggleCmd }) {
     } catch (err) {
       const out = `${err?.stdout || ''}\n${err?.stderr || ''}`;
       const is429 = /\b429\b|Too Many Requests/i.test(out);
-      const tag = is429 ? '429 rate-limited' : (out.split('\n').find((l) => l.trim()) || 'kaggle CLI failed');
-      const e = new Error(`${competition}: ${tag.trim()}`);
+      const meaningful = out
+        .split('\n')
+        .map((l) => l.trim())
+        .find((l) => l && !/^Warning:/i.test(l));
+      const tag = is429 ? '429 rate-limited' : (meaningful || 'kaggle CLI failed');
+      const e = new Error(`${competition}: ${tag}`);
       e.cause = err;
       throw e;
     }
