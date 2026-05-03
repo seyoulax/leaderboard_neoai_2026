@@ -1,4 +1,4 @@
-import { Link, NavLink, Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom';
+import { Link, NavLink, Navigate, Outlet, Route, Routes, useNavigate, useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import {
   getOverallLeaderboard,
@@ -802,6 +802,7 @@ function ObsBoardBar() {
 }
 
 function ControlPage() {
+  const { slug: competitionSlug } = useParams();
   const [list, setList] = useState([]);
   const [currentId, setCurrentId] = useState(null);
   const [query, setQuery] = useState('');
@@ -810,7 +811,7 @@ function ControlPage() {
 
   async function refresh() {
     try {
-      const data = await getParticipants();
+      const data = await getParticipants(competitionSlug);
       setList(data.participants || []);
       setCurrentId(data.currentId);
       setError(null);
@@ -829,7 +830,7 @@ function ControlPage() {
     setBusy(true);
     setError(null);
     try {
-      const data = await setCurrentCard(id);
+      const data = await setCurrentCard(competitionSlug, id);
       setCurrentId(data.currentId);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -1072,7 +1073,7 @@ function AdminLogin({ onSuccess }) {
   );
 }
 
-function PrivateRow({ slug }) {
+function PrivateRow({ slug, competitionSlug }) {
   const [info, setInfo] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -1081,7 +1082,7 @@ function PrivateRow({ slug }) {
     if (!slug) return;
     setError(null);
     try {
-      const data = await getAdminPrivate(slug);
+      const data = await getAdminPrivate(competitionSlug, slug);
       setInfo(data);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -1100,7 +1101,7 @@ function PrivateRow({ slug }) {
     setError(null);
     try {
       const text = await file.text();
-      const r = await uploadAdminPrivate(slug, text);
+      const r = await uploadAdminPrivate(competitionSlug, slug, text);
       setInfo({ exists: true, count: r.count, updatedAt: new Date().toISOString() });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -1114,7 +1115,7 @@ function PrivateRow({ slug }) {
     setBusy(true);
     setError(null);
     try {
-      await deleteAdminPrivate(slug);
+      await deleteAdminPrivate(competitionSlug, slug);
       setInfo({ exists: false });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -1146,6 +1147,7 @@ function PrivateRow({ slug }) {
 }
 
 function AdminTasksPage() {
+  const { slug: competitionSlug } = useParams();
   const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
   const [original, setOriginal] = useState('');
@@ -1169,7 +1171,7 @@ function AdminTasksPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await getAdminTasks();
+      const data = await getAdminTasks(competitionSlug);
       const list = normalize(data.tasks);
       setTasks(list);
       setOriginal(JSON.stringify(list));
@@ -1214,7 +1216,7 @@ function AdminTasksPage() {
     setSaving(true);
     setError(null);
     try {
-      const data = await saveAdminTasks(tasks);
+      const data = await saveAdminTasks(competitionSlug, tasks);
       const list = normalize(data.tasks);
       setTasks(list);
       setOriginal(JSON.stringify(list));
@@ -1310,7 +1312,7 @@ function AdminTasksPage() {
               <button className="control-btn control-btn-ghost" onClick={() => remove(idx)}>×</button>
             </span>
           </div>
-          <PrivateRow slug={task.slug} />
+          <PrivateRow slug={task.slug} competitionSlug={competitionSlug} />
           </div>
         ))}
 
@@ -1333,6 +1335,7 @@ function AdminTasksPage() {
 }
 
 function AdminBoardsPage() {
+  const { slug: competitionSlug } = useParams();
   const navigate = useNavigate();
   const [boards, setBoards] = useState([]);
   const [allTasks, setAllTasks] = useState([]);
@@ -1358,7 +1361,7 @@ function AdminBoardsPage() {
     setLoading(true);
     setError(null);
     try {
-      const [b, t] = await Promise.all([getAdminBoards(), getAdminTasks()]);
+      const [b, t] = await Promise.all([getAdminBoards(competitionSlug), getAdminTasks(competitionSlug)]);
       const tasksList = t.tasks || [];
       const known = new Set(tasksList.map((x) => x.slug));
       const list = normalize(b.boards, known);
@@ -1411,7 +1414,7 @@ function AdminBoardsPage() {
     setSaving(true);
     setError(null);
     try {
-      const data = await saveAdminBoards(boards);
+      const data = await saveAdminBoards(competitionSlug, boards);
       const known = new Set(allTasks.map((x) => x.slug));
       const list = normalize(data.boards, known);
       setBoards(list);
@@ -1531,75 +1534,23 @@ function AdminBoardsPage() {
 }
 
 function AdminShell() {
-  const navigate = useNavigate();
-  const [authed, setAuthed] = useState(() => Boolean(getAdminToken()));
-
-  useEffect(() => {
-    function onStorage() {
-      setAuthed(Boolean(getAdminToken()));
-    }
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
-
-  function logout() {
-    setAdminToken('');
-    setAuthed(false);
-    navigate('/admin', { replace: true });
-  }
-
-  if (!authed) {
-    const login = <AdminLogin onSuccess={() => setAuthed(true)} />;
-    return (
-      <div className="page">
-        <header className="hero">
-          <p className="eyebrow">NEOAI · admin</p>
-          <h1>Вход</h1>
-        </header>
-        <main>
-          <Routes>
-            <Route path="/" element={login} />
-            <Route path="tasks" element={login} />
-            <Route path="card" element={login} />
-            <Route path="*" element={<Navigate to="/admin" replace />} />
-          </Routes>
-        </main>
-      </div>
-    );
-  }
-
+  const { slug: competitionSlug } = useParams();
+  const base = competitionSlug ? `/admin/competitions/${encodeURIComponent(competitionSlug)}` : '';
   return (
-    <div className="page">
+    <div className="admin-page">
       <header className="hero">
-        <p className="eyebrow">NEOAI · admin</p>
-        <h1>Админка</h1>
+        <h1>NEOAI Admin</h1>
+        <Link to="/admin/competitions" className="eyebrow-link">← все соревнования</Link>
       </header>
-
-      <nav className="tabs">
-        <NavLink to="/admin/tasks" className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
-          Задачи
-        </NavLink>
-        <NavLink to="/admin/boards" className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
-          Лидерборды
-        </NavLink>
-        <NavLink to="/admin/card" className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
-          Карточка
-        </NavLink>
-        <NavLink to="/leaderboard" className="tab">← Лидерборд</NavLink>
-        <button onClick={logout} className="tab" style={{ marginLeft: 'auto' }}>
-          Выйти
-        </button>
-      </nav>
-
-      <main>
-        <Routes>
-          <Route path="/" element={<Navigate to="/admin/tasks" replace />} />
-          <Route path="tasks" element={<AdminTasksPage />} />
-          <Route path="boards" element={<AdminBoardsPage />} />
-          <Route path="card" element={<ControlPage />} />
-          <Route path="*" element={<Navigate to="/admin/tasks" replace />} />
-        </Routes>
-      </main>
+      {competitionSlug ? (
+        <nav className="tabs">
+          <NavLink to={`${base}/tasks`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Tasks</NavLink>
+          <NavLink to={`${base}/boards`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Boards</NavLink>
+          <NavLink to={`${base}/participants`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Participants</NavLink>
+          <NavLink to={`${base}/card`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Card</NavLink>
+        </nav>
+      ) : null}
+      <Outlet />
     </div>
   );
 }
