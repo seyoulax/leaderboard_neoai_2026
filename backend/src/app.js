@@ -142,7 +142,9 @@ async function saveTasksFor(slug, tasks) {
   await fs.mkdir(competitionDir(slug), { recursive: true });
   const file = path.join(competitionDir(slug), 'tasks.json');
   const body = JSON.stringify(tasks, null, 2) + '\n';
-  await fs.writeFile(file, body, 'utf8');
+  const tmp = `${file}.tmp`;
+  await fs.writeFile(tmp, body, 'utf8');
+  await fs.rename(tmp, file);
 }
 
 async function loadBoardsFor(slug) {
@@ -176,7 +178,9 @@ async function saveBoardsFor(slug, boards) {
   await fs.mkdir(competitionDir(slug), { recursive: true });
   const file = path.join(competitionDir(slug), 'boards.json');
   const body = JSON.stringify(boards, null, 2) + '\n';
-  await fs.writeFile(file, body, 'utf8');
+  const tmp = `${file}.tmp`;
+  await fs.writeFile(tmp, body, 'utf8');
+  await fs.rename(tmp, file);
 }
 
 async function loadParticipantsFor(slug) {
@@ -198,7 +202,9 @@ async function saveParticipantsFor(slug, participants) {
   await fs.mkdir(competitionDir(slug), { recursive: true });
   const file = path.join(competitionDir(slug), 'participants.json');
   const body = JSON.stringify(participants, null, 2) + '\n';
-  await fs.writeFile(file, body, 'utf8');
+  const tmp = `${file}.tmp`;
+  await fs.writeFile(tmp, body, 'utf8');
+  await fs.rename(tmp, file);
 }
 
 let cache = {
