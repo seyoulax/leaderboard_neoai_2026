@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import {
   getOverallLeaderboard,
   getTaskLeaderboard,
-  getTasks,
   getBoards,
   getParticipants,
   getCurrentCard,
@@ -24,6 +23,9 @@ import ObsView from './ObsView';
 import ObsBar from './ObsBar';
 import ObsCycle from './ObsCycle';
 import ObsCard from './ObsCard';
+import CompetitionsListPage from './CompetitionsListPage';
+import AdminCompetitionsPage from './AdminCompetitionsPage';
+import AdminParticipantsPage from './AdminParticipantsPage';
 
 const REFRESH_MS = 30_000;
 
@@ -911,121 +913,63 @@ function ControlPage() {
   );
 }
 
-function SitemapPage({ tasks, boards }) {
-  const visibleBoards = sortedVisibleBoards(boards);
-  const allBoards = (boards || []).slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+function CompetitionShell() {
+  const { competitionSlug } = useParams();
+  const tasksState = usePolling(() => getOverallLeaderboard(competitionSlug), [competitionSlug]);
+  const boardsState = usePolling(() => getBoards(competitionSlug), [competitionSlug]);
 
+  if (tasksState.loading || boardsState.loading) {
+    return <p className="status">Загрузка...</p>;
+  }
+  if (tasksState.error) {
+    return <p className="status error">{tasksState.error}</p>;
+  }
   return (
-    <section className="panel">
-      <div className="panel-head">
-        <h2>Все страницы</h2>
-        <span>динамический список по tasks/boards с бэка</span>
-      </div>
-
-      <div className="sitemap">
-        <div className="sitemap-group">
-          <h3>Публичные таблицы</h3>
-          <ul>
-            <li><Link to="/leaderboard">/leaderboard</Link> — общий лидерборд по сумме всех задач</li>
-            <li><Link to="/cycle">/cycle</Link> — общий ЛБ, циклически по 15 строк (для табло, скрыт из нав-меню)</li>
-            {allBoards.map((b) => (
-              <li key={b.slug}>
-                <Link to={`/board/${b.slug}`}>/board/{b.slug}</Link> — борд «{b.title}»
-                {b.visible === false ? ' (скрыт из навигации)' : ''}
-              </li>
-            ))}
-            {(tasks || []).map((t) => (
-              <li key={t.slug}>
-                <Link to={`/task/${t.slug}`}>/task/{t.slug}</Link> — задача «{t.title}»
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="sitemap-group">
-          <h3>Админка (нужен пароль)</h3>
-          <ul>
-            <li><Link to="/admin">/admin</Link> — вход</li>
-            <li><Link to="/admin/tasks">/admin/tasks</Link> — редактирование задач (slug, title, competition, baseline/author)</li>
-            <li><Link to="/admin/boards">/admin/boards</Link> — редактирование лидербордов (выборка задач + видимость + порядок)</li>
-            <li><Link to="/admin/card">/admin/card</Link> — выбор активной карточки участника для OBS</li>
-          </ul>
-        </div>
-
-        <div className="sitemap-group">
-          <h3>OBS-оверлеи</h3>
-          <p className="meta" style={{ padding: 0, border: 'none' }}>
-            Под Browser Source в OBS. Без шапки/нав, тёмный фон под chroma-key.
-          </p>
-          <ul>
-            <li><Link to="/obs/overall">/obs/overall</Link> — общий top-15 текстовыми строками</li>
-            <li><Link to="/obs/cycle">/obs/cycle</Link> — общий ЛБ, цикл по 15</li>
-            <li><Link to="/obs/card">/obs/card</Link> — карточка текущего активного участника</li>
-            {visibleBoards.map((b) => (
-              <li key={`obs-${b.slug}`}>
-                <Link to={`/obs/board/${b.slug}`}>/obs/board/{b.slug}</Link> — top-15 борда «{b.title}» (строки)
-                {' · '}
-                <Link to={`/obs/bar/board/${b.slug}`}>/obs/bar/board/{b.slug}</Link> — он же баром с per-task chip'ами
-              </li>
-            ))}
-            {(tasks || []).map((t) => (
-              <li key={`obs-task-${t.slug}`}>
-                <Link to={`/obs/task/${t.slug}`}>/obs/task/{t.slug}</Link> — задача «{t.title}»
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    </section>
+    <Layout
+      tasks={tasksState.data?.tasks || []}
+      boards={boardsState.data?.boards || []}
+      competitionSlug={competitionSlug}
+    >
+      <Outlet />
+    </Layout>
   );
 }
 
-function MainShell() {
-  const [tasks, setTasks] = useState([]);
-  const [boards, setBoards] = useState([]);
-  const [tasksError, setTasksError] = useState(null);
+function BoardPageWrapper() {
+  const { competitionSlug } = useParams();
+  const { data, loading, error } = usePolling(() => getBoards(competitionSlug), [competitionSlug]);
+  if (loading) return <p className="status">Загрузка...</p>;
+  if (error) return <p className="status error">{error}</p>;
+  return <BoardPage boards={data?.boards || []} />;
+}
+
+function AdminAuthGate() {
+  const [authenticated, setAuthenticated] = useState(!!getAdminToken());
+  const [checking, setChecking] = useState(!!getAdminToken());
 
   useEffect(() => {
-    let active = true;
-
-    async function load() {
-      try {
-        const [t, b] = await Promise.all([getTasks(), getBoards()]);
-        if (!active) return;
-        setTasks(t.tasks || []);
-        setBoards(b.boards || []);
-        setTasksError(null);
-      } catch (error) {
-        if (!active) return;
-        setTasksError(error instanceof Error ? error.message : String(error));
-      }
+    if (!getAdminToken()) {
+      setChecking(false);
+      return;
     }
-
-    load();
-    const timer = setInterval(load, REFRESH_MS);
-
-    return () => {
-      active = false;
-      clearInterval(timer);
-    };
+    let active = true;
+    adminPing()
+      .then(() => { if (active) { setAuthenticated(true); setChecking(false); } })
+      .catch(() => {
+        if (!active) return;
+        setAdminToken('');
+        setAuthenticated(false);
+        setChecking(false);
+      });
+    return () => { active = false; };
   }, []);
 
-  return (
-    <Layout tasks={tasks} boards={boards}>
-      {tasksError ? <p className="status error">{tasksError}</p> : null}
+  if (checking) return <p className="status">Проверка авторизации...</p>;
+  if (!authenticated) {
+    return <AdminLogin onSuccess={() => setAuthenticated(true)} />;
+  }
 
-      <Routes>
-        <Route path="/" element={<Navigate to="/leaderboard" replace />} />
-        <Route path="/leaderboard" element={<OverallPage />} />
-        <Route path="/cycle" element={<CyclingOverallPage />} />
-        <Route path="/control" element={<Navigate to="/admin/card" replace />} />
-        <Route path="/board/:slug" element={<BoardPage boards={boards} />} />
-        <Route path="/task/:slug" element={<TaskPage />} />
-        <Route path="/routes" element={<SitemapPage tasks={tasks} boards={boards} />} />
-        <Route path="*" element={<p className="status">Страница не найдена. <Link to="/leaderboard">Вернуться</Link></p>} />
-      </Routes>
-    </Layout>
-  );
+  return <Outlet />;
 }
 
 function AdminLogin({ onSuccess }) {
@@ -1558,14 +1502,45 @@ function AdminShell() {
 export default function App() {
   return (
     <Routes>
-      <Route path="/obs/overall" element={<ObsOverall />} />
-      <Route path="/obs/board/:slug" element={<ObsBoard />} />
-      <Route path="/obs/task/:slug" element={<ObsTask />} />
-      <Route path="/obs/bar/board/:slug" element={<ObsBoardBar />} />
-      <Route path="/obs/cycle" element={<ObsCycle />} />
-      <Route path="/obs/card" element={<ObsCard />} />
-      <Route path="/admin/*" element={<AdminShell />} />
-      <Route path="*" element={<MainShell />} />
+      {/* Public root: list of competitions */}
+      <Route path="/" element={<CompetitionsListPage />} />
+
+      {/* Public per-competition routes */}
+      <Route path="/competitions/:competitionSlug" element={<CompetitionShell />}>
+        <Route index element={<Navigate to="leaderboard" replace />} />
+        <Route path="leaderboard" element={<OverallPage />} />
+        <Route path="cycle" element={<CyclingOverallPage />} />
+        <Route path="board/:slug" element={<BoardPageWrapper />} />
+        <Route path="task/:slug" element={<TaskPage />} />
+      </Route>
+
+      {/* Admin */}
+      <Route path="/admin" element={<AdminAuthGate />}>
+        <Route index element={<Navigate to="competitions" replace />} />
+        <Route path="competitions" element={<AdminCompetitionsPage />} />
+        <Route path="competitions/:slug" element={<AdminShell />}>
+          <Route index element={<Navigate to="tasks" replace />} />
+          <Route path="tasks" element={<AdminTasksPage />} />
+          <Route path="boards" element={<AdminBoardsPage />} />
+          <Route path="participants" element={<AdminParticipantsPage />} />
+          <Route path="card" element={<ControlPage />} />
+        </Route>
+      </Route>
+
+      {/* OBS (no header/nav) */}
+      <Route path="/obs/competitions/:competitionSlug/overall" element={<ObsOverall />} />
+      <Route path="/obs/competitions/:competitionSlug/cycle" element={<ObsCycle />} />
+      <Route path="/obs/competitions/:competitionSlug/board/:slug" element={<ObsBoard />} />
+      <Route path="/obs/competitions/:competitionSlug/bar/board/:slug" element={<ObsBoardBar />} />
+      <Route path="/obs/competitions/:competitionSlug/task/:slug" element={<ObsTask />} />
+      <Route path="/obs/competitions/:competitionSlug/card" element={<ObsCard />} />
+
+      {/* 404 */}
+      <Route path="*" element={
+        <p className="status" style={{ padding: 24 }}>
+          Страница не найдена. <Link to="/">На главную</Link>
+        </p>
+      } />
     </Routes>
   );
 }
