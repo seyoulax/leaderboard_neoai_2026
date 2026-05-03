@@ -7,7 +7,7 @@ services:
     env_file:
       - ./backend/.env
     volumes:
-      - ./backend/data/tasks.json:/app/data/tasks.json:ro
+      - ./backend/data:/app/data:ro
       - ${HOME}/.kaggle:/root/.kaggle:ro
     ports:
       - "3001:3001"

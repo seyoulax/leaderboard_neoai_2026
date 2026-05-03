@@ -82,7 +82,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
-          source: backend/data/participants.json
+          source: backend/data/competitions/neoai-2026/participants.json
           target: ${{ secrets.DEPLOY_PATH }}
 
       - name: Sync stackmorelayers static files
