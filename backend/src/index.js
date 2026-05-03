@@ -209,6 +209,18 @@ function buildOursKaggleSet(list) {
   return set;
 }
 
+function buildOursDisplayMap(list) {
+  const map = new Map();
+  for (const p of list || []) {
+    const id = (p && p.kaggleId ? String(p.kaggleId) : '').trim().toLowerCase();
+    if (!id) continue;
+    const parts = (p.name || '').trim().split(/\s+/).filter(Boolean);
+    const display = parts.length >= 2 ? `${parts[0]} ${parts[1]}` : (parts[0] || '');
+    if (display) map.set(id, display);
+  }
+  return map;
+}
+
 function filterRowsByOurs(rows, oursSet) {
   if (!oursSet || oursSet.size === 0) return [];
   return (rows || []).filter((r) => oursSet.has((r.nickname || '').toLowerCase()));
@@ -216,6 +228,19 @@ function filterRowsByOurs(rows, oursSet) {
 
 function projectTaskRowsToOurs(taskRows, oursSet) {
   return taskRows.map((t) => ({ ...t, rows: filterRowsByOurs(t.rows, oursSet) }));
+}
+
+function applyDisplayNames(result, displayMap) {
+  if (!displayMap || displayMap.size === 0) return;
+  const rename = (entry) => {
+    const key = (entry.nickname || '').toLowerCase();
+    const display = displayMap.get(key);
+    if (display) entry.nickname = display;
+  };
+  for (const e of result.overall || []) rename(e);
+  for (const slug of Object.keys(result.byTask || {})) {
+    for (const e of result.byTask[slug].entries || []) rename(e);
+  }
 }
 
 async function refreshCache() {
@@ -229,6 +254,7 @@ async function refreshCache() {
     const tasks = await loadTasks();
     participants = await loadParticipants();
     const oursSet = buildOursKaggleSet(participants);
+    const oursDisplayMap = buildOursDisplayMap(participants);
 
     const previousByTask = cache.byTask || {};
     const taskRows = [];
@@ -272,6 +298,7 @@ async function refreshCache() {
     annotateWithDeltas(result, { byTask: cache.byTask, overall: cache.overall });
 
     const oursResult = buildLeaderboards(projectTaskRowsToOurs(taskRows, oursSet));
+    applyDisplayNames(oursResult, oursDisplayMap);
     annotateWithDeltas(oursResult, { byTask: cache.oursByTask, overall: cache.oursOverall });
 
     const privateTaskRows = [];
@@ -296,6 +323,7 @@ async function refreshCache() {
     annotateWithDeltas(privateResult, { byTask: cache.privateByTask, overall: cache.privateOverall });
 
     const oursPrivateResult = buildLeaderboards(projectTaskRowsToOurs(privateTaskRows, oursSet));
+    applyDisplayNames(oursPrivateResult, oursDisplayMap);
     annotateWithDeltas(oursPrivateResult, {
       byTask: cache.oursPrivateByTask,
       overall: cache.oursPrivateOverall,
