@@ -336,7 +336,7 @@ async function refreshCache() {
       if (!file) continue;
       let records;
       try {
-        records = parsePrivateCsv(file.raw);
+        records = parsePrivateCsv(file.raw, { higherIsBetter: task.higherIsBetter });
       } catch (e) {
         console.warn(`[private] parse failed for ${task.slug}: ${e.message}`);
         continue;
@@ -602,10 +602,11 @@ app.put('/api/admin/tasks/:slug/private', requireAdmin, async (req, res) => {
       res.status(404).json({ error: `task '${req.params.slug}' not found` });
       return;
     }
+    const task = tasks.find((t) => t.slug === req.params.slug);
     const csv = typeof req.body?.csv === 'string' ? req.body.csv : '';
-    const records = parsePrivateCsv(csv);
+    const records = parsePrivateCsv(csv, { higherIsBetter: task.higherIsBetter });
     if (!records.length) {
-      res.status(400).json({ error: 'no valid rows parsed (need columns kaggle_id and raw_score)' });
+      res.status(400).json({ error: 'no valid rows parsed (need either Kaggle all-submissions columns UserName/IsSelected/PublicScore/PrivateScore or kaggle_id/raw_score)' });
       return;
     }
     await writePrivateFile(PRIVATE_DIR, req.params.slug, csv);
