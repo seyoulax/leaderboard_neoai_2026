@@ -443,85 +443,6 @@ function annotateWithDeltas(result, prevCache) {
   }
 }
 
-app.get('/api/health', (_req, res) => {
-  res.json({
-    status: 'ok',
-    updatedAt: cache.updatedAt,
-    isRefreshing: cache.isRefreshing,
-    errors: cache.errors,
-  });
-});
-
-app.get('/api/tasks', (_req, res) => {
-  res.json({ tasks: cache.tasks, updatedAt: cache.updatedAt, errors: cache.errors });
-});
-
-app.get('/api/leaderboard', (_req, res) => {
-  res.json({
-    updatedAt: cache.updatedAt,
-    tasks: cache.tasks,
-    overall: cache.overall,
-    privateOverall: cache.privateOverall,
-    privateByTask: cache.privateByTask,
-    privateTaskSlugs: cache.privateTaskSlugs,
-    oursOverall: cache.oursOverall,
-    oursByTask: cache.oursByTask,
-    oursPrivateOverall: cache.oursPrivateOverall,
-    oursPrivateByTask: cache.oursPrivateByTask,
-    errors: cache.errors,
-  });
-});
-
-app.get('/api/tasks/:slug', (req, res) => {
-  const wanted = String(req.params.slug || '').toLowerCase();
-  const findKey = (map) =>
-    Object.keys(map).find((k) => k.toLowerCase() === wanted);
-  const taskKey = findKey(cache.byTask);
-  const privateKey = findKey(cache.privateByTask);
-  const oursKey = findKey(cache.oursByTask);
-  const oursPrivateKey = findKey(cache.oursPrivateByTask);
-  const task = taskKey ? cache.byTask[taskKey] : null;
-  const privateTask = privateKey ? cache.privateByTask[privateKey] : null;
-  const oursTask = oursKey ? cache.oursByTask[oursKey] : null;
-  const oursPrivateTask = oursPrivateKey ? cache.oursPrivateByTask[oursPrivateKey] : null;
-  const meta = (cache.tasks || []).find((t) => t.slug.toLowerCase() === wanted);
-
-  if (!task && !privateTask && !meta) {
-    res.status(404).json({ error: `Task '${req.params.slug}' not found` });
-    return;
-  }
-
-  const fallback = meta
-    ? {
-        slug: meta.slug,
-        title: meta.title,
-        competition: meta.competition,
-        higherIsBetter: meta.higherIsBetter,
-        baselineScore: meta.baselineScore,
-        authorScore: meta.authorScore,
-        updatedAt: cache.updatedAt,
-        entries: [],
-      }
-    : { ...privateTask, entries: [] };
-
-  const taskErrors = (cache.errors || []).filter((e) =>
-    typeof e.message === 'string' && e.message.toLowerCase().startsWith(`${wanted}:`)
-  );
-
-  res.json({
-    updatedAt: cache.updatedAt,
-    task: task || fallback,
-    privateTask,
-    oursTask,
-    oursPrivateTask,
-    errors: taskErrors.length ? taskErrors : cache.errors,
-  });
-});
-
-app.post('/api/refresh', async (_req, res) => {
-  await refreshCache();
-  res.json({ ok: true, updatedAt: cache.updatedAt, errors: cache.errors });
-});
 
 function safeEqualToken(provided, expected) {
   const a = Buffer.from(provided || '', 'utf8');
@@ -548,6 +469,204 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+function findCompetitionMeta(slug) {
+  if (!slug) return null;
+  const wanted = String(slug).toLowerCase();
+  return cache.competitionsIndex.find((c) => c.slug.toLowerCase() === wanted) || null;
+}
+
+function requireCompetition(req, res) {
+  const meta = findCompetitionMeta(req.params.competitionSlug);
+  if (!meta) {
+    res.status(404).json({ error: `Competition '${req.params.competitionSlug}' not found` });
+    return null;
+  }
+  return meta;
+}
+
+app.get('/api/health', (_req, res) => {
+  const competitions = cache.competitionsIndex.map((c) => {
+    const cc = cache.byCompetition.get(c.slug);
+    return {
+      slug: c.slug,
+      updatedAt: cc?.updatedAt || null,
+      errors: cc?.errors || [],
+    };
+  });
+  res.json({
+    status: 'ok',
+    lastSweepAt: cache.lastSweepAt,
+    isRefreshing: cache.isRefreshing,
+    competitions,
+  });
+});
+
+app.get('/api/competitions', (_req, res) => {
+  const visible = cache.competitionsIndex
+    .filter((c) => c.visible)
+    .slice()
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  res.json({ competitions: visible });
+});
+
+app.get('/api/competitions/:competitionSlug', (req, res) => {
+  const meta = requireCompetition(req, res);
+  if (!meta) return;
+  res.json({ competition: meta });
+});
+
+app.get('/api/competitions/:competitionSlug/leaderboard', (req, res) => {
+  const meta = requireCompetition(req, res);
+  if (!meta) return;
+  const cc = cache.byCompetition.get(meta.slug) || emptyCompetitionCache();
+  res.json({
+    updatedAt: cc.updatedAt,
+    tasks: cc.tasks,
+    overall: cc.overall,
+    privateOverall: cc.privateOverall,
+    privateByTask: cc.privateByTask,
+    privateTaskSlugs: cc.privateTaskSlugs,
+    oursOverall: cc.oursOverall,
+    oursByTask: cc.oursByTask,
+    oursPrivateOverall: cc.oursPrivateOverall,
+    oursPrivateByTask: cc.oursPrivateByTask,
+    errors: cc.errors,
+  });
+});
+
+app.get('/api/competitions/:competitionSlug/tasks/:taskSlug', (req, res) => {
+  const meta = requireCompetition(req, res);
+  if (!meta) return;
+  const cc = cache.byCompetition.get(meta.slug) || emptyCompetitionCache();
+  const wanted = String(req.params.taskSlug || '').toLowerCase();
+  const findKey = (map) => Object.keys(map).find((k) => k.toLowerCase() === wanted);
+  const taskKey = findKey(cc.byTask);
+  const privateKey = findKey(cc.privateByTask);
+  const oursKey = findKey(cc.oursByTask);
+  const oursPrivateKey = findKey(cc.oursPrivateByTask);
+  const task = taskKey ? cc.byTask[taskKey] : null;
+  const privateTask = privateKey ? cc.privateByTask[privateKey] : null;
+  const oursTask = oursKey ? cc.oursByTask[oursKey] : null;
+  const oursPrivateTask = oursPrivateKey ? cc.oursPrivateByTask[oursPrivateKey] : null;
+  const taskMeta = (cc.tasks || []).find((t) => t.slug.toLowerCase() === wanted);
+
+  if (!task && !privateTask && !taskMeta) {
+    res.status(404).json({ error: `Task '${req.params.taskSlug}' not found in '${meta.slug}'` });
+    return;
+  }
+
+  const fallback = taskMeta
+    ? {
+        slug: taskMeta.slug,
+        title: taskMeta.title,
+        competition: taskMeta.competition,
+        higherIsBetter: taskMeta.higherIsBetter,
+        baselineScore: taskMeta.baselineScore,
+        authorScore: taskMeta.authorScore,
+        updatedAt: cc.updatedAt,
+        entries: [],
+      }
+    : { ...privateTask, entries: [] };
+
+  const taskErrors = (cc.errors || []).filter((e) =>
+    typeof e.message === 'string' && e.message.toLowerCase().startsWith(`${wanted}:`)
+  );
+
+  res.json({
+    updatedAt: cc.updatedAt,
+    task: task || fallback,
+    privateTask,
+    oursTask,
+    oursPrivateTask,
+    errors: taskErrors.length ? taskErrors : cc.errors,
+  });
+});
+
+app.get('/api/competitions/:competitionSlug/boards', async (req, res) => {
+  const meta = requireCompetition(req, res);
+  if (!meta) return;
+  try {
+    const boards = await loadBoardsFor(meta.slug);
+    res.json({ boards });
+  } catch (e) {
+    res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+  }
+});
+
+app.get('/api/competitions/:competitionSlug/participants', (req, res) => {
+  const meta = requireCompetition(req, res);
+  if (!meta) return;
+  const cc = cache.byCompetition.get(meta.slug);
+  const participants = (cc?.participants || []).map((p) => ({
+    id: p.id,
+    name: p.name,
+    kaggleId: p.kaggleId || null,
+  }));
+  res.json({
+    participants,
+    currentId: cc?.currentParticipantId || null,
+  });
+});
+
+app.post('/api/competitions/:competitionSlug/refresh', async (req, res) => {
+  const meta = requireCompetition(req, res);
+  if (!meta) return;
+  if (cache.isRefreshing) {
+    res.status(409).json({ error: 'refresh sweep is already running' });
+    return;
+  }
+  await refreshCompetition(meta.slug).catch((e) =>
+    console.error(`[refresh ${meta.slug}] FAILED`, e)
+  );
+  const cc = cache.byCompetition.get(meta.slug);
+  res.json({ ok: true, updatedAt: cc?.updatedAt, errors: cc?.errors || [] });
+});
+
+app.get('/api/competitions/:competitionSlug/card', (req, res) => {
+  const meta = requireCompetition(req, res);
+  if (!meta) return;
+  const cc = cache.byCompetition.get(meta.slug);
+  const current = (cc?.participants || []).find((p) => p.id === cc?.currentParticipantId);
+  const kaggleStats = current ? findKaggleStats(meta.slug, current.kaggleId) : null;
+  res.json({
+    current: current || null,
+    currentId: cc?.currentParticipantId || null,
+    kaggleStats,
+    updatedAt: cc?.updatedAt || null,
+  });
+});
+
+app.post('/api/competitions/:competitionSlug/card', async (req, res) => {
+  const meta = requireCompetition(req, res);
+  if (!meta) return;
+  const { id } = req.body || {};
+  const cc = getCompCache(meta.slug);
+
+  if (id === null) {
+    cc.currentParticipantId = null;
+    await writeCompetitionState(competitionDir(meta.slug), { currentParticipantId: null });
+    res.json({ ok: true, currentId: null, current: null });
+    return;
+  }
+
+  if (typeof id !== 'string') {
+    res.status(400).json({ error: 'id must be a string or null' });
+    return;
+  }
+
+  const participants = await loadParticipantsFor(meta.slug);
+  cc.participants = participants;
+  const found = participants.find((p) => p.id === id);
+  if (!found) {
+    res.status(404).json({ error: `participant '${id}' not found in '${meta.slug}'` });
+    return;
+  }
+
+  cc.currentParticipantId = id;
+  await writeCompetitionState(competitionDir(meta.slug), { currentParticipantId: id });
+  res.json({ ok: true, currentId: id, current: found });
+});
+
 app.get('/api/admin/tasks', requireAdmin, async (_req, res) => {
   try {
     const raw = await fs.readFile(TASKS_FILE, 'utf8');
@@ -565,15 +684,6 @@ app.put('/api/admin/tasks', requireAdmin, async (req, res) => {
     refreshCache().catch((e) => console.error('[refresh after save] FAILED', e));
   } catch (e) {
     res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
-  }
-});
-
-app.get('/api/boards', async (_req, res) => {
-  try {
-    const boards = await loadBoards();
-    res.json({ boards });
-  } catch (e) {
-    res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
   }
 });
 
@@ -649,18 +759,6 @@ app.put('/api/admin/boards', requireAdmin, async (req, res) => {
   }
 });
 
-app.get('/api/participants', async (_req, res) => {
-  participants = await loadParticipants();
-  res.json({
-    participants: participants.map((p) => ({
-      id: p.id,
-      name: p.name,
-      kaggleId: p.kaggleId || null,
-    })),
-    currentId: currentParticipantId,
-  });
-});
-
 function findKaggleStats(slug, kaggleId) {
   if (!kaggleId) return null;
   const compCache = cache.byCompetition.get(slug);
@@ -679,44 +777,6 @@ function findKaggleStats(slug, kaggleId) {
     tasks: row.tasks,
   };
 }
-
-app.get('/api/card', (_req, res) => {
-  const current = participants.find((p) => p.id === currentParticipantId);
-  const kaggleStats = current ? findKaggleStats(current.kaggleId) : null;
-
-  res.json({
-    current: current || null,
-    currentId: currentParticipantId,
-    kaggleStats,
-    updatedAt: cache.updatedAt,
-  });
-});
-
-app.post('/api/card', async (req, res) => {
-  const { id } = req.body || {};
-
-  if (id === null) {
-    currentParticipantId = null;
-    res.json({ ok: true, currentId: null, current: null });
-    return;
-  }
-
-  if (typeof id !== 'string') {
-    res.status(400).json({ error: 'id must be a string or null' });
-    return;
-  }
-
-  participants = await loadParticipants();
-  const found = participants.find((p) => p.id === id);
-
-  if (!found) {
-    res.status(404).json({ error: `participant '${id}' not found` });
-    return;
-  }
-
-  currentParticipantId = id;
-  res.json({ ok: true, currentId: id, current: found });
-});
 
 app.listen(PORT, async () => {
   console.log(`Backend started on http://localhost:${PORT}`);
