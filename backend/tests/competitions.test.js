@@ -60,3 +60,31 @@ test('validateCompetitions: keeps subtitle when provided', () => {
   const out = validateCompetitions([{ slug: 'a', title: 'A', subtitle: 's' }]);
   assert.equal(out[0].subtitle, 's');
 });
+
+test('validateCompetitions: rejects title >200 chars', () => {
+  const long = 'x'.repeat(201);
+  assert.throws(() => validateCompetitions([{ slug: 'a', title: long }]), /title/i);
+});
+
+test('validateCompetitions: rejects subtitle >500 chars', () => {
+  const long = 'x'.repeat(501);
+  assert.throws(
+    () => validateCompetitions([{ slug: 'a', title: 'A', subtitle: long }]),
+    /subtitle/i
+  );
+});
+
+test('validateCompetitions: visible=false roundtrips', () => {
+  const out = validateCompetitions([{ slug: 'a', title: 'A', visible: false }]);
+  assert.equal(out[0].visible, false);
+});
+
+test('validateCompetitions: visible=true explicit', () => {
+  const out = validateCompetitions([{ slug: 'a', title: 'A', visible: true }]);
+  assert.equal(out[0].visible, true);
+});
+
+test('validateCompetitions: order from non-number defaults to 0', () => {
+  const out = validateCompetitions([{ slug: 'a', title: 'A', order: 'bad' }]);
+  assert.equal(out[0].order, 0);
+});

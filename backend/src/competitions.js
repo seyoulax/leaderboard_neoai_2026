@@ -36,8 +36,8 @@ export function validateCompetitions(input) {
       }
       result.subtitle = sub;
     }
-    result.order = Number.isFinite(Number(c.order)) ? Number(c.order) : 0;
-    result.visible = c.visible !== false;
+    result.order = typeof c.order === 'number' && Number.isFinite(c.order) ? c.order : 0;
+    result.visible = c.visible === undefined ? true : c.visible === true;
     return result;
   });
 }
@@ -55,6 +55,8 @@ export async function loadCompetitions(filePath) {
 export async function saveCompetitions(filePath, list) {
   const validated = validateCompetitions(list);
   const body = JSON.stringify(validated, null, 2) + '\n';
-  await fs.writeFile(filePath, body, 'utf8');
+  const tmp = `${filePath}.tmp`;
+  await fs.writeFile(tmp, body, 'utf8');
+  await fs.rename(tmp, filePath);
   return validated;
 }
