@@ -834,7 +834,7 @@ function ControlPage() {
     refresh();
     const t = setInterval(refresh, 5000);
     return () => clearInterval(t);
-  }, []);
+  }, [competitionSlug]);
 
   async function pick(id) {
     setBusy(true);

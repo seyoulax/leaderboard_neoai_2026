@@ -36,7 +36,7 @@ export default function ObsCard() {
       active = false;
       clearInterval(timer);
     };
-  }, []);
+  }, [competitionSlug]);
 
   if (!participant) return null;
 
