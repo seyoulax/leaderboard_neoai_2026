@@ -704,3 +704,11 @@ tr.row-down > td {
   font-size: 13px;
   color: var(--muted);
 }
+
+.admin-comp-create { padding: 16px; border-bottom: 1px solid var(--line); }
+.admin-comp-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.admin-comp-row input { padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--ink); }
+.admin-comp-table { width: 100%; border-collapse: collapse; }
+.admin-comp-table th, .admin-comp-table td { padding: 8px 12px; border-bottom: 1px solid var(--line); text-align: left; }
+.admin-comp-table input { width: 100%; padding: 4px 8px; background: transparent; color: var(--ink); border: 1px solid transparent; border-radius: 4px; }
+.admin-comp-table input:focus { border-color: var(--accent); outline: none; }
