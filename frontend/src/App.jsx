@@ -632,7 +632,8 @@ function TaskPage() {
 
 function ObsOverall() {
   const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
-  const rows = (data?.overall || []).map((r) => ({
+  const ourSet = useOurKaggleSet();
+  const rows = applyFilter(data?.overall || [], ourSet, true).map((r) => ({
     key: r.participantKey,
     name: r.nickname || r.teamName || '-',
     score: r.totalPoints.toFixed(2),
@@ -654,6 +655,7 @@ function ObsBoard() {
   const boardsState = usePolling(() => getBoards(), []);
   const board = (boardsState.data?.boards || []).find((b) => b.slug === slug);
   const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
+  const ourSet = useOurKaggleSet();
 
   if (!boardsState.loading && !board) {
     return <ObsView contextLabel="Лидерборд не найден" rows={[]} loading={false} error={`Лидерборд '${slug}' не найден`} />;
@@ -666,7 +668,7 @@ function ObsBoard() {
     .filter((t) => board.taskSlugs.includes(t.slug))
     .map((t) => t.slug);
 
-  const rows = (data?.overall || [])
+  const rows = applyFilter(data?.overall || [], ourSet, true)
     .map((r) => {
       const total = presentSlugs.reduce((sum, slug) => sum + (r.tasks?.[slug]?.points ?? 0), 0);
       const hasAnyPrev = presentSlugs.some((slug) => r.tasks?.[slug]?.previousPoints != null);
@@ -711,9 +713,10 @@ function formatRawScore(score) {
 function ObsTask() {
   const { slug } = useParams();
   const { data, loading, error } = usePolling(() => getTaskLeaderboard(slug), [slug]);
+  const ourSet = useOurKaggleSet();
 
   const task = data?.task;
-  const rows = (task?.entries || []).map((r) => ({
+  const rows = applyFilter(task?.entries || [], ourSet, true).map((r) => ({
     key: r.participantKey,
     name: r.nickname || r.teamName || '-',
     score: formatRawScore(r.score),
@@ -736,6 +739,7 @@ function ObsBoardBar() {
   const boardsState = usePolling(() => getBoards(), []);
   const board = (boardsState.data?.boards || []).find((b) => b.slug === slug);
   const { data, loading, error } = usePolling(() => getOverallLeaderboard(), []);
+  const ourSet = useOurKaggleSet();
 
   if (!boardsState.loading && !board) {
     return <ObsBar contextLabel="—" rows={[]} loading={false} error={`Лидерборд '${slug}' не найден`} />;
@@ -753,7 +757,7 @@ function ObsBoardBar() {
     return { slug: t.slug, short };
   });
 
-  const rows = (data?.overall || [])
+  const rows = applyFilter(data?.overall || [], ourSet, true)
     .map((r) => {
       const total = presentSlugs.reduce((sum, slug) => sum + (r.tasks?.[slug]?.points ?? 0), 0);
       const hasAnyPrev = presentSlugs.some((slug) => r.tasks?.[slug]?.previousPoints != null);

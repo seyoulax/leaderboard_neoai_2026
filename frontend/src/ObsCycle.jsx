@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getOverallLeaderboard } from './api';
+import { getOverallLeaderboard, getParticipants } from './api';
 import './obs.css';
 
 const PAGE_SIZE = 15;
@@ -47,17 +47,39 @@ export default function ObsCycle() {
 
   const { data, loading, error } = usePolling(() => getOverallLeaderboard());
   const [pageIdx, setPageIdx] = useState(0);
+  const [ourSet, setOurSet] = useState(null);
 
   useEffect(() => {
     const timer = setInterval(() => setPageIdx((p) => p + 1), PAGE_MS);
     return () => clearInterval(timer);
   }, []);
 
-  const total = data?.overall?.length || 0;
+  useEffect(() => {
+    let active = true;
+    getParticipants()
+      .then((d) => {
+        if (!active) return;
+        const ids = (d.participants || [])
+          .map((p) => (p.kaggleId || '').toString().trim().toLowerCase())
+          .filter(Boolean);
+        setOurSet(new Set(ids));
+      })
+      .catch(() => active && setOurSet(new Set()));
+    return () => { active = false; };
+  }, []);
+
+  const overallAll = data?.overall || [];
+  const overall = ourSet
+    ? overallAll
+        .filter((r) => ourSet.has((r.nickname || '').toLowerCase()))
+        .map((r, i) => ({ ...r, place: i + 1 }))
+    : overallAll;
+
+  const total = overall.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const currentPage = pageIdx % totalPages;
   const start = currentPage * PAGE_SIZE;
-  const slice = (data?.overall || []).slice(start, start + PAGE_SIZE);
+  const slice = overall.slice(start, start + PAGE_SIZE);
   const endShown = Math.min(start + PAGE_SIZE, total);
 
   return (
