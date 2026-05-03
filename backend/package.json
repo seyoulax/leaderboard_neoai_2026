@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node --watch src/index.js",
     "start": "node src/index.js",
-    "test": "node --test backend/tests/"
+    "test": "node --test tests/**/*.test.js"
   },
   "dependencies": {
     "adm-zip": "^0.5.16",
