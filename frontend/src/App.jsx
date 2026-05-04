@@ -34,6 +34,10 @@ import {
   LegacyObsBoardBarRedirect,
   LegacyObsTaskRedirect,
 } from './legacyRedirects';
+import { AuthProvider } from './auth/AuthContext.jsx';
+import LoginPage from './auth/LoginPage.jsx';
+import RegisterPage from './auth/RegisterPage.jsx';
+import UserMenu from './UserMenu.jsx';
 
 const REFRESH_MS = 30_000;
 
@@ -1565,11 +1569,25 @@ function AdminShell() {
   );
 }
 
+function HeaderUserMenu() {
+  return (
+    <div className="header-user-menu">
+      <UserMenu />
+    </div>
+  );
+}
+
 export default function App() {
   return (
-    <Routes>
+    <AuthProvider>
+      <HeaderUserMenu />
+      <Routes>
       {/* Public root: list of competitions */}
       <Route path="/" element={<CompetitionsListPage />} />
+
+      {/* Auth */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
 
       {/* Public per-competition routes */}
       <Route path="/competitions/:competitionSlug" element={<CompetitionShell />}>
@@ -1617,6 +1635,7 @@ export default function App() {
           Страница не найдена. <Link to="/">На главную</Link>
         </p>
       } />
-    </Routes>
+      </Routes>
+    </AuthProvider>
   );
 }

@@ -852,3 +852,4 @@ tr.row-down > td {
 .auth-card button { padding: 10px; background: #111; color: #fff; border: 0; border-radius: 4px; cursor: pointer; }
 .user-menu { display: inline-flex; gap: 12px; align-items: center; }
 .user-menu button { background: transparent; border: 1px solid #ccc; padding: 4px 10px; border-radius: 4px; cursor: pointer; }
+.header-user-menu { position: absolute; top: 12px; right: 16px; z-index: 50; font-size: 14px; }
