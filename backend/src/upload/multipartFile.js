@@ -9,6 +9,11 @@ export function acceptSingleFile(req, res, opts) {
   let handled = false;
   let aborted = false;
   let gotFile = false;
+  const fields = {};
+
+  bb.on('field', (name, val) => {
+    fields[name] = val;
+  });
 
   bb.on('file', (name, stream, info) => {
     gotFile = true;
@@ -53,6 +58,7 @@ export function acceptSingleFile(req, res, opts) {
           finalPath,
           originalFilename: info.filename,
           mimetype: info.mimeType,
+          fields,
         });
       });
     });

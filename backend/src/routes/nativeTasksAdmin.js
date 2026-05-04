@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import path from 'node:path';
 import { getCompetition } from '../db/competitionsRepo.js';
 import {
   insertNativeTask,
@@ -7,8 +8,28 @@ import {
   updateNativeTask,
   softDeleteNativeTask,
 } from '../db/nativeTasksRepo.js';
+import {
+  insertPendingFile,
+  commitFilePath,
+  getFileById,
+  deleteFileById,
+} from '../db/nativeTaskFilesRepo.js';
+import { acceptSingleFile } from '../upload/multipartFile.js';
+import { safeFilename } from '../upload/safeFilename.js';
 
 const SLUG_RE = /^[a-z0-9][a-z0-9-]*$/;
+
+const NATIVE_DATA_DIR = () => path.resolve(process.env.NATIVE_DATA_DIR || './data/native');
+
+function maxBytesFor(kind) {
+  if (kind === 'dataset') return Number(process.env.MAX_DATASET_BYTES || 524288000);
+  if (kind === 'artifact') return Number(process.env.MAX_ARTIFACT_BYTES || 26214400);
+  return 0;
+}
+
+function fileDir(comp, task, kind) {
+  return path.join(NATIVE_DATA_DIR(), comp, task, kind);
+}
 
 function requireNativeComp(db, slug) {
   const c = getCompetition(db, slug);
@@ -88,6 +109,55 @@ export function createNativeTasksAdminRouter({ db }) {
     if (!existing) return res.status(404).json({ error: 'task not found' });
     softDeleteNativeTask(db, req.params.competitionSlug, req.params.taskSlug);
     res.json({ ok: true });
+  });
+
+  router.post('/:taskSlug/files', (req, res) => {
+    const r = requireNativeComp(db, req.params.competitionSlug);
+    if (r.error) return res.status(r.error.status).json({ error: r.error.message });
+    const task = getNativeTask(db, req.params.competitionSlug, req.params.taskSlug);
+    if (!task) return res.status(404).json({ error: 'task not found' });
+    const kind = req.query.kind;
+    if (kind !== 'dataset' && kind !== 'artifact') {
+      return res.status(400).json({ error: "kind must be 'dataset' or 'artifact'" });
+    }
+    const destDir = fileDir(req.params.competitionSlug, req.params.taskSlug, kind);
+    const maxBytes = maxBytesFor(kind);
+
+    acceptSingleFile(req, res, {
+      maxBytes,
+      destDir,
+      makeFinalName: (info) => `.pending-${Date.now()}-${safeFilename(info.filename)}`,
+      onAccepted: async ({ size, sha256, finalPath, originalFilename, fields }) => {
+        try {
+          const displayName = String(fields?.display_name || originalFilename);
+          const description = String(fields?.description || '');
+          const row = insertPendingFile(db, {
+            taskId: task.id,
+            kind,
+            displayName,
+            description,
+            originalFilename,
+            sizeBytes: size,
+            sha256,
+          });
+          const finalName = `${row.id}-${safeFilename(originalFilename)}`;
+          const targetPath = path.join(destDir, finalName);
+          const fsp = await import('node:fs/promises');
+          try {
+            await fsp.rename(finalPath, targetPath);
+            commitFilePath(db, row.id, targetPath);
+            res.json({ file: getFileById(db, row.id) });
+          } catch (renameErr) {
+            deleteFileById(db, row.id);
+            await fsp.rm(finalPath, { force: true }).catch(() => {});
+            res.status(500).json({ error: renameErr.message });
+          }
+        } catch (e) {
+          res.status(500).json({ error: e.message });
+        }
+      },
+      onError: (err, status) => res.status(status || 500).json({ error: err.message }),
+    });
   });
 
   return router;

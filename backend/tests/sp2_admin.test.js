@@ -77,3 +77,57 @@ test('admin native-tasks: duplicate slug → 400', async () => {
   assert.equal(dup.status, 400);
   server.close();
 });
+
+import path from 'node:path';
+import os from 'node:os';
+import fs from 'node:fs';
+
+function multipartBody(filename, content, mime = 'text/csv') {
+  const boundary = '----X';
+  const body = Buffer.concat([
+    Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="display_name"\r\n\r\nMyFile\r\n`),
+    Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${filename}"\r\nContent-Type: ${mime}\r\n\r\n`),
+    Buffer.from(content),
+    Buffer.from(`\r\n--${boundary}--\r\n`),
+  ]);
+  return { body, boundary };
+}
+
+test('admin native-tasks: POST file (dataset) saves on disk + row', async () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sp2-'));
+  process.env.NATIVE_DATA_DIR = tmp;
+  const { app } = setup();
+  const server = await start(app);
+  const port = server.address().port;
+  const base = `http://127.0.0.1:${port}/api/admin/competitions/comp/native-tasks`;
+  await fetch(base, { method: 'POST', headers: ADMIN_HEADERS, body: JSON.stringify({ slug: 't', title: 'T' }) });
+  const { body, boundary } = multipartBody('train.csv', 'a,b\n1,2\n');
+  const r = await fetch(`${base}/t/files?kind=dataset`, {
+    method: 'POST',
+    headers: { 'content-type': `multipart/form-data; boundary=${boundary}`, 'x-admin-token': 'shared' },
+    body,
+  });
+  assert.equal(r.status, 200);
+  const j = await r.json();
+  assert.equal(j.file.kind, 'dataset');
+  assert.equal(j.file.originalFilename, 'train.csv');
+  assert.ok(fs.existsSync(j.file.path));
+  fs.rmSync(tmp, { recursive: true, force: true });
+  server.close();
+});
+
+test('admin native-tasks: POST file kind=invalid → 400', async () => {
+  const { app } = setup();
+  const server = await start(app);
+  const port = server.address().port;
+  const base = `http://127.0.0.1:${port}/api/admin/competitions/comp/native-tasks`;
+  await fetch(base, { method: 'POST', headers: ADMIN_HEADERS, body: JSON.stringify({ slug: 't', title: 'T' }) });
+  const { body, boundary } = multipartBody('x.csv', 'x');
+  const r = await fetch(`${base}/t/files?kind=BOGUS`, {
+    method: 'POST',
+    headers: { 'content-type': `multipart/form-data; boundary=${boundary}`, 'x-admin-token': 'shared' },
+    body,
+  });
+  assert.equal(r.status, 400);
+  server.close();
+});
