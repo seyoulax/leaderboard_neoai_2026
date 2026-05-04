@@ -82,63 +82,222 @@ export default function AdminCompetitionsPage() {
   if (loading) return <p className="status">Загрузка...</p>;
 
   return (
-    <section className="panel">
-      <div className="panel-head"><h2>Соревнования</h2></div>
+    <div className="admin-comp">
+      <header className="admin-comp-header">
+        <p className="eyebrow">Админка</p>
+        <h1>Соревнования</h1>
+      </header>
+
       {error ? <p className="status error">{error}</p> : null}
 
-      <div className="admin-comp-create">
-        <h3>+ Новое соревнование</h3>
-        <div className="admin-comp-row">
-          <input placeholder="slug" value={draft.slug} onChange={(e) => setDraft({ ...draft, slug: e.target.value })} />
-          <input placeholder="title" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
-          <input placeholder="subtitle (опц.)" value={draft.subtitle} onChange={(e) => setDraft({ ...draft, subtitle: e.target.value })} />
-          <input type="number" placeholder="order" value={draft.order} onChange={(e) => setDraft({ ...draft, order: e.target.value })} />
-          <label><input type="checkbox" checked={draft.visible} onChange={(e) => setDraft({ ...draft, visible: e.target.checked })} /> visible</label>
-          <fieldset className="admin-comp-type">
-            <label><input type="radio" name="type" value="kaggle" checked={draft.type === 'kaggle'} onChange={() => setDraft({ ...draft, type: 'kaggle' })} /> Kaggle</label>
-            <label><input type="radio" name="type" value="native" checked={draft.type === 'native'} onChange={() => setDraft({ ...draft, type: 'native' })} /> Native</label>
-          </fieldset>
-          <fieldset className="admin-comp-type">
-            <label><input type="radio" name="visibility" value="public" checked={draft.visibility === 'public'} onChange={() => setDraft({ ...draft, visibility: 'public' })} /> Public</label>
-            <label><input type="radio" name="visibility" value="unlisted" checked={draft.visibility === 'unlisted'} onChange={() => setDraft({ ...draft, visibility: 'unlisted' })} /> Unlisted</label>
-          </fieldset>
-          <button disabled={busy || !draft.slug || !draft.title} onClick={createNew}>Создать</button>
+      <section className="panel native-edit-panel">
+        <div className="panel-head">
+          <h2>+ Новое соревнование</h2>
+          <span>Kaggle = подгрузка ЛБ из Kaggle CLI · Native = задачи + сабмиты у нас</span>
         </div>
-      </div>
+        <div className="native-edit-body">
+          <div className="admin-create-grid">
+            <label className="native-field">
+              <span className="native-field-label">slug *</span>
+              <input
+                className="control-input"
+                placeholder="neoai-2026"
+                value={draft.slug}
+                onChange={(e) => setDraft({ ...draft, slug: e.target.value })}
+              />
+            </label>
+            <label className="native-field">
+              <span className="native-field-label">title *</span>
+              <input
+                className="control-input"
+                placeholder="NEOAI 2026"
+                value={draft.title}
+                onChange={(e) => setDraft({ ...draft, title: e.target.value })}
+              />
+            </label>
+            <label className="native-field" style={{ gridColumn: 'span 2' }}>
+              <span className="native-field-label">subtitle (опц.)</span>
+              <input
+                className="control-input"
+                placeholder="Northern Eurasia Olympiad in AI"
+                value={draft.subtitle}
+                onChange={(e) => setDraft({ ...draft, subtitle: e.target.value })}
+              />
+            </label>
+            <label className="native-field" style={{ maxWidth: 120 }}>
+              <span className="native-field-label">order</span>
+              <input
+                className="control-input"
+                type="number"
+                value={draft.order}
+                onChange={(e) => setDraft({ ...draft, order: e.target.value })}
+              />
+            </label>
+            <label className="native-anchor native-anchor-checkbox" style={{ alignSelf: 'end', paddingBottom: 12 }}>
+              <input
+                type="checkbox"
+                checked={draft.visible}
+                onChange={(e) => setDraft({ ...draft, visible: e.target.checked })}
+              />
+              <span>visible</span>
+            </label>
+          </div>
 
-      <table className="admin-comp-table">
-        <thead><tr><th>slug</th><th>title</th><th>subtitle</th><th>order</th><th>visible</th><th>тип</th><th>видимость</th><th>задачи</th><th></th></tr></thead>
-        <tbody>
-          {list.map((c, idx) => (
-            <tr key={c.slug}>
-              <td><Link to={`/admin/competitions/${encodeURIComponent(c.slug)}/tasks`}>{c.slug}</Link></td>
-              <td><input value={c.title} onChange={(e) => updateAt(idx, 'title', e.target.value)} /></td>
-              <td><input value={c.subtitle || ''} onChange={(e) => updateAt(idx, 'subtitle', e.target.value)} /></td>
-              <td><input type="number" value={c.order ?? 0} onChange={(e) => updateAt(idx, 'order', Number(e.target.value))} /></td>
-              <td><input type="checkbox" checked={c.visible !== false} onChange={(e) => updateAt(idx, 'visible', e.target.checked)} /></td>
-              <td className="muted" title="нельзя поменять после создания">{c.type || 'kaggle'}</td>
-              <td>
-                <select value={c.visibility || 'public'} onChange={(e) => updateAt(idx, 'visibility', e.target.value)}>
-                  <option value="public">public</option>
-                  <option value="unlisted">unlisted</option>
-                </select>
-              </td>
-              <td>
-                {c.type === 'native' ? (
-                  <Link to={`/admin/competitions/${encodeURIComponent(c.slug)}/native-tasks`}>native-tasks →</Link>
-                ) : (
-                  <span className="muted">—</span>
-                )}
-              </td>
-              <td><button onClick={() => remove(c.slug)}>🗑</button></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+          <div className="admin-create-radios">
+            <fieldset className="native-anchors">
+              <legend>Тип</legend>
+              <div className="native-anchors-grid">
+                <label className="native-anchor native-anchor-checkbox">
+                  <input type="radio" name="type" value="kaggle" checked={draft.type === 'kaggle'} onChange={() => setDraft({ ...draft, type: 'kaggle' })} />
+                  <span>Kaggle</span>
+                </label>
+                <label className="native-anchor native-anchor-checkbox">
+                  <input type="radio" name="type" value="native" checked={draft.type === 'native'} onChange={() => setDraft({ ...draft, type: 'native' })} />
+                  <span>Native</span>
+                </label>
+              </div>
+            </fieldset>
+            <fieldset className="native-anchors">
+              <legend>Видимость</legend>
+              <div className="native-anchors-grid">
+                <label className="native-anchor native-anchor-checkbox">
+                  <input type="radio" name="visibility" value="public" checked={draft.visibility === 'public'} onChange={() => setDraft({ ...draft, visibility: 'public' })} />
+                  <span>Public — в каталоге</span>
+                </label>
+                <label className="native-anchor native-anchor-checkbox">
+                  <input type="radio" name="visibility" value="unlisted" checked={draft.visibility === 'unlisted'} onChange={() => setDraft({ ...draft, visibility: 'unlisted' })} />
+                  <span>Unlisted — только по ссылке</span>
+                </label>
+              </div>
+            </fieldset>
+          </div>
 
-      <button disabled={busy} onClick={saveAll} className="control-btn" style={{ margin: 16 }}>
-        💾 Сохранить все
-      </button>
-    </section>
+          <div className="native-edit-actions">
+            <button
+              className="control-btn"
+              disabled={busy || !draft.slug || !draft.title}
+              onClick={createNew}
+            >
+              {busy ? 'Создаём…' : 'Создать соревнование'}
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className="panel native-edit-panel">
+        <div className="panel-head">
+          <h2>Существующие</h2>
+          <span>{list.length} {plural(list.length, 'соревнование', 'соревнования', 'соревнований')}</span>
+        </div>
+        <div className="admin-comp-table-wrap">
+          <table className="admin-comp-table v2">
+            <thead>
+              <tr>
+                <th>slug</th>
+                <th>title</th>
+                <th>subtitle</th>
+                <th style={{ width: 80 }}>order</th>
+                <th style={{ width: 70 }}>visible</th>
+                <th style={{ width: 100 }}>тип</th>
+                <th style={{ width: 130 }}>видимость</th>
+                <th style={{ width: 140 }}>задачи</th>
+                <th style={{ width: 50 }}></th>
+              </tr>
+            </thead>
+            <tbody>
+              {list.map((c, idx) => (
+                <tr key={c.slug}>
+                  <td>
+                    <Link to={`/admin/competitions/${encodeURIComponent(c.slug)}/tasks`} className="admin-comp-slug">
+                      {c.slug}
+                    </Link>
+                  </td>
+                  <td>
+                    <input
+                      className="admin-cell-input"
+                      value={c.title}
+                      onChange={(e) => updateAt(idx, 'title', e.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      className="admin-cell-input"
+                      value={c.subtitle || ''}
+                      onChange={(e) => updateAt(idx, 'subtitle', e.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      className="admin-cell-input mono"
+                      type="number"
+                      value={c.order ?? 0}
+                      onChange={(e) => updateAt(idx, 'order', Number(e.target.value))}
+                    />
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
+                    <input
+                      type="checkbox"
+                      checked={c.visible !== false}
+                      onChange={(e) => updateAt(idx, 'visible', e.target.checked)}
+                      style={{ accentColor: 'var(--accent)' }}
+                    />
+                  </td>
+                  <td>
+                    <span className={`competition-badge competition-badge-${c.type || 'kaggle'}`} title="нельзя поменять после создания">
+                      {c.type || 'kaggle'}
+                    </span>
+                  </td>
+                  <td>
+                    <select
+                      className="admin-cell-select"
+                      value={c.visibility || 'public'}
+                      onChange={(e) => updateAt(idx, 'visibility', e.target.value)}
+                    >
+                      <option value="public">public</option>
+                      <option value="unlisted">unlisted</option>
+                    </select>
+                  </td>
+                  <td>
+                    {c.type === 'native' ? (
+                      <Link
+                        to={`/admin/competitions/${encodeURIComponent(c.slug)}/native-tasks`}
+                        className="admin-comp-tasks-link"
+                      >
+                        native-tasks →
+                      </Link>
+                    ) : (
+                      <span className="muted">—</span>
+                    )}
+                  </td>
+                  <td>
+                    <button
+                      className="control-btn control-btn-ghost"
+                      onClick={() => remove(c.slug)}
+                      title="удалить"
+                    >
+                      ×
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="native-edit-actions" style={{ padding: '16px 24px', borderTop: '1px solid var(--line)' }}>
+          <button disabled={busy} onClick={saveAll} className="control-btn">
+            {busy ? 'Сохраняем…' : '💾 Сохранить изменения'}
+          </button>
+        </div>
+      </section>
+    </div>
   );
+}
+
+function plural(n, one, few, many) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod100 >= 11 && mod100 <= 14) return many;
+  if (mod10 === 1) return one;
+  if (mod10 >= 2 && mod10 <= 4) return few;
+  return many;
 }

@@ -1187,3 +1187,141 @@ tr.row-down > td {
   white-space: nowrap;
   max-width: 100%;
 }
+
+/* ─── admin competitions page ──────────────────────────────── */
+.admin-comp {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px 24px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.admin-comp-header { padding: 8px 0 4px; }
+.admin-comp-header .eyebrow {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.admin-comp-header h1 {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.admin-create-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.admin-create-radios {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 720px) {
+  .admin-create-grid { grid-template-columns: 1fr 1fr; }
+  .admin-create-radios { grid-template-columns: 1fr; }
+}
+
+/* table v2 — themed cells */
+.admin-comp-table-wrap { overflow-x: auto; }
+.admin-comp-table.v2 {
+  width: 100%;
+  border-collapse: collapse;
+}
+.admin-comp-table.v2 th {
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+.admin-comp-table.v2 td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+.admin-comp-table.v2 tbody tr {
+  background: transparent;
+  transition: background 0.15s;
+}
+.admin-comp-table.v2 tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
+.admin-comp-table.v2 tbody tr:nth-child(1),
+.admin-comp-table.v2 tbody tr:nth-child(2),
+.admin-comp-table.v2 tbody tr:nth-child(3) { background: transparent; }
+.admin-comp-table.v2 tbody tr:nth-child(1) td:first-child,
+.admin-comp-table.v2 tbody tr:nth-child(2) td:first-child,
+.admin-comp-table.v2 tbody tr:nth-child(3) td:first-child {
+  color: inherit;
+  font-weight: inherit;
+}
+
+.admin-comp-slug {
+  font-family: ui-monospace, monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+  text-decoration: none;
+}
+.admin-comp-slug:hover { text-decoration: underline; }
+
+.admin-comp-tasks-link {
+  font-size: 12px;
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+.admin-comp-tasks-link:hover { text-decoration: underline; }
+
+.admin-cell-input {
+  width: 100%;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 13px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.admin-cell-input:hover { background: rgba(255, 255, 255, 0.04); }
+.admin-cell-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: rgba(125, 95, 255, 0.06);
+}
+.admin-cell-input.mono { font-family: ui-monospace, monospace; }
+
+.admin-cell-select {
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.admin-cell-select:focus { outline: none; border-color: var(--accent); }
+
+.competition-badge-kaggle {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--muted);
+  margin: 0;
+}
+.competition-badge-native {
+  background: var(--accent-soft);
+  color: var(--accent);
+  margin: 0;
+}
