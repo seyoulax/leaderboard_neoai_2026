@@ -102,11 +102,11 @@ data/
 
 ## Score anchors (baseline / author)
 
-У каждой задачи 4 опциональных поля скоров: `baselineScorePublic`, `authorScorePublic`, `baselineScorePrivate`, `authorScorePrivate`. Источники (в порядке приоритета):
+У каждой задачи 4 опциональных поля скоров в `tasks.json`: `baselineScorePublic`, `authorScorePublic`, `baselineScorePrivate`, `authorScorePrivate`. Задаются вручную в админке `/admin/competitions/<slug>/tasks`.
 
-1. **Auto-extract из Kaggle CSV.** При refresh бэк ищет в leaderboard CSV строки с `Rank=0`, чьё имя команды содержит `baseline` или `author` (case-insensitive), и подставляет их score в соответствующие поля. Для приватного — то же самое в private CSV (через `extractPrivateAnchors`).
-2. **Fallback к admin-полям.** Если auto-extract вернул `null` (анкер не найден в CSV), берётся значение из `tasks.json`, заданное в админке.
-3. **Если оба null** — задача нормализуется без якорей (по rank=1/last).
+Если оба заполнены и различаются — задача нормализуется по якорям (см. `normalizeWithAnchors`). Иначе — по rank=1/last.
+
+Pseudo-rows в Kaggle leaderboard CSV (Rank=0 с именем команды, содержащим `baseline`/`author`) **отбрасываются** при парсинге, чтобы не попадали в участников. Их скор для нормализации не используется.
 
 ## ENV-переменные backend
 

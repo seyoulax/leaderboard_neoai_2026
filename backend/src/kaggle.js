@@ -26,8 +26,6 @@ function parseLeaderboardRows(csvRaw) {
   const rows = parse(csvRaw, { columns: true, skip_empty_lines: true, bom: true });
 
   const entries = [];
-  let baselineScore = null;
-  let authorScore = null;
 
   for (const row of rows) {
     const teamId = pickValue(row, ['teamId', 'TeamId']);
@@ -41,16 +39,10 @@ function parseLeaderboardRows(csvRaw) {
 
     if (score === null) continue;
 
+    // Skip pseudo-rows (Rank=0 baseline/author): анкеры задаются вручную в tasks.json.
     if (rank === 0) {
       const tn = String(teamName || '').toLowerCase();
-      if (tn.includes('baseline')) {
-        if (baselineScore === null) baselineScore = score;
-        continue;
-      }
-      if (tn.includes('author')) {
-        if (authorScore === null) authorScore = score;
-        continue;
-      }
+      if (tn.includes('baseline') || tn.includes('author')) continue;
     }
 
     const nickname = teamMemberUserNames
@@ -68,7 +60,7 @@ function parseLeaderboardRows(csvRaw) {
     });
   }
 
-  return { rows: entries, anchors: { baselineScore, authorScore } };
+  return entries;
 }
 
 function pickPublicCsvEntry(entries) {

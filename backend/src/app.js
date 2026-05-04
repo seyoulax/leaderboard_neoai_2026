@@ -11,7 +11,6 @@ import { buildLeaderboards } from './leaderboard.js';
 import {
   parsePrivateCsv,
   buildPrivateRows,
-  extractPrivateAnchors,
   readPrivateFile,
   writePrivateFile,
   deletePrivateFile,
@@ -373,16 +372,14 @@ async function refreshCompetition(slug) {
 
   for (const task of tasks) {
     try {
-      const fetched = await fetchCompetitionLeaderboard({
+      const rows = await fetchCompetitionLeaderboard({
         competition: task.competition,
         kaggleCmd: KAGGLE_CMD,
       });
       taskRows.push({
         ...task,
-        baselineScorePublic: fetched.anchors.baselineScore ?? task.baselineScorePublic,
-        authorScorePublic: fetched.anchors.authorScore ?? task.authorScorePublic,
         updatedAt: new Date().toISOString(),
-        rows: fetched.rows,
+        rows,
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -393,8 +390,6 @@ async function refreshCompetition(slug) {
       if (prev && Array.isArray(prev.entries)) {
         taskRows.push({
           ...task,
-          baselineScorePublic: prev.baselineScore ?? task.baselineScorePublic,
-          authorScorePublic: prev.authorScore ?? task.authorScorePublic,
           updatedAt: prev.updatedAt || compCache.updatedAt,
           rows: prev.entries.map((e) => ({
             participantKey: e.participantKey,
@@ -435,12 +430,9 @@ async function refreshCompetition(slug) {
       continue;
     }
     if (!records.length) continue;
-    const { records: participantRecords, anchors } = extractPrivateAnchors(records);
-    const rows = buildPrivateRows({ records: participantRecords, higherIsBetter: task.higherIsBetter, participants });
+    const rows = buildPrivateRows({ records, higherIsBetter: task.higherIsBetter, participants });
     privateTaskRows.push({
       ...task,
-      baselineScorePrivate: anchors.baselineScore ?? task.baselineScorePrivate,
-      authorScorePrivate: anchors.authorScore ?? task.authorScorePrivate,
       updatedAt: file.updatedAt,
       rows,
     });

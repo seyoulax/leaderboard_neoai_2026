@@ -100,25 +100,6 @@ export function parsePrivateCsv(raw, { higherIsBetter = true } = {}) {
   return out;
 }
 
-export function extractPrivateAnchors(records) {
-  let baselineScore = null;
-  let authorScore = null;
-  const filtered = [];
-  for (const r of records) {
-    const id = String(r.kaggleId || '').toLowerCase();
-    if (id.includes('baseline')) {
-      if (baselineScore === null) baselineScore = r.score;
-      continue;
-    }
-    if (id.includes('author')) {
-      if (authorScore === null) authorScore = r.score;
-      continue;
-    }
-    filtered.push(r);
-  }
-  return { records: filtered, anchors: { baselineScore, authorScore } };
-}
-
 export function buildPrivateRows({ records, higherIsBetter, participants }) {
   const sorted = records.slice().sort((a, b) => (higherIsBetter ? b.score - a.score : a.score - b.score));
   const map = new Map(
