@@ -14,10 +14,11 @@
 | `/login` | Email + пароль (session cookie); редирект на `from` или `/` |
 | `/register` | Регистрация: email, пароль (≥ 8), displayName, kaggleId (опц.) |
 | `/competitions/<slug>` | Редирект на `leaderboard` |
-| `/competitions/<slug>/leaderboard` | Общий ЛБ |
+| `/competitions/<slug>/leaderboard` | Общий ЛБ (для `type=native` показывает список задач без entries — заполнятся в SP-3) |
 | `/competitions/<slug>/cycle` | Циклическая показ по 15 строк (по прямому URL, без таба в навигации) |
 | `/competitions/<slug>/board/<b>` | Лидерборд борда |
-| `/competitions/<slug>/task/<t>` | Лидерборд задачи |
+| `/competitions/<slug>/task/<t>` | Лидерборд задачи (kaggle) |
+| `/competitions/<slug>/native-tasks/<task>` | Публичная страница нативной задачи: markdown-описание + datasets/artifacts с auth-gated скачиванием + zip-бандлы |
 
 В правом верхнем углу любой страницы — `UserMenu`: «Войти / Регистрация» для анонимов; имя + «Выйти» (+ ссылка «Админка», если `role='admin'`) — для залогиненных.
 
@@ -37,12 +38,14 @@
 | URL | Что |
 | --- | --- |
 | `/admin` | Legacy token-логин (вводит `ADMIN_TOKEN`). Для session-auth используй `/login` админ-аккаунтом — после успеха `UserMenu` подскажет ссылку на админку. |
-| `/admin/competitions` | CRUD соревнований (поле `type: kaggle | native` — radio при создании, колонка в таблице) |
+| `/admin/competitions` | CRUD соревнований: поля `type: kaggle \| native` (radio, нельзя поменять после создания), `visibility: public \| unlisted` (radio + колонка-селект). Для native-соревнований — ссылка `native-tasks →`. |
 | `/admin/competitions/<slug>` | Редирект на `tasks` |
-| `/admin/competitions/<slug>/tasks` | CRUD задач (scoped) |
+| `/admin/competitions/<slug>/tasks` | CRUD kaggle-задач (scoped) |
 | `/admin/competitions/<slug>/boards` | CRUD бордов (scoped) |
 | `/admin/competitions/<slug>/participants` | JSON paste/upload |
 | `/admin/competitions/<slug>/card` | OBS-карточка (scoped) |
+| `/admin/competitions/<slug>/native-tasks` | Список нативных задач (только для `type=native`): создание/удаление |
+| `/admin/competitions/<slug>/native-tasks/<task>` | Редактор нативной задачи: метаданные + markdown с preview + scoring anchors + загрузка датасетов/артефактов/grader/ground-truth |
 
 ## Legacy redirects
 
