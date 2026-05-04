@@ -617,6 +617,7 @@ html.obs body {
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
+  object-position: center top;
   background: #0e0e0e;
   display: block;
 }
