@@ -1,10 +1,19 @@
 import express from 'express';
 import cors from 'cors';
-import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadCompetitions, saveCompetitions, validateCompetitions } from './competitions.js';
+import { validateCompetitions } from './competitions.js';
+import { loadUser, requireAdmin } from './auth/middleware.js';
+import { createAuthRouter } from './routes/auth.js';
+import {
+  listActiveCompetitions,
+  listVisibleCompetitions,
+  getCompetition,
+  insertCompetition,
+  softDeleteCompetition,
+  bulkReplaceCompetitions,
+} from './db/competitionsRepo.js';
 import { readCompetitionState, writeCompetitionState } from './state.js';
 import { fetchCompetitionLeaderboard } from './kaggle.js';
 import { buildLeaderboards } from './leaderboard.js';
@@ -21,11 +30,15 @@ const __dirname = path.dirname(__filename);
 
 const KAGGLE_CMD = process.env.KAGGLE_CMD || 'kaggle';
 export const DATA_DIR = path.resolve(__dirname, '..', process.env.DATA_DIR || './data');
-const COMPETITIONS_FILE = path.join(DATA_DIR, 'competitions.json');
 const COMPETITIONS_DIR = path.join(DATA_DIR, 'competitions');
 const PRIVATE_DIR_BASE = path.join(DATA_DIR, 'private');
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN || '';
 const REQUEST_GAP_MS = Number(process.env.REQUEST_GAP_MS || 3000);
+
+let _dbForRefresh = null;
+function getDbHandle() {
+  if (!_dbForRefresh) throw new Error('refreshAll called before createApp({db})');
+  return _dbForRefresh;
+}
 
 function competitionDir(slug) {
   return path.join(COMPETITIONS_DIR, slug);
@@ -349,8 +362,9 @@ export async function refreshAll() {
   }
   cache.isRefreshing = true;
   try {
-    cache.competitionsIndex = await loadCompetitions(COMPETITIONS_FILE);
+    cache.competitionsIndex = listActiveCompetitions(getDbHandle());
     for (const comp of cache.competitionsIndex) {
+      if (comp.type !== 'kaggle') continue;
       try {
         await refreshCompetition(comp.slug);
       } catch (e) {
@@ -488,31 +502,6 @@ function findKaggleStats(slug, kaggleId) {
   };
 }
 
-function safeEqualToken(provided, expected) {
-  const a = Buffer.from(provided || '', 'utf8');
-  const b = Buffer.from(expected || '', 'utf8');
-  if (a.length !== b.length) {
-    crypto.timingSafeEqual(b, b);
-    return false;
-  }
-  return crypto.timingSafeEqual(a, b);
-}
-
-function requireAdmin(req, res, next) {
-  if (!ADMIN_TOKEN) {
-    res.status(503).json({ error: 'admin disabled: ADMIN_TOKEN is not set on the server' });
-    return;
-  }
-  const token = req.get('x-admin-token') || '';
-  if (!safeEqualToken(token, ADMIN_TOKEN)) {
-    const ip = req.ip || req.socket.remoteAddress || 'unknown';
-    console.warn(`[admin] failed auth from ${ip}`);
-    res.status(401).json({ error: 'invalid admin token' });
-    return;
-  }
-  next();
-}
-
 function findCompetitionMeta(slug) {
   if (!slug) return null;
   const wanted = String(slug).toLowerCase();
@@ -538,11 +527,17 @@ function ensureKnownSlug(req, res) {
   return slug;
 }
 
-export function createApp() {
+export function createApp({ db } = {}) {
+  if (!db) throw new Error('createApp({db}) is required');
+  _dbForRefresh = db;
+  const ADMIN_TOKEN = process.env.ADMIN_TOKEN || '';
+  const adminMw = requireAdmin({ adminToken: ADMIN_TOKEN });
   const app = express();
   app.set('trust proxy', true);
-  app.use(cors());
+  app.use(cors({ origin: true, credentials: true }));
   app.use(express.json({ limit: '50mb' }));
+  app.use(loadUser({ db }));
+  app.use('/api/auth', createAuthRouter({ db }));
 
   app.get('/api/health', (_req, res) => {
     const competitions = cache.competitionsIndex.map((c) => {
@@ -562,11 +557,7 @@ export function createApp() {
   });
 
   app.get('/api/competitions', (_req, res) => {
-    const visible = cache.competitionsIndex
-      .filter((c) => c.visible)
-      .slice()
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    res.json({ competitions: visible });
+    res.json({ competitions: listVisibleCompetitions(db) });
   });
 
   app.get('/api/competitions/:competitionSlug', (req, res) => {
@@ -729,47 +720,59 @@ export function createApp() {
     res.json({ ok: true, currentId: id, current: found });
   });
 
-  app.get('/api/admin/competitions', requireAdmin, async (_req, res) => {
-    try {
-      const list = await loadCompetitions(COMPETITIONS_FILE);
-      res.json({ competitions: list });
-    } catch (e) {
-      res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
-    }
+  app.get('/api/admin/competitions', adminMw, async (_req, res) => {
+    res.json({ competitions: listActiveCompetitions(db) });
   });
 
-  app.put('/api/admin/competitions', requireAdmin, async (req, res) => {
+  app.put('/api/admin/competitions', adminMw, async (req, res) => {
     try {
       const validated = validateCompetitions(req.body?.competitions);
-      await saveCompetitions(COMPETITIONS_FILE, validated);
-      for (const c of validated) {
+      const enriched = validated.map((c, idx) => {
+        const incoming = (req.body?.competitions || [])[idx] || {};
+        return {
+          slug: c.slug,
+          title: c.title,
+          subtitle: c.subtitle ?? null,
+          type: incoming.type === 'native' ? 'native' : 'kaggle',
+          visible: c.visible !== false,
+          displayOrder: Number.isFinite(c.order) ? c.order : 0,
+        };
+      });
+      bulkReplaceCompetitions(db, enriched);
+      for (const c of enriched) {
         await fs.mkdir(competitionDir(c.slug), { recursive: true });
       }
-      cache.competitionsIndex = validated;
-      res.json({ ok: true, competitions: validated });
+      cache.competitionsIndex = listActiveCompetitions(db);
+      res.json({ ok: true, competitions: cache.competitionsIndex });
       refreshAll().catch((e) => console.error('[refresh after admin save] FAILED', e));
     } catch (e) {
       res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
     }
   });
 
-  app.post('/api/admin/competitions', requireAdmin, async (req, res) => {
+  app.post('/api/admin/competitions', adminMw, async (req, res) => {
     try {
       const next = req.body?.competition;
       if (!next || typeof next !== 'object') {
         res.status(400).json({ error: 'competition object required in body' });
         return;
       }
-      const list = await loadCompetitions(COMPETITIONS_FILE);
-      if (list.some((c) => c.slug === String(next.slug || '').trim().toLowerCase())) {
-        res.status(400).json({ error: `slug '${next.slug}' already exists` });
+      const slug = String(next.slug || '').trim().toLowerCase();
+      if (getCompetition(db, slug)) {
+        res.status(400).json({ error: `slug '${slug}' already exists` });
         return;
       }
-      const validated = validateCompetitions([...list, next]);
-      await saveCompetitions(COMPETITIONS_FILE, validated);
-      const created = validated[validated.length - 1];
+      const [validated] = validateCompetitions([next]);
+      const created = insertCompetition(db, {
+        slug: validated.slug,
+        title: validated.title,
+        subtitle: validated.subtitle ?? null,
+        type: next.type === 'native' ? 'native' : 'kaggle',
+        visible: validated.visible !== false,
+        displayOrder: Number.isFinite(validated.order) ? validated.order : 0,
+      });
       await fs.mkdir(competitionDir(created.slug), { recursive: true });
-      cache.competitionsIndex = validated;
+      cache.competitionsIndex = listActiveCompetitions(db);
       res.json({ ok: true, competition: created });
       refreshAll().catch((e) => console.error('[refresh after admin create] FAILED', e));
     } catch (e) {
@@ -777,17 +780,15 @@ export function createApp() {
     }
   });
 
-  app.delete('/api/admin/competitions/:competitionSlug', requireAdmin, async (req, res) => {
+  app.delete('/api/admin/competitions/:competitionSlug', adminMw, async (req, res) => {
     try {
       const slug = String(req.params.competitionSlug || '').toLowerCase();
-      const list = await loadCompetitions(COMPETITIONS_FILE);
-      const idx = list.findIndex((c) => c.slug === slug);
-      if (idx < 0) {
+      const meta = getCompetition(db, slug);
+      if (!meta) {
         res.status(404).json({ error: `competition '${slug}' not found` });
         return;
       }
-      const remaining = list.filter((c) => c.slug !== slug);
-      await saveCompetitions(COMPETITIONS_FILE, remaining);
+      softDeleteCompetition(db, slug);
       const ts = new Date().toISOString().replace(/[:.]/g, '-');
       const dir = competitionDir(slug);
       const deletedDir = path.join(COMPETITIONS_DIR, `${slug}.deleted-${ts}`);
@@ -796,7 +797,7 @@ export function createApp() {
       } catch (e) {
         if (e.code !== 'ENOENT') throw e;
       }
-      cache.competitionsIndex = remaining;
+      cache.competitionsIndex = listActiveCompetitions(db);
       cache.byCompetition.delete(slug);
       res.json({ ok: true, deleted: slug, archivedAs: deletedDir });
     } catch (e) {
@@ -804,7 +805,7 @@ export function createApp() {
     }
   });
 
-  app.get('/api/admin/competitions/:competitionSlug/tasks', requireAdmin, async (req, res) => {
+  app.get('/api/admin/competitions/:competitionSlug/tasks', adminMw, async (req, res) => {
     const slug = ensureKnownSlug(req, res); if (!slug) return;
     try {
       const tasks = await loadTasksFor(slug);
@@ -814,7 +815,7 @@ export function createApp() {
     }
   });
 
-  app.put('/api/admin/competitions/:competitionSlug/tasks', requireAdmin, async (req, res) => {
+  app.put('/api/admin/competitions/:competitionSlug/tasks', adminMw, async (req, res) => {
     const slug = ensureKnownSlug(req, res); if (!slug) return;
     try {
       const tasks = validateTasks(req.body?.tasks);
@@ -828,7 +829,7 @@ export function createApp() {
     }
   });
 
-  app.get('/api/admin/competitions/:competitionSlug/boards', requireAdmin, async (req, res) => {
+  app.get('/api/admin/competitions/:competitionSlug/boards', adminMw, async (req, res) => {
     const slug = ensureKnownSlug(req, res); if (!slug) return;
     try {
       const boards = await loadBoardsFor(slug);
@@ -838,7 +839,7 @@ export function createApp() {
     }
   });
 
-  app.put('/api/admin/competitions/:competitionSlug/boards', requireAdmin, async (req, res) => {
+  app.put('/api/admin/competitions/:competitionSlug/boards', adminMw, async (req, res) => {
     const slug = ensureKnownSlug(req, res); if (!slug) return;
     try {
       const tasks = await loadTasksFor(slug);
@@ -851,7 +852,7 @@ export function createApp() {
     }
   });
 
-  app.get('/api/admin/competitions/:competitionSlug/participants', requireAdmin, async (req, res) => {
+  app.get('/api/admin/competitions/:competitionSlug/participants', adminMw, async (req, res) => {
     const slug = ensureKnownSlug(req, res); if (!slug) return;
     try {
       const participants = await loadParticipantsFor(slug);
@@ -861,7 +862,7 @@ export function createApp() {
     }
   });
 
-  app.put('/api/admin/competitions/:competitionSlug/participants', requireAdmin, async (req, res) => {
+  app.put('/api/admin/competitions/:competitionSlug/participants', adminMw, async (req, res) => {
     const slug = ensureKnownSlug(req, res); if (!slug) return;
     try {
       const participants = req.body?.participants;
@@ -879,7 +880,7 @@ export function createApp() {
     }
   });
 
-  app.get('/api/admin/competitions/:competitionSlug/tasks/:taskSlug/private', requireAdmin, async (req, res) => {
+  app.get('/api/admin/competitions/:competitionSlug/tasks/:taskSlug/private', adminMw, async (req, res) => {
     const slug = ensureKnownSlug(req, res); if (!slug) return;
     try {
       const file = await readPrivateFile(privateDirFor(slug), req.params.taskSlug);
@@ -892,7 +893,7 @@ export function createApp() {
     }
   });
 
-  app.put('/api/admin/competitions/:competitionSlug/tasks/:taskSlug/private', requireAdmin, async (req, res) => {
+  app.put('/api/admin/competitions/:competitionSlug/tasks/:taskSlug/private', adminMw, async (req, res) => {
     const slug = ensureKnownSlug(req, res); if (!slug) return;
     try {
       const tasks = await loadTasksFor(slug);
@@ -917,7 +918,7 @@ export function createApp() {
     }
   });
 
-  app.delete('/api/admin/competitions/:competitionSlug/tasks/:taskSlug/private', requireAdmin, async (req, res) => {
+  app.delete('/api/admin/competitions/:competitionSlug/tasks/:taskSlug/private', adminMw, async (req, res) => {
     const slug = ensureKnownSlug(req, res); if (!slug) return;
     try {
       await deletePrivateFile(privateDirFor(slug), req.params.taskSlug);
@@ -934,7 +935,7 @@ export function createApp() {
 }
 
 export async function bootstrapForTests() {
-  cache.competitionsIndex = await loadCompetitions(COMPETITIONS_FILE);
+  cache.competitionsIndex = listActiveCompetitions(getDbHandle());
   for (const c of cache.competitionsIndex) {
     if (!cache.byCompetition.has(c.slug)) {
       cache.byCompetition.set(c.slug, emptyCompetitionCache());
@@ -943,5 +944,5 @@ export async function bootstrapForTests() {
 }
 
 export async function reloadIndex() {
-  cache.competitionsIndex = await loadCompetitions(COMPETITIONS_FILE);
+  cache.competitionsIndex = listActiveCompetitions(getDbHandle());
 }
