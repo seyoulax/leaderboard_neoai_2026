@@ -969,3 +969,33 @@ tr.row-down > td {
   transition: background 0.18s, color 0.18s, border-color 0.18s;
 }
 .user-menu button:hover { background: var(--accent); color: #fff; }
+
+/* ─── competitions list (SP-2 search) ──────────────────────── */
+.competitions-search {
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ink);
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 14px;
+  min-width: 240px;
+  transition: border-color 0.18s, background 0.18s;
+}
+.competitions-search:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: rgba(125, 95, 255, 0.06);
+}
+.competition-badge {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+}
