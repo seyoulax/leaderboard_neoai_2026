@@ -59,3 +59,80 @@ test('migration 0002: native_tasks + native_task_files exist with FKs', () => {
     /UNIQUE/i
   );
 });
+
+import {
+  insertNativeTask,
+  getNativeTask,
+  listNativeTasks,
+  updateNativeTask,
+  softDeleteNativeTask,
+} from '../src/db/nativeTasksRepo.js';
+
+function seedComp(db, slug = 'c', type = 'native') {
+  db.prepare("INSERT INTO competitions (slug, title, type) VALUES (?, ?, ?)").run(slug, slug.toUpperCase(), type);
+}
+
+test('nativeTasksRepo.insertNativeTask + getNativeTask', () => {
+  const db = freshDb();
+  seedComp(db);
+  const t = insertNativeTask(db, {
+    competitionSlug: 'c',
+    slug: 't1',
+    title: 'T1',
+    descriptionMd: '# Hi',
+    higherIsBetter: true,
+  });
+  assert.equal(t.slug, 't1');
+  assert.equal(t.descriptionMd, '# Hi');
+  assert.equal(t.higherIsBetter, true);
+  const got = getNativeTask(db, 'c', 't1');
+  assert.equal(got.id, t.id);
+});
+
+test('nativeTasksRepo: scoring anchors round-trip', () => {
+  const db = freshDb();
+  seedComp(db);
+  const t = insertNativeTask(db, {
+    competitionSlug: 'c',
+    slug: 't',
+    title: 'T',
+    baselineScorePublic: 0.5,
+    authorScorePublic: 0.9,
+    baselineScorePrivate: 0.4,
+    authorScorePrivate: 0.85,
+  });
+  assert.equal(t.baselineScorePublic, 0.5);
+  assert.equal(t.authorScorePublic, 0.9);
+  assert.equal(t.baselineScorePrivate, 0.4);
+  assert.equal(t.authorScorePrivate, 0.85);
+});
+
+test('nativeTasksRepo.listNativeTasks: hides soft-deleted', () => {
+  const db = freshDb();
+  seedComp(db);
+  insertNativeTask(db, { competitionSlug: 'c', slug: 'a', title: 'A' });
+  insertNativeTask(db, { competitionSlug: 'c', slug: 'b', title: 'B' });
+  softDeleteNativeTask(db, 'c', 'a');
+  const list = listNativeTasks(db, 'c').map((t) => t.slug);
+  assert.deepEqual(list, ['b']);
+});
+
+test('nativeTasksRepo.updateNativeTask: partial update', () => {
+  const db = freshDb();
+  seedComp(db);
+  insertNativeTask(db, { competitionSlug: 'c', slug: 't', title: 'old', descriptionMd: 'd' });
+  updateNativeTask(db, 'c', 't', { title: 'new', descriptionMd: 'D2' });
+  const got = getNativeTask(db, 'c', 't');
+  assert.equal(got.title, 'new');
+  assert.equal(got.descriptionMd, 'D2');
+});
+
+test('nativeTasksRepo.insertNativeTask: duplicate slug throws', () => {
+  const db = freshDb();
+  seedComp(db);
+  insertNativeTask(db, { competitionSlug: 'c', slug: 't', title: 'T' });
+  assert.throws(
+    () => insertNativeTask(db, { competitionSlug: 'c', slug: 't', title: 'D' }),
+    /UNIQUE/i
+  );
+});
