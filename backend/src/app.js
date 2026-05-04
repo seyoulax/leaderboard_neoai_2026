@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { validateCompetitions } from './competitions.js';
 import { loadUser, requireAdmin } from './auth/middleware.js';
 import { createAuthRouter } from './routes/auth.js';
+import { createNativeTasksAdminRouter } from './routes/nativeTasksAdmin.js';
 import {
   listActiveCompetitions,
   listVisibleCompetitions,
@@ -934,6 +935,8 @@ export function createApp({ db } = {}) {
       res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
     }
   });
+
+  app.use('/api/admin/competitions/:competitionSlug/native-tasks', adminMw, createNativeTasksAdminRouter({ db }));
 
   return app;
 }
