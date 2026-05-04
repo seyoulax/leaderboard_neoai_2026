@@ -12,7 +12,7 @@ export default function AdminCompetitionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [draft, setDraft] = useState({ slug: '', title: '', subtitle: '', order: 0, visible: true, type: 'kaggle' });
+  const [draft, setDraft] = useState({ slug: '', title: '', subtitle: '', order: 0, visible: true, type: 'kaggle', visibility: 'public' });
 
   async function refresh() {
     try {
@@ -53,10 +53,11 @@ export default function AdminCompetitionsPage() {
         order: Number(draft.order) || 0,
         visible: !!draft.visible,
         type: draft.type === 'native' ? 'native' : 'kaggle',
+        visibility: draft.visibility === 'unlisted' ? 'unlisted' : 'public',
       };
       if (draft.subtitle.trim()) payload.subtitle = draft.subtitle.trim();
       await createAdminCompetition(payload);
-      setDraft({ slug: '', title: '', subtitle: '', order: 0, visible: true, type: 'kaggle' });
+      setDraft({ slug: '', title: '', subtitle: '', order: 0, visible: true, type: 'kaggle', visibility: 'public' });
       await refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -97,12 +98,16 @@ export default function AdminCompetitionsPage() {
             <label><input type="radio" name="type" value="kaggle" checked={draft.type === 'kaggle'} onChange={() => setDraft({ ...draft, type: 'kaggle' })} /> Kaggle</label>
             <label><input type="radio" name="type" value="native" checked={draft.type === 'native'} onChange={() => setDraft({ ...draft, type: 'native' })} /> Native</label>
           </fieldset>
+          <fieldset className="admin-comp-type">
+            <label><input type="radio" name="visibility" value="public" checked={draft.visibility === 'public'} onChange={() => setDraft({ ...draft, visibility: 'public' })} /> Public</label>
+            <label><input type="radio" name="visibility" value="unlisted" checked={draft.visibility === 'unlisted'} onChange={() => setDraft({ ...draft, visibility: 'unlisted' })} /> Unlisted</label>
+          </fieldset>
           <button disabled={busy || !draft.slug || !draft.title} onClick={createNew}>Создать</button>
         </div>
       </div>
 
       <table className="admin-comp-table">
-        <thead><tr><th>slug</th><th>title</th><th>subtitle</th><th>order</th><th>visible</th><th>тип</th><th></th></tr></thead>
+        <thead><tr><th>slug</th><th>title</th><th>subtitle</th><th>order</th><th>visible</th><th>тип</th><th>видимость</th><th>задачи</th><th></th></tr></thead>
         <tbody>
           {list.map((c, idx) => (
             <tr key={c.slug}>
@@ -111,7 +116,20 @@ export default function AdminCompetitionsPage() {
               <td><input value={c.subtitle || ''} onChange={(e) => updateAt(idx, 'subtitle', e.target.value)} /></td>
               <td><input type="number" value={c.order ?? 0} onChange={(e) => updateAt(idx, 'order', Number(e.target.value))} /></td>
               <td><input type="checkbox" checked={c.visible !== false} onChange={(e) => updateAt(idx, 'visible', e.target.checked)} /></td>
-              <td className="muted">{c.type || 'kaggle'}</td>
+              <td className="muted" title="нельзя поменять после создания">{c.type || 'kaggle'}</td>
+              <td>
+                <select value={c.visibility || 'public'} onChange={(e) => updateAt(idx, 'visibility', e.target.value)}>
+                  <option value="public">public</option>
+                  <option value="unlisted">unlisted</option>
+                </select>
+              </td>
+              <td>
+                {c.type === 'native' ? (
+                  <Link to={`/admin/competitions/${encodeURIComponent(c.slug)}/native-tasks`}>native-tasks →</Link>
+                ) : (
+                  <span className="muted">—</span>
+                )}
+              </td>
               <td><button onClick={() => remove(c.slug)}>🗑</button></td>
             </tr>
           ))}
