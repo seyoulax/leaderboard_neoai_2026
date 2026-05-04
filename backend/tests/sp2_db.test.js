@@ -136,3 +136,70 @@ test('nativeTasksRepo.insertNativeTask: duplicate slug throws', () => {
     /UNIQUE/i
   );
 });
+
+import {
+  insertPendingFile,
+  commitFilePath,
+  getFileById,
+  listFilesByTask,
+  deleteFileById,
+  updateFileMetadata,
+} from '../src/db/nativeTaskFilesRepo.js';
+
+function seedTask(db) {
+  seedComp(db);
+  const t = insertNativeTask(db, { competitionSlug: 'c', slug: 't', title: 'T' });
+  return t;
+}
+
+test('files: insertPending → commitPath → list', () => {
+  const db = freshDb();
+  const task = seedTask(db);
+  const row = insertPendingFile(db, {
+    taskId: task.id,
+    kind: 'dataset',
+    displayName: 'train',
+    description: '',
+    originalFilename: 'train.csv',
+    sizeBytes: 1024,
+    sha256: 'abc',
+  });
+  assert.ok(row.id);
+  commitFilePath(db, row.id, '/abs/path');
+  const got = getFileById(db, row.id);
+  assert.equal(got.path, '/abs/path');
+  const list = listFilesByTask(db, task.id, 'dataset');
+  assert.equal(list.length, 1);
+});
+
+test('files: kind filter', () => {
+  const db = freshDb();
+  const task = seedTask(db);
+  const a = insertPendingFile(db, { taskId: task.id, kind: 'dataset', displayName: 'a', originalFilename: 'a', sizeBytes: 1, sha256: 'x' });
+  commitFilePath(db, a.id, '/a');
+  const b = insertPendingFile(db, { taskId: task.id, kind: 'artifact', displayName: 'b', originalFilename: 'b', sizeBytes: 1, sha256: 'y' });
+  commitFilePath(db, b.id, '/b');
+  assert.equal(listFilesByTask(db, task.id, 'dataset').length, 1);
+  assert.equal(listFilesByTask(db, task.id, 'artifact').length, 1);
+});
+
+test('files: deleteById removes row', () => {
+  const db = freshDb();
+  const task = seedTask(db);
+  const f = insertPendingFile(db, { taskId: task.id, kind: 'dataset', displayName: 'a', originalFilename: 'a', sizeBytes: 1, sha256: 'x' });
+  commitFilePath(db, f.id, '/a');
+  deleteFileById(db, f.id);
+  assert.equal(getFileById(db, f.id), null);
+});
+
+test('files: updateMetadata changes display_name/description/order', () => {
+  const db = freshDb();
+  const task = seedTask(db);
+  const f = insertPendingFile(db, { taskId: task.id, kind: 'dataset', displayName: 'a', originalFilename: 'a.csv', sizeBytes: 1, sha256: 'x' });
+  commitFilePath(db, f.id, '/a');
+  updateFileMetadata(db, f.id, { displayName: 'NEW', description: 'd', displayOrder: 5 });
+  const got = getFileById(db, f.id);
+  assert.equal(got.displayName, 'NEW');
+  assert.equal(got.description, 'd');
+  assert.equal(got.displayOrder, 5);
+});
