@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<title>Статистика участников · NeoAI 2026</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0b0d12;
+    --panel: #141822;
+    --panel-2: #1b212e;
+    --border: #232a3a;
+    --text: #e7eaf0;
+    --muted: #8d97ad;
+    --accent: #7c8cff;
+    --accent-2: #59d4a4;
+    --warn: #f0b35a;
+    --bad: #e76b6b;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", system-ui, sans-serif;
+    overflow: hidden;
+  }
+  .deck {
+    position: relative;
+    height: 100vh;
+    width: 100vw;
+  }
+  .slide {
+    position: absolute;
+    inset: 0;
+    padding: 56px 72px 96px;
+    display: none;
+    flex-direction: column;
+    overflow: auto;
+  }
+  .slide.active { display: flex; }
+  .eyebrow {
+    color: var(--muted);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin-bottom: 12px;
+  }
+  h1 {
+    font-size: 56px;
+    line-height: 1.05;
+    margin: 0 0 16px;
+    letter-spacing: -0.02em;
+  }
+  h2 {
+    font-size: 36px;
+    line-height: 1.1;
+    margin: 0 0 24px;
+    letter-spacing: -0.015em;
+  }
+  .lede {
+    color: var(--muted);
+    font-size: 18px;
+    max-width: 720px;
+  }
+  .grid {
+    display: grid;
+    gap: 20px;
+    flex: 1;
+    min-height: 0;
+  }
+  .grid.cols-2 { grid-template-columns: 1.4fr 1fr; }
+  .grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .card h3 {
+    margin: 0 0 12px;
+    font-size: 14px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+  }
+  .chart-wrap {
+    position: relative;
+    flex: 1;
+    min-height: 220px;
+  }
+  .kpis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .kpi {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+  }
+  .kpi .v {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .kpi .l {
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 4px;
+  }
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  .table th, .table td {
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .table th {
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .scroll { overflow: auto; }
+  .nav {
+    position: fixed;
+    bottom: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    background: rgba(20, 24, 34, 0.85);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 10px;
+    backdrop-filter: blur(8px);
+    z-index: 10;
+  }
+  .nav button {
+    background: transparent;
+    color: var(--text);
+    border: 0;
+    border-radius: 999px;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-size: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .nav button:hover { background: var(--panel-2); }
+  .nav .pos {
+    color: var(--muted);
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    min-width: 44px;
+    text-align: center;
+  }
+  .dots {
+    display: flex;
+    gap: 6px;
+  }
+  .dots span {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--border);
+    cursor: pointer;
+  }
+  .dots span.active { background: var(--accent); }
+  .legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .legend i {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .title-slide {
+    justify-content: center;
+    align-items: flex-start;
+  }
+  .title-slide .meta {
+    margin-top: 36px;
+    display: grid;
+    grid-template-columns: repeat(3, max-content);
+    gap: 28px 56px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .title-slide .meta b {
+    display: block;
+    color: var(--text);
+    font-size: 22px;
+    margin-bottom: 2px;
+    letter-spacing: -0.01em;
+  }
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+  <section class="slide title-slide active">
+    <div class="eyebrow">NeoAI · 2026</div>
+    <h1>Статистика участников</h1>
+    <p class="lede">Срез по городам, классам и достижениям. Стрелки ← / → или кнопки внизу для навигации.</p>
+    <div class="meta" id="title-meta"></div>
+  </section>
+
+  <section class="slide">
+    <div class="eyebrow">Слайд 2 · География</div>
+    <h2>Откуда участники</h2>
+    <div class="kpis" id="city-kpis"></div>
+    <div class="grid cols-2">
+      <div class="card">
+        <h3>Топ городов</h3>
+        <div class="chart-wrap"><canvas id="chart-cities"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Все города</h3>
+        <div class="scroll" style="flex:1; min-height:220px;">
+          <table class="table" id="city-table">
+            <thead><tr><th>Город</th><th class="num">Чел.</th><th class="num">Доля</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="eyebrow">Слайд 3 · Классы</div>
+    <h2>Распределение по классам</h2>
+    <div class="kpis" id="grade-kpis"></div>
+    <div class="grid cols-2">
+      <div class="card">
+        <h3>Доли классов</h3>
+        <div class="chart-wrap"><canvas id="chart-grade-pie"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Средние достижения по классу</h3>
+        <div class="chart-wrap"><canvas id="chart-grade-ach"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide">
+    <div class="eyebrow">Слайд 4 · Достижения</div>
+    <h2>Олимпиады и результаты</h2>
+    <div class="kpis" id="ach-kpis"></div>
+    <div class="grid cols-2">
+      <div class="card">
+        <h3>По олимпиадам · уровень результата</h3>
+        <div class="chart-wrap"><canvas id="chart-ach-stack"></canvas></div>
+        <div class="legend">
+          <span><i style="background:#59d4a4"></i>Победитель</span>
+          <span><i style="background:#7c8cff"></i>Призёр</span>
+          <span><i style="background:#f0b35a"></i>Финалист</span>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Топ участников по числу достижений</h3>
+        <div class="scroll" style="flex:1; min-height:220px;">
+          <table class="table" id="top-participants">
+            <thead><tr><th>Участник</th><th>Город</th><th class="num">Достиж.</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="nav">
+  <button id="prev" title="Назад (←)">‹</button>
+  <span class="pos" id="pos">1 / 4</span>
+  <button id="next" title="Вперёд (→)">›</button>
+  <span class="dots" id="dots"></span>
+</div>
+
+<script id="participants-data" type="application/json">[{"id":"gordeeva-marija","name":"Гордеева Мария Денисовна","kaggleId":"heriqis777","photo":"/photos/gordeeva-marija.jpg","role":"Участник","city":"Москва","grade":"10 класс","achievements":["ВсОШ ИИ: Призер","Всероссийская олимпиада по ИИ: Финалист","НТО ИИ: Победитель","НТО БДиМО: Финалист","DANO: Победитель"],"bio":""},{"id":"lavrent'ev-vladislav","name":"Лаврентьев Владислав Евгеньевич","kaggleId":"lightningv08","photo":"/photos/lavrent'ev-vladislav.jpg","role":"Участник","city":"Москва","grade":"11 класс","achievements":["ВсОШ ИИ: Призер","Всероссийская олимпиада по ИИ: Финалист","НТО ИИ: Финалист","DANO: Финалист"],"bio":"Победитель олимпиады Физтех по математике Призер осеннего тура Турнира городов Победитель олимпиады "},{"id":"labzin-kirill","name":"Лабзин Кирилл Михайлович","kaggleId":"kirill57678","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"Сочи","grade":"11 класс","achievements":["ВсОШ ИИ: Победитель","Всероссийская олимпиада по ИИ: Призер","AI Challenge: Победитель","НТО ИИ: Победитель","FAIO: Призер","DANO: Победитель"],"bio":""},{"id":"gorohov-artem","name":"Горохов Артём Станиславович","kaggleId":"ga5534","photo":"/photos/gorohov-artem.jpg","role":"Участник","city":"Санкт-Петербург","grade":"10 класс","achievements":["ВсОШ ИИ: Призер","Yandex Cup: Финалист","Всероссийская олимпиада по ИИ: Призер","НТО ИИ: Финалист","НТО БДиМО: Финалист","FAIO: Финалист","DANO: Победитель"],"bio":""},{"id":"efimov-egor","name":"Ефимов Егор Александрович","kaggleId":"quezaltendes","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"Пенза","grade":"11 класс","achievements":["ВсОШ ИИ: Финалист","Всероссийская олимпиада по ИИ: Финалист"],"bio":""},{"id":"kroha-konstantin","name":"Кроха Константин Владимирович","kaggleId":"gistreg","photo":"/photos/kroha-konstantin.jpg","role":"Участник","city":"Москва","grade":"10 класс","achievements":["ВсОШ ИИ: Финалист"],"bio":""},{"id":"semenenko-sergej","name":"Семененко Сергей Сергеевич","kaggleId":"sergses","photo":"/photos/semenenko-sergej.jpg","role":"Участник","city":"Москва","grade":"11 класс","achievements":["ВсОШ ИИ: Финалист","НТО БДиМО: Призер"],"bio":""},{"id":"shilovskij-dmitrij","name":"Шиловский Дмитрий Евгеньевич","kaggleId":"dmitryshilovsky","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"Архангельск","grade":"10 класс","achievements":["Всероссийская олимпиада по ИИ: Финалист"],"bio":"В 2025-м году во всероссийской олимпиаде по искусственному интеллекту такие результаты: - отборочный"},{"id":"kirpichenko-elisej","name":"Кирпиченко Елисей Андреевич","kaggleId":"xxbar19","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"Санкт-Петербург","grade":"11 класс","achievements":["ВсОШ ИИ: Финалист","Yandex Cup: Победитель","Всероссийская олимпиада по ИИ: Победитель","НТО ИИ: Финалист","НТО БДиМО: Финалист","DANO: Финалист"],"bio":"Kaggle Competition Expert (x2): - Kaggle Gold Medalist | Deep Past Challenge - Translate Akkadian to"},{"id":"plotnikov-jurij","name":"Плотников Юрий Сергеевич","kaggleId":"yuriplot","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"Самара","grade":"9 класс","achievements":["DANO: Победитель"],"bio":"Прошел майнор ИАД по машинному обучению в ВШЭ. Прошел MIT 18.01 на платформе OCW"},{"id":"torovin-aleksandr","name":"Торовин Александр Алексеевич","kaggleId":"alextorov","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"Салават","grade":"11 класс","achievements":["ВсОШ ИИ: Призер","Всероссийская олимпиада по ИИ: Финалист","НТО ИИ: Финалист","НТО БДиМО: Финалист"],"bio":""},{"id":"povarov-aleksandr","name":"Поваров Александр Григорьевич","kaggleId":"alexanderpovarov","photo":"/photos/povarov-aleksandr.jpg","role":"Участник","city":"Москва","grade":"11 класс","achievements":["IAIO: Финалист","ВсОШ ИИ: Победитель","Всероссийская олимпиада по ИИ: Финалист","FAIO: Финалист","DANO: Победитель"],"bio":""},{"id":"bol'shakov-aleksandr","name":"Большаков Александр Алексеевич","kaggleId":"dioroadroller","photo":"/photos/bol'shakov-aleksandr.jpg","role":"Участник","city":"Москва","grade":"11 класс","achievements":["ВсОШ ИИ: Финалист"],"bio":""},{"id":"djadchenko-mark","name":"Дядченко Марк Юрьевич","kaggleId":"markdjadchenko","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"Ростов-на-Дону","grade":"8 класс","achievements":["ВсОШ ИИ: Финалист","Yandex Cup: Победитель","Всероссийская олимпиада по ИИ: Победитель","НТО ИИ: Победитель"],"bio":"топ 3 Yandex Cup ML Track, топ 2 НТО ИИ, Kaggle Master, всероссийская олимпиада по ИИ топ 4 и тд"},{"id":"chistov-nikita","name":"Чистов Никита Леонидович","kaggleId":"kitmexanic","photo":"/photos/chistov-nikita.jpg","role":"Участник","city":"Москва","grade":"10 класс","achievements":["ВсОШ ИИ: Финалист"],"bio":"Ранее увлекался робототехникой, за счёт чего есть прикладные навыки работы с физическим железом, нем"},{"id":"jakupov-el'dar","name":"Якупов Эльдар Филаретович","kaggleId":"fuagra","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"Москва","grade":"9 класс","achievements":["ВсОШ ИИ: Финалист"],"bio":""},{"id":"vershinin-mihail","name":"Вершинин Михаил Денисович","kaggleId":"rasdafar","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"Новосибирск","grade":"11 класс","achievements":["IOAI: Победитель","IAIO: Призер","ВсОШ ИИ: Призер","Всероссийская олимпиада по ИИ: Призер","FAIO: Призер","DANO: Победитель"],"bio":"Люблю играть на пианино, хорошо лажу с людьми"},{"id":"dzhalilov-artem","name":"Джалилов Артём Ильясович","kaggleId":"artemdzhalilov","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"Сириус","grade":"11 класс","achievements":["IAIO: Призер","ВсОШ ИИ: Призер","Всероссийская олимпиада по ИИ: Призер","НТО ИИ: Призер","FAIO: Призер","DANO: Призер"],"bio":""},{"id":"mastov-arsenij","name":"Мастов Арсений Викторович","kaggleId":"nemominiksad","photo":"/photos/mastov-arsenij.jpg","role":"Участник","city":"Новосибирск","grade":"11 класс","achievements":["ВсОШ ИИ: Призер","DANO: Финалист"],"bio":""},{"id":"morgunov-evgenij","name":"Моргунов Евгений Георгиевич","kaggleId":"emorgunov","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"Иркутск","grade":"10 класс","achievements":["ВсОШ ИИ: Победитель"],"bio":""},{"id":"sokolov-il'ja","name":"Соколов Илья Андреевич","kaggleId":"sokilya","photo":"/photos/sokolov-il'ja.jpg","role":"Участник","city":"Ростов-на-Дону","grade":"11 класс","achievements":["ВсОШ Программирование: Призер","DANO: Призер"],"bio":"Прошел курс deep learning school часть 1, прохожу AI track focus, курс по подготовке к всош ии от це"},{"id":"kondrashov-mihail","name":"Кондрашов Михаил Николаевич","kaggleId":"m1ck0n","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"Химки","grade":"11 класс","achievements":["AI Challenge: Победитель","НТО ИИ: Призер","НТО БДиМО: Финалист"],"bio":"Начал развиваться в ML около года назад, но несмотря на небольшой период смог обойти более опытных р"},{"id":"bogdanov-al'bert","name":"Богданов Альберт Азатович","kaggleId":"itbert","photo":"/photos/bogdanov-al'bert.jpg","role":"Участник","city":"Санкт-Петербург","grade":"11 класс","achievements":["IAIO: Финалист","ВсОШ ИИ: Призер","Всероссийская олимпиада по ИИ: Финалист","НТО ИИ: Финалист","НТО БДиМО: Финалист"],"bio":"Докладчик Конгресса молодых ученых, \"Анализ и сравнение методов предобуславливания для оптимизации о"},{"id":"erlykov-aleksandr","name":"Ерлыков Александр Антонович","kaggleId":"imdonut","photo":"/photos/erlykov-aleksandr.jpg","role":"Участник","city":"Москва","grade":"11 класс","achievements":["ВсОШ ИИ: Финалист","DANO: Победитель"],"bio":"Финалист ВСОШ, Призер региона Победитель DANO"},{"id":"apal'kov-vladislav","name":"Апальков Владислав Алексеевич","kaggleId":"applevl","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"Ставрополь","grade":"11 класс","achievements":["ВсОШ ИИ: Финалист","НТО ИИ: Финалист","Innopolis: Финалист","DANO: Финалист"],"bio":""},{"id":"ivahin-kirill","name":"Ивахин Кирилл Алексеевич","kaggleId":"kiraidk","photo":"/photos/ivahin-kirill.jpg","role":"Участник","city":"Пенза","grade":"10 класс","achievements":["ВсОШ ИИ: Финалист","Всероссийская олимпиада по ИИ: Финалист"],"bio":"Участвовал в закле всероса и всоша по ии, выиграл хакатон культурный компас"},{"id":"susljakov-semen","name":"Сусляков Семён Сергеевич","kaggleId":"simonsuslyakov","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"Новосибирск","grade":"11 класс","achievements":["ВсОШ ИИ: Призер","Всероссийская олимпиада по ИИ: Финалист","НТО ИИ: Финалист","НТО БДиМО: Финалист","DANO: Финалист"],"bio":"Стажер-MLE в Sberdevices - июль 2025 - январь 2026"},{"id":"mahan'kov-kirill","name":"Маханьков Кирилл Андреевич","kaggleId":"kagglercs","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"Самара","grade":"10 класс","achievements":["НТО ИИ: Призер","НТО БДиМО: Победитель"],"bio":"Тендерхак (Новосибирск) 2025/2026 - победитель"},{"id":"potalov-mihail","name":"Поталов Михаил Сергеевич","kaggleId":"zqmktgwjpy2ug","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"Санкт-Петербург","grade":"11 класс","achievements":["ВсОШ ИИ: Победитель"],"bio":""},{"id":"sungurov-vladislav","name":"Сунгуров Владислав Антонович","kaggleId":"vladsunny","photo":"/photos/sungurov-vladislav.jpg","role":"Участник","city":"Москва","grade":"10 класс","achievements":["ВсОШ ИИ: Призер","FAIO: Финалист","DANO: Призер"],"bio":"Кроме ML неплохо разбираюсь в промышленной разработке, уверенно работаю с git, docker, умею полность"},{"id":"goncharov-artem","name":"Гончаров Артём Максимович","kaggleId":"artemgoncarov","photo":"/photos/goncharov-artem.jpg","role":"Участник","city":"Новосибирск","grade":"10 класс","achievements":["ВсОШ ИИ: Финалист","Yandex Cup: Финалист","Всероссийская олимпиада по ИИ: Победитель","FAIO: Призер","DANO: Финалист"],"bio":"шейкапнулся на Kaggle csiro image2biomass с 10 на 34 место на привате( основал feel the agi работал "},{"id":"kuliev-el'mir","name":"Кулиев Эльмир Первиз Оглы","kaggleId":"obosrish","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"Москва","grade":"11 класс","achievements":["НТО БДиМО: Призер"],"bio":"Вот уже 2-й год познаю DS/ML, стараюсь активно практиковать навыки в данной области в реальных задач"},{"id":"kuznetsov-nikita","name":"Кузнецов Никита Николаевич","kaggleId":"nikitakuznetsof","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"Новосибирск","grade":"10 класс","achievements":["Всероссийская олимпиада по ИИ: Финалист","НТО ИИ: Финалист","НТО БДиМО: Финалист","DANO: Финалист"],"bio":"С 3 апреля перестаю вайбкодить"},{"id":"kolegov-aleksej","name":"Колегов Алексей Михайлович","kaggleId":"clodis","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"Ижевск","grade":"11 класс","achievements":["ВсОШ ИИ: Призер","Yandex Cup: Финалист","Всероссийская олимпиада по ИИ: Призер","DANO: Победитель"],"bio":""},{"id":"bushin-andrej","name":"Бушин Андрей Евгеньевич","kaggleId":"andbush","photo":"/photos/bushin-andrej.jpg","role":"Участник","city":"Москва","grade":"11 класс","achievements":["ВсОШ ИИ: Призер","DANO: Финалист"],"bio":"В аири постажировался"},{"id":"voropaev-jaroslav","name":"Воропаев Ярослав Александрович","kaggleId":"zabojeb","photo":"/photos/voropaev-jaroslav.jpg","role":"Участник","city":"Орёл","grade":"11 класс","achievements":["ВсОШ ИИ: Призер","Всероссийская олимпиада по ИИ: Призер","НТО ИИ: Победитель","НТО БДиМО: Финалист","FAIO: Финалист"],"bio":"Очень хочу написать научную статью по CS/AI/ML но не знаю как Топ 1% пользователей ChatGPT (подтверж"},{"id":"nurullin-ruslan","name":"Нуруллин Руслан Николаевич","kaggleId":"rusyalain","photo":"/photos/nurullin-ruslan.jpg","role":"Участник","city":"Казань","grade":"10 класс","achievements":["ВсОШ ИИ: Призер","DANO: Финалист"],"bio":"серьёзно взялся за мл только после региона, очень рад, что смог войти в топ–25 второго тура всоша за"},{"id":"atanov-andrej","name":"Атанов Андрей Андреевич","kaggleId":"harlenka","photo":"/photos/atanov-andrej.jpg","role":"Участник","city":"Санкт-Петербург","grade":"11 класс","achievements":["НТО БДиМО: Финалист","DANO: Финалист"],"bio":""},{"id":"kattsyn-sergej","name":"Катцын Сергей Андреевич","kaggleId":"phantom2059","photo":"/photos/kattsyn-sergej.jpg","role":"Участник","city":"Новосибирск","grade":"11 класс","achievements":["Всероссийская олимпиада по ИИ: Финалист","НТО ИИ: Призер","НТО БДиМО: Победитель"],"bio":"Дополнительно особо нечего, все олимпиады и хакатоны указал выше, так-же приложу свой kaggle и githu"},{"id":"rodionov-semen","name":"Родионов Семен","kaggleId":"sefixnep","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"Новосибирск","grade":"11 класс","achievements":["Всероссийская олимпиада по ИИ: Победитель","НТО ИИ: Финалист","НТО БДиМО: Призер","FAIO: Призер"],"bio":"Если я захочу, я не сдамся"},{"id":"scheglov-sergej","name":"Щеглов Сергей Денисович","kaggleId":"sseglov","photo":"/photos/scheglov-sergej.jpg","role":"Участник","city":"Москва","grade":"11 класс","achievements":["ВсОШ ИИ: Призер","DANO: Призер"],"bio":"Член сборной Москвы по ИИ"},{"id":"kokovkin-lev","name":"Коковкин Лев Алексеевич","kaggleId":"sigmaborov","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"Москва","grade":"11 класс","achievements":["Всероссийская олимпиада по ИИ: Финалист","НТО ИИ: Финалист"],"bio":"Победитель DLS 3/501 Финалист Всеросса по ИИ 2 бронзы на Kaggle Отбирался на февральский межнар по и"},{"id":"il'in-ivan","name":"Ильин Иван Ярославич","kaggleId":"limprog","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"Санкт-Петербург","grade":"9 класс","achievements":["ВсОШ ИИ: Победитель"],"bio":"-"},{"id":"l'vov-stanislav","name":"Львов Станислав Александрович","kaggleId":"tickflag","photo":"/photos/l'vov-stanislav.jpg","role":"Участник","city":"Чебоксары","grade":"11 класс","achievements":["ВсОШ ИИ: Финалист","НТО ИИ: Финалист"],"bio":""},{"id":"okulov-nikita","name":"Окулов Никита Владимирович","kaggleId":"amlet00","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"Верхняя Пышма","grade":"11 класс","achievements":["ВсОШ ИИ: Призер"],"bio":"участие в сборах от ЦУ «подготовка к ВсОШу по ИИ», Прошел курс от Т-образования «подготовка к ВсОШу "},{"id":"skazhutin-daniil","name":"Скажутин Даниил Андреевич","kaggleId":"skazhutindaniil","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"Москва","grade":"10 класс","achievements":["ВсОШ ИИ: Призер"],"bio":"Также участвовал в командном проекте около ИИ-сферы и делаю индивидуальный проект напрямую связанный"},{"id":"pudovkin-nikita","name":"Пудовкин Никита Олегович","kaggleId":"nickpudovkin","photo":"/photos/pudovkin-nikita.jpg","role":"Участник","city":"Волгоград","grade":"10 класс","achievements":["ВсОШ Программирование: Призер","НТО ИИ: Призер","Innopolis: Финалист","DANO: Победитель"],"bio":""},{"id":"gasanov-zajnutdin","name":"Гасанов Зайнутдин Исламович","kaggleId":"fleongg","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"Махачкала","grade":"9 класс","achievements":["Всероссийская олимпиада по ИИ: Финалист"],"bio":""},{"id":"hachatrjan-sargis","name":"Хачатрян Саргис Каренович","kaggleId":"avazaku","photo":"/photos/hachatrjan-sargis.jpg","role":"Участник","city":"Москва","grade":"11 класс","achievements":["ВсОШ ИИ: Призер"],"bio":""},{"id":"kuptsov-mihail","name":"Купцов Михаил Валерьевич","kaggleId":"chastertlye","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"Набережные Челны","grade":"11 класс","achievements":["ВсОШ ИИ: Призер"],"bio":""},{"id":"lempert-aleksej","name":"Лемперт Алексей Игоревич","kaggleId":"alexsnower","photo":"/photos/lempert-aleksej.jpg","role":"Участник","city":"Москва","grade":"11 класс","achievements":["ВсОШ ИИ: Финалист"],"bio":""},{"id":"bykov-konstantin","name":"Быков Константин Эдуардович","kaggleId":"dbindung","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"Новосибирск","grade":"11 класс","achievements":["ВсОШ ИИ: Призер","Всероссийская олимпиада по ИИ: Финалист","DANO: Призер"],"bio":"Финалист: Всероссийская олимпиада по ИИ 2024; DANO 2024; НТО ИИ 2025; НТО БДиМО 2025; Всероссийская "},{"id":"najmushin-andrej","name":"Наймушин Андрей Сергеевич","kaggleId":"andrewsokolovsky","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"Пермь","grade":"9 класс","achievements":["AI Challenge: Призер","НТО ИИ: Призер"],"bio":"3 место aijjc 2025 баланс белого в мобильных телефонах, призер нто ии 2026, призер региона по больши"},{"id":"chetverjakov-andrej","name":"Четверяков Андрей Петрович","kaggleId":"bitmann0","photo":"/photos/chetverjakov-andrej.jpg","role":"Участник","city":"Новосибирск","grade":"11 класс","achievements":["AI Challenge: Победитель","НТО ИИ: Финалист","НТО БДиМО: Победитель"],"bio":""},{"id":"kireev-kirill","name":"Киреев Кирилл Андреевич","kaggleId":"lambdaderta","photo":"/photos/kireev-kirill.jpg","role":"Участник","city":"Москва","grade":"11 класс","achievements":["Всероссийская олимпиада по ИИ: Призер","НТО ИИ: Финалист","НТО БДиМО: Финалист"],"bio":"Я люблю котов"},{"id":"kulishov-egor","name":"Кулишов Егор Дмитриевич","kaggleId":"naladwepo","photo":"/photos/kulishov-egor.jpg","role":"Участник","city":"Самара","grade":"10 класс","achievements":["ВсОШ ИИ: Финалист","Всероссийская олимпиада по ИИ: Финалист","НТО ИИ: Победитель","НТО БДиМО: Финалист","DANO: Финалист"],"bio":""},{"id":"tamrazov-roman","name":"Тамразов Роман Каренович","kaggleId":"romantamrazov","photo":"/photos/tamrazov-roman.jpg","role":"Участник","city":"Санкт-Петербург","grade":"10 класс","achievements":["НТО БДиМО: Финалист"],"bio":""},{"id":"nazemtsev-artem","name":"Наземцев Артём Дмитриевич","kaggleId":"artemnazemtsev","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"Санкт-Петербург","grade":"9 класс","achievements":["ВсОШ ИИ: Победитель","НТО ИИ: Финалист"],"bio":"Финалист нто ии, 100 место на 2 этапа всероссийской олимпиады по ии, но после этого стал сильно бота"},{"id":"talashkevich-kirill","name":"Талашкевич Кирилл Дмитриевич","kaggleId":"senypro","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"Казань","grade":"10 класс","achievements":["ВсОШ ИИ: Призер","DANO: Призер"],"bio":"Был на мартовской смене Сириуса по информатике (ИИ) 2026 год"},{"id":"kamyshan-evgenij","name":"Камышан Евгений Владиславович","kaggleId":"svo1488zov","photo":"/photos/kamyshan-evgenij.jpg","role":"Участник","city":"Луганск","grade":"11 класс","achievements":["ВсОШ ИИ: Призёр","Всероссийская олимпиада по ИИ: Финалист","НТО ИИ: Призёр","НТО БДиМО: Финалист"],"bio":""},{"id":"andronhl","name":"56","kaggleId":"andronhl","photo":"/photos/anna-smirnova.jpg","role":"Участник","city":"","grade":"","achievements":[],"bio":""}]</script>
+<script>
+(() => {
+  const PARTICIPANTS = JSON.parse(document.getElementById('participants-data').textContent);
+  const total = PARTICIPANTS.length;
+
+  // ---------- helpers ----------
+  const counter = () => {
+    const m = new Map();
+    return {
+      add(k) { m.set(k, (m.get(k) || 0) + 1); },
+      sortedDesc() { return [...m.entries()].sort((a, b) => b[1] - a[1]); },
+      get size() { return m.size; },
+      get(k) { return m.get(k) || 0; }
+    };
+  };
+  const fmtPct = (n, t) => t ? `${((n / t) * 100).toFixed(1)}%` : '0%';
+  const norm = (s) => (s || '').trim();
+  // Normalize result tokens (handles "Призёр" / "Призер")
+  const normResult = (r) => {
+    const x = (r || '').toLowerCase().replace(/ё/g, 'е').trim();
+    if (x.startsWith('побед')) return 'Победитель';
+    if (x.startsWith('приз')) return 'Призёр';
+    if (x.startsWith('финал')) return 'Финалист';
+    return r;
+  };
+
+  // ---------- aggregations ----------
+  const byCity = counter();
+  const byGrade = counter();
+  const achPerPerson = [];
+  const olympiadByResult = new Map();
+  let withCity = 0, withGrade = 0, totalAch = 0;
+
+  for (const p of PARTICIPANTS) {
+    const city = norm(p.city);
+    const grade = norm(p.grade);
+    const ach = Array.isArray(p.achievements) ? p.achievements : [];
+    if (city) { byCity.add(city); withCity++; } else byCity.add('— не указан');
+    if (grade) { byGrade.add(grade); withGrade++; } else byGrade.add('— не указан');
+    achPerPerson.push({ name: p.name, city: city || '—', n: ach.length });
+    totalAch += ach.length;
+    for (const a of ach) {
+      const idx = a.indexOf(':');
+      if (idx === -1) continue;
+      const olymp = a.slice(0, idx).trim();
+      const result = normResult(a.slice(idx + 1).trim());
+      if (!olympiadByResult.has(olymp)) olympiadByResult.set(olymp, { 'Победитель': 0, 'Призёр': 0, 'Финалист': 0 });
+      const slot = olympiadByResult.get(olymp);
+      if (slot[result] !== undefined) slot[result]++;
+    }
+  }
+
+  // ---------- title slide ----------
+  document.getElementById('title-meta').innerHTML = `
+    <div><b>${total}</b>участников</div>
+    <div><b>${byCity.size - (byCity.get('— не указан') ? 1 : 0)}</b>городов</div>
+    <div><b>${totalAch}</b>достижений всего</div>
+  `;
+
+  // ---------- city slide ----------
+  const cityEntries = byCity.sortedDesc();
+  const topCity = cityEntries[0];
+  const moscow = byCity.get('Москва');
+  const spb = byCity.get('Санкт-Петербург');
+  document.getElementById('city-kpis').innerHTML = `
+    <div class="kpi"><div class="v">${total}</div><div class="l">Всего участников</div></div>
+    <div class="kpi"><div class="v">${byCity.size - (byCity.get('— не указан') ? 1 : 0)}</div><div class="l">Уникальных городов</div></div>
+    <div class="kpi"><div class="v">${moscow}</div><div class="l">Из Москвы (${fmtPct(moscow, total)})</div></div>
+    <div class="kpi"><div class="v">${spb}</div><div class="l">Из Санкт-Петербурга</div></div>
+  `;
+
+  const top10 = cityEntries.filter(([k]) => k !== '— не указан').slice(0, 10);
+  new Chart(document.getElementById('chart-cities'), {
+    type: 'bar',
+    data: {
+      labels: top10.map(([k]) => k),
+      datasets: [{
+        data: top10.map(([, v]) => v),
+        backgroundColor: '#7c8cff',
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#8d97ad', precision: 0 }, grid: { color: '#232a3a' } },
+        y: { ticks: { color: '#e7eaf0' }, grid: { display: false } },
+      }
+    }
+  });
+
+  const cityBody = document.querySelector('#city-table tbody');
+  cityBody.innerHTML = cityEntries.map(([k, v]) =>
+    `<tr><td>${k}</td><td class="num">${v}</td><td class="num">${fmtPct(v, total)}</td></tr>`
+  ).join('');
+
+  // ---------- grade slide ----------
+  const gradeOrder = ['8 класс', '9 класс', '10 класс', '11 класс', '— не указан'];
+  const gradeLabels = gradeOrder.filter((g) => byGrade.get(g));
+  const gradeData = gradeLabels.map((g) => byGrade.get(g));
+  const eleven = byGrade.get('11 класс');
+  const ten = byGrade.get('10 класс');
+  document.getElementById('grade-kpis').innerHTML = `
+    <div class="kpi"><div class="v">${eleven}</div><div class="l">11 класс (${fmtPct(eleven, total)})</div></div>
+    <div class="kpi"><div class="v">${ten}</div><div class="l">10 класс (${fmtPct(ten, total)})</div></div>
+    <div class="kpi"><div class="v">${byGrade.get('9 класс')}</div><div class="l">9 класс</div></div>
+    <div class="kpi"><div class="v">${byGrade.get('8 класс')}</div><div class="l">8 класс</div></div>
+  `;
+
+  new Chart(document.getElementById('chart-grade-pie'), {
+    type: 'doughnut',
+    data: {
+      labels: gradeLabels,
+      datasets: [{
+        data: gradeData,
+        backgroundColor: ['#e76b6b', '#f0b35a', '#7c8cff', '#59d4a4', '#444b5c'],
+        borderColor: '#141822',
+        borderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'right', labels: { color: '#e7eaf0' } },
+      },
+      cutout: '58%',
+    }
+  });
+
+  // avg achievements by grade
+  const achByGrade = new Map();
+  for (const p of PARTICIPANTS) {
+    const g = norm(p.grade) || '— не указан';
+    if (!achByGrade.has(g)) achByGrade.set(g, { sum: 0, n: 0 });
+    const s = achByGrade.get(g);
+    s.sum += (p.achievements || []).length;
+    s.n += 1;
+  }
+  const avgLabels = gradeLabels;
+  const avgData = avgLabels.map((g) => {
+    const s = achByGrade.get(g);
+    return s ? +(s.sum / s.n).toFixed(2) : 0;
+  });
+  new Chart(document.getElementById('chart-grade-ach'), {
+    type: 'bar',
+    data: {
+      labels: avgLabels,
+      datasets: [{
+        data: avgData,
+        backgroundColor: '#59d4a4',
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { ticks: { color: '#8d97ad' }, grid: { color: '#232a3a' }, beginAtZero: true },
+        x: { ticks: { color: '#e7eaf0' }, grid: { display: false } },
+      }
+    }
+  });
+
+  // ---------- achievements slide ----------
+  const olympArr = [...olympiadByResult.entries()]
+    .map(([k, v]) => ({ k, v, sum: v['Победитель'] + v['Призёр'] + v['Финалист'] }))
+    .sort((a, b) => b.sum - a.sum);
+  const olympLabels = olympArr.map((o) => o.k);
+  const winners = olympArr.map((o) => o.v['Победитель']);
+  const prizers = olympArr.map((o) => o.v['Призёр']);
+  const finalists = olympArr.map((o) => o.v['Финалист']);
+  const sumWin = winners.reduce((a, b) => a + b, 0);
+  const sumPriz = prizers.reduce((a, b) => a + b, 0);
+  const sumFin = finalists.reduce((a, b) => a + b, 0);
+
+  document.getElementById('ach-kpis').innerHTML = `
+    <div class="kpi"><div class="v">${totalAch}</div><div class="l">Всего достижений</div></div>
+    <div class="kpi"><div class="v">${sumWin}</div><div class="l">Победителей</div></div>
+    <div class="kpi"><div class="v">${sumPriz}</div><div class="l">Призёров</div></div>
+    <div class="kpi"><div class="v">${sumFin}</div><div class="l">Финалистов</div></div>
+  `;
+
+  new Chart(document.getElementById('chart-ach-stack'), {
+    type: 'bar',
+    data: {
+      labels: olympLabels,
+      datasets: [
+        { label: 'Победитель', data: winners, backgroundColor: '#59d4a4', borderRadius: 4 },
+        { label: 'Призёр', data: prizers, backgroundColor: '#7c8cff', borderRadius: 4 },
+        { label: 'Финалист', data: finalists, backgroundColor: '#f0b35a', borderRadius: 4 },
+      ]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { stacked: true, ticks: { color: '#8d97ad', precision: 0 }, grid: { color: '#232a3a' } },
+        y: { stacked: true, ticks: { color: '#e7eaf0' }, grid: { display: false } },
+      }
+    }
+  });
+
+  const top = [...achPerPerson].sort((a, b) => b.n - a.n).slice(0, 12);
+  document.querySelector('#top-participants tbody').innerHTML = top.map((p) =>
+    `<tr><td>${p.name}</td><td>${p.city}</td><td class="num">${p.n}</td></tr>`
+  ).join('');
+
+  // ---------- nav ----------
+  const slides = document.querySelectorAll('.slide');
+  let i = 0;
+  const dots = document.getElementById('dots');
+  slides.forEach((_, idx) => {
+    const d = document.createElement('span');
+    d.addEventListener('click', () => go(idx));
+    dots.appendChild(d);
+  });
+  const pos = document.getElementById('pos');
+  function go(n) {
+    i = (n + slides.length) % slides.length;
+    slides.forEach((s, idx) => s.classList.toggle('active', idx === i));
+    [...dots.children].forEach((d, idx) => d.classList.toggle('active', idx === i));
+    pos.textContent = `${i + 1} / ${slides.length}`;
+  }
+  document.getElementById('prev').addEventListener('click', () => go(i - 1));
+  document.getElementById('next').addEventListener('click', () => go(i + 1));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') go(i - 1);
+    else if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') go(i + 1);
+    else if (e.key === 'Home') go(0);
+    else if (e.key === 'End') go(slides.length - 1);
+  });
+  go(0);
+})();
+</script>
+</body>
+</html>
