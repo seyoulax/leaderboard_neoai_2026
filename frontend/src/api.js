@@ -171,3 +171,62 @@ export const auth = {
   logout: () => request('/auth/logout', { method: 'POST' }),
   me: () => request('/auth/me'),
 };
+
+// ---------- Competitions (search) ----------
+
+export const competitions = {
+  list: (q) => request(`/competitions${q ? `?q=${encodeURIComponent(q)}` : ''}`),
+  get: (slug) => request(`/competitions/${slug}`),
+  getLeaderboard: (slug) => request(`/competitions/${slug}/leaderboard`),
+};
+
+// ---------- Native tasks (public) ----------
+
+export const nativeTasks = {
+  listPublic: (compSlug) => request(`/competitions/${compSlug}/native-tasks`),
+  getPublic: (compSlug, taskSlug) => request(`/competitions/${compSlug}/native-tasks/${taskSlug}`),
+  fileUrl: (compSlug, taskSlug, fileId) =>
+    `${API_BASE}/competitions/${compSlug}/native-tasks/${taskSlug}/files/${fileId}`,
+  zipUrl: (compSlug, taskSlug, kind) =>
+    `${API_BASE}/competitions/${compSlug}/native-tasks/${taskSlug}/files.zip?kind=${kind}`,
+};
+
+// ---------- Native tasks (admin) ----------
+
+async function uploadFormData(url, formData) {
+  const r = await fetch(url, { method: 'POST', credentials: 'include', body: formData });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw Object.assign(new Error(j?.error || r.statusText), { status: r.status });
+  return j;
+}
+
+async function putFormData(url, formData) {
+  const r = await fetch(url, { method: 'PUT', credentials: 'include', body: formData });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw Object.assign(new Error(j?.error || r.statusText), { status: r.status });
+  return j;
+}
+
+export const adminNativeTasks = {
+  list: (compSlug) => request(`/admin/competitions/${compSlug}/native-tasks`),
+  create: (compSlug, body) =>
+    request(`/admin/competitions/${compSlug}/native-tasks`, { method: 'POST', body: JSON.stringify(body) }),
+  update: (compSlug, taskSlug, body) =>
+    request(`/admin/competitions/${compSlug}/native-tasks/${taskSlug}`, { method: 'PUT', body: JSON.stringify(body) }),
+  delete: (compSlug, taskSlug) =>
+    request(`/admin/competitions/${compSlug}/native-tasks/${taskSlug}`, { method: 'DELETE' }),
+  uploadFile: (compSlug, taskSlug, kind, formData) =>
+    uploadFormData(`${API_BASE}/admin/competitions/${compSlug}/native-tasks/${taskSlug}/files?kind=${kind}`, formData),
+  updateFile: (compSlug, taskSlug, fileId, body) =>
+    request(`/admin/competitions/${compSlug}/native-tasks/${taskSlug}/files/${fileId}`, { method: 'PUT', body: JSON.stringify(body) }),
+  deleteFile: (compSlug, taskSlug, fileId) =>
+    request(`/admin/competitions/${compSlug}/native-tasks/${taskSlug}/files/${fileId}`, { method: 'DELETE' }),
+  uploadGrader: (compSlug, taskSlug, formData) =>
+    putFormData(`${API_BASE}/admin/competitions/${compSlug}/native-tasks/${taskSlug}/grader`, formData),
+  uploadGroundTruth: (compSlug, taskSlug, formData) =>
+    putFormData(`${API_BASE}/admin/competitions/${compSlug}/native-tasks/${taskSlug}/ground-truth`, formData),
+  deleteGrader: (compSlug, taskSlug) =>
+    request(`/admin/competitions/${compSlug}/native-tasks/${taskSlug}/grader`, { method: 'DELETE' }),
+  deleteGroundTruth: (compSlug, taskSlug) =>
+    request(`/admin/competitions/${compSlug}/native-tasks/${taskSlug}/ground-truth`, { method: 'DELETE' }),
+};
