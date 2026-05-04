@@ -844,12 +844,128 @@ tr.row-down > td {
 .admin-pp-issues li { padding: 2px 0; }
 
 /* ─── auth ─────────────────────────────────────────────────── */
-.auth-card { max-width: 360px; margin: 60px auto; padding: 24px; border: 1px solid #ddd; border-radius: 8px; }
-.auth-card form { display: flex; flex-direction: column; gap: 12px; }
-.auth-card label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
-.auth-card input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-.auth-card .error { color: #c00; font-size: 14px; }
-.auth-card button { padding: 10px; background: #111; color: #fff; border: 0; border-radius: 4px; cursor: pointer; }
-.user-menu { display: inline-flex; gap: 12px; align-items: center; }
-.user-menu button { background: transparent; border: 1px solid #ccc; padding: 4px 10px; border-radius: 4px; cursor: pointer; }
-.header-user-menu { position: absolute; top: 12px; right: 16px; z-index: 50; font-size: 14px; }
+.auth-card {
+  max-width: 380px;
+  margin: 80px auto;
+  padding: 32px;
+  border: 1px solid var(--line);
+  background: linear-gradient(155deg, #1a1a1a 0%, #131313 100%);
+  border-radius: 22px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+}
+.auth-card h1 { margin: 0 0 20px; font-size: 24px; font-weight: 600; }
+.auth-card form { display: flex; flex-direction: column; gap: 16px; }
+.auth-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.auth-card input {
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ink);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  transition: border-color 0.18s, background 0.18s, box-shadow 0.18s;
+}
+.auth-card input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: rgba(125, 95, 255, 0.06);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.auth-card .error {
+  color: var(--danger);
+  background: var(--danger-bg);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+.auth-card button {
+  margin-top: 4px;
+  padding: 12px 16px;
+  background: var(--accent);
+  color: #fff;
+  border: 0;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s, transform 0.05s, box-shadow 0.18s;
+  box-shadow: 0 6px 20px rgba(125, 95, 255, 0.35);
+}
+.auth-card button:hover { background: #8e73ff; box-shadow: 0 8px 24px rgba(125, 95, 255, 0.45); }
+.auth-card button:active { transform: translateY(1px); }
+.auth-card button:disabled {
+  background: var(--card-2);
+  color: var(--muted);
+  box-shadow: none;
+  cursor: wait;
+}
+.auth-card p {
+  margin: 18px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+}
+.auth-card a { color: var(--accent); text-decoration: none; font-weight: 500; }
+.auth-card a:hover { text-decoration: underline; }
+
+.header-user-menu {
+  position: absolute;
+  top: 18px;
+  right: 24px;
+  z-index: 50;
+  font-size: 13px;
+}
+.user-menu {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 6px 6px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  backdrop-filter: blur(12px);
+}
+.user-menu > span {
+  font-weight: 500;
+  color: var(--ink);
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.user-menu a {
+  color: var(--muted);
+  text-decoration: none;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-weight: 500;
+  transition: color 0.18s, background 0.18s;
+}
+.user-menu a:hover { color: var(--ink); background: rgba(255, 255, 255, 0.06); }
+.user-menu button {
+  background: var(--accent-soft);
+  border: 1px solid transparent;
+  color: var(--accent);
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, border-color 0.18s;
+}
+.user-menu button:hover { background: var(--accent); color: #fff; }
