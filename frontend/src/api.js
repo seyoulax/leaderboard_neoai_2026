@@ -1,66 +1,71 @@
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001/api';
+const API_BASE = import.meta.env.VITE_API_BASE || '/api';
+
+async function request(path, opts = {}) {
+  const headers = { ...(opts.headers || {}) };
+  if (opts.body && !headers['content-type'] && !headers['Content-Type']) {
+    headers['content-type'] = 'application/json';
+  }
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...opts,
+    headers,
+    credentials: 'include',
+  });
+  const text = await res.text();
+  let json = null;
+  try { json = text ? JSON.parse(text) : null; } catch {}
+  if (!res.ok) {
+    const err = new Error(json?.error || res.statusText || `Request failed: ${res.status}`);
+    err.status = res.status;
+    err.payload = json;
+    throw err;
+  }
+  return json;
+}
 
 // ---------- Public, unscoped ----------
 
 export async function getCompetitions() {
-  const res = await fetch(`${API_BASE}/competitions`);
-  if (!res.ok) throw new Error(`Failed to fetch competitions: ${res.status}`);
-  return res.json();
+  return request('/competitions');
 }
 
 // ---------- Public, scoped to competition ----------
 
 function compBase(slug) {
-  return `${API_BASE}/competitions/${encodeURIComponent(slug)}`;
+  return `/competitions/${encodeURIComponent(slug)}`;
 }
 
 export async function getCompetition(slug) {
-  const res = await fetch(compBase(slug));
-  if (!res.ok) throw new Error(`Failed to fetch competition '${slug}': ${res.status}`);
-  return res.json();
+  return request(compBase(slug));
 }
 
 export async function getOverallLeaderboard(slug) {
-  const res = await fetch(`${compBase(slug)}/leaderboard`);
-  if (!res.ok) throw new Error(`Failed to fetch leaderboard '${slug}': ${res.status}`);
-  return res.json();
+  return request(`${compBase(slug)}/leaderboard`);
 }
 
 export async function getTaskLeaderboard(slug, taskSlug) {
-  const res = await fetch(`${compBase(slug)}/tasks/${encodeURIComponent(taskSlug)}`);
-  if (!res.ok) throw new Error(`Failed to fetch task '${slug}/${taskSlug}': ${res.status}`);
-  return res.json();
+  return request(`${compBase(slug)}/tasks/${encodeURIComponent(taskSlug)}`);
 }
 
 export async function getBoards(slug) {
-  const res = await fetch(`${compBase(slug)}/boards`);
-  if (!res.ok) throw new Error(`Failed to fetch boards '${slug}': ${res.status}`);
-  return res.json();
+  return request(`${compBase(slug)}/boards`);
 }
 
 export async function getParticipants(slug) {
-  const res = await fetch(`${compBase(slug)}/participants`);
-  if (!res.ok) throw new Error(`Failed to fetch participants '${slug}': ${res.status}`);
-  return res.json();
+  return request(`${compBase(slug)}/participants`);
 }
 
 export async function getCurrentCard(slug) {
-  const res = await fetch(`${compBase(slug)}/card`);
-  if (!res.ok) throw new Error(`Failed to fetch card '${slug}': ${res.status}`);
-  return res.json();
+  return request(`${compBase(slug)}/card`);
 }
 
 export async function setCurrentCard(slug, id) {
-  const res = await fetch(`${compBase(slug)}/card`, {
+  return request(`${compBase(slug)}/card`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ id }),
   });
-  if (!res.ok) throw new Error(`Failed to set current card '${slug}': ${res.status}`);
-  return res.json();
 }
 
-// ---------- Admin token ----------
+// ---------- Admin token (legacy fallback) ----------
 
 const ADMIN_TOKEN_KEY = 'neoai_admin_token';
 
@@ -81,15 +86,17 @@ export class AdminAuthError extends Error {
 
 async function adminFetch(p, opts = {}) {
   const token = getAdminToken();
-  const headers = { ...(opts.headers || {}), 'x-admin-token': token };
-  if (opts.body && !headers['Content-Type']) headers['Content-Type'] = 'application/json';
-  const res = await fetch(`${API_BASE}${p}`, { ...opts, headers });
-  if (res.status === 401) {
-    setAdminToken(''); throw new AdminAuthError();
+  const headers = { ...(opts.headers || {}) };
+  if (token) headers['x-admin-token'] = token;
+  try {
+    return await request(p, { ...opts, headers });
+  } catch (e) {
+    if (e.status === 401) {
+      setAdminToken('');
+      throw new AdminAuthError(e.message);
+    }
+    throw e;
   }
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data?.error || `Request failed: ${res.status}`);
-  return data;
 }
 
 export async function adminPing() { return adminFetch('/admin/competitions'); }
@@ -155,3 +162,12 @@ export async function deleteAdminPrivate(slug, taskSlug) {
     method: 'DELETE',
   });
 }
+
+// ---------- Auth ----------
+
+export const auth = {
+  register: (body) => request('/auth/register', { method: 'POST', body: JSON.stringify(body) }),
+  login: (body) => request('/auth/login', { method: 'POST', body: JSON.stringify(body) }),
+  logout: () => request('/auth/logout', { method: 'POST' }),
+  me: () => request('/auth/me'),
+};
