@@ -37,6 +37,8 @@ import {
 import { AuthProvider } from './auth/AuthContext.jsx';
 import LoginPage from './auth/LoginPage.jsx';
 import NativeTaskPage from './native/NativeTaskPage.jsx';
+import AdminNativeTasksList from './admin/AdminNativeTasksList.jsx';
+import AdminNativeTaskEdit from './admin/AdminNativeTaskEdit.jsx';
 import RegisterPage from './auth/RegisterPage.jsx';
 import UserMenu from './UserMenu.jsx';
 
@@ -1613,6 +1615,8 @@ export default function App() {
           <Route path="participants" element={<AdminParticipantsPage />} />
           <Route path="card" element={<ControlPage />} />
         </Route>
+        <Route path="competitions/:competitionSlug/native-tasks" element={<AdminNativeTasksList />} />
+        <Route path="competitions/:competitionSlug/native-tasks/:taskSlug" element={<AdminNativeTaskEdit />} />
       </Route>
 
       {/* OBS (no header/nav) */}
