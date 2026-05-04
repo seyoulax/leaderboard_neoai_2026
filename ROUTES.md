@@ -11,11 +11,15 @@
 | URL | Что |
 | --- | --- |
 | `/` | Список видимых соревнований |
+| `/login` | Email + пароль (session cookie); редирект на `from` или `/` |
+| `/register` | Регистрация: email, пароль (≥ 8), displayName, kaggleId (опц.) |
 | `/competitions/<slug>` | Редирект на `leaderboard` |
 | `/competitions/<slug>/leaderboard` | Общий ЛБ |
 | `/competitions/<slug>/cycle` | Циклическая показ по 15 строк (по прямому URL, без таба в навигации) |
 | `/competitions/<slug>/board/<b>` | Лидерборд борда |
 | `/competitions/<slug>/task/<t>` | Лидерборд задачи |
+
+В правом верхнем углу любой страницы — `UserMenu`: «Войти / Регистрация» для анонимов; имя + «Выйти» (+ ссылка «Админка», если `role='admin'`) — для залогиненных.
 
 ## OBS
 
@@ -32,8 +36,8 @@
 
 | URL | Что |
 | --- | --- |
-| `/admin` | Логин |
-| `/admin/competitions` | CRUD соревнований |
+| `/admin` | Legacy token-логин (вводит `ADMIN_TOKEN`). Для session-auth используй `/login` админ-аккаунтом — после успеха `UserMenu` подскажет ссылку на админку. |
+| `/admin/competitions` | CRUD соревнований (поле `type: kaggle | native` — radio при создании, колонка в таблице) |
 | `/admin/competitions/<slug>` | Редирект на `tasks` |
 | `/admin/competitions/<slug>/tasks` | CRUD задач (scoped) |
 | `/admin/competitions/<slug>/boards` | CRUD бордов (scoped) |
@@ -128,4 +132,9 @@ Pseudo-rows в Kaggle leaderboard CSV (Rank=0 с именем команды, с
 | `REQUEST_GAP_MS` | `3000` | Пауза между Kaggle-запросами |
 | `KAGGLE_CMD` | `kaggle` | Бинарь Kaggle CLI |
 | `DATA_DIR` | `./data` | Корень data |
-| `ADMIN_TOKEN` | (пусто) | Токен админки |
+| `ADMIN_TOKEN` | (пусто) | Legacy shared token; fallback к session-cookie auth (`x-admin-token` header). Депрекейтнут после SP-4. |
+| `DB_FILE` | `./data/app.db` | Путь к SQLite (identity, индекс соревнований) |
+| `SESSION_TTL_DAYS` | `30` | TTL session cookie |
+| `COOKIE_SECURE` | `auto` | `true` / `false` / `auto` (по `req.protocol` + `x-forwarded-proto`) |
+| `ADMIN_BOOTSTRAP_EMAIL` | (пусто) | При первом старте создаст админа если ни одного нет (идемпотентно). Если юзер с таким email уже есть — повышает его до admin. |
+| `ADMIN_BOOTSTRAP_PASSWORD` | (пусто) | Пара к `ADMIN_BOOTSTRAP_EMAIL` |
