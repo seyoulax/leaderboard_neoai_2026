@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { runMigrations } from '../src/db/index.js';
-import { createApp } from '../src/app.js';
+import { createApp, bootstrapForTests } from '../src/app.js';
 import { insertCompetition } from '../src/db/competitionsRepo.js';
 import { createUser } from '../src/db/usersRepo.js';
 import { createSession } from '../src/db/sessionsRepo.js';
@@ -154,6 +154,23 @@ test('public: GET .zip bundles all files of given kind', async () => {
   assert.equal(buf.slice(0, 2).toString(), 'PK'); // ZIP magic
 
   fs.rmSync(tmp, { recursive: true, force: true });
+  server.close();
+});
+
+test('GET /leaderboard: native dispatch returns native tasks (no kaggle cc)', async () => {
+  const { app } = setup();
+  await bootstrapForTests();
+  const server = await start(app);
+  const port = server.address().port;
+  await fetch(`http://127.0.0.1:${port}/api/admin/competitions/comp/native-tasks`, {
+    method: 'POST', headers: ADMIN_HEADERS, body: JSON.stringify({ slug: 't', title: 'T' }),
+  });
+  const r = await fetch(`http://127.0.0.1:${port}/api/competitions/comp/leaderboard`);
+  assert.equal(r.status, 200);
+  const j = await r.json();
+  assert.equal(j.tasks.length, 1);
+  assert.equal(j.tasks[0].slug, 't');
+  assert.deepEqual(j.overall, []);
   server.close();
 });
 

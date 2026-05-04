@@ -8,6 +8,7 @@ import { loadUser, requireAdmin } from './auth/middleware.js';
 import { createAuthRouter } from './routes/auth.js';
 import { createNativeTasksAdminRouter } from './routes/nativeTasksAdmin.js';
 import { createNativeTasksPublicRouter } from './routes/nativeTasksPublic.js';
+import { listNativeTasks } from './db/nativeTasksRepo.js';
 import {
   listActiveCompetitions,
   listVisibleCompetitions,
@@ -574,6 +575,31 @@ export function createApp({ db } = {}) {
   app.get('/api/competitions/:competitionSlug/leaderboard', (req, res) => {
     const meta = requireCompetition(req, res);
     if (!meta) return;
+    if (meta.type === 'native') {
+      const taskMetas = listNativeTasks(db, meta.slug).map((t) => ({
+        slug: t.slug,
+        title: t.title,
+        higherIsBetter: t.higherIsBetter,
+        baselineScorePublic: t.baselineScorePublic,
+        authorScorePublic: t.authorScorePublic,
+        baselineScorePrivate: t.baselineScorePrivate,
+        authorScorePrivate: t.authorScorePrivate,
+      }));
+      res.json({
+        updatedAt: null,
+        tasks: taskMetas,
+        overall: [],
+        privateOverall: [],
+        privateByTask: {},
+        privateTaskSlugs: [],
+        oursOverall: [],
+        oursByTask: {},
+        oursPrivateOverall: [],
+        oursPrivateByTask: {},
+        errors: [],
+      });
+      return;
+    }
     const cc = cache.byCompetition.get(meta.slug) || emptyCompetitionCache();
     res.json({
       updatedAt: cc.updatedAt,
