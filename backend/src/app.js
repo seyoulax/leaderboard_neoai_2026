@@ -9,6 +9,7 @@ import { createAuthRouter } from './routes/auth.js';
 import {
   listActiveCompetitions,
   listVisibleCompetitions,
+  searchPublicCompetitions,
   getCompetition,
   insertCompetition,
   softDeleteCompetition,
@@ -556,8 +557,10 @@ export function createApp({ db } = {}) {
     });
   });
 
-  app.get('/api/competitions', (_req, res) => {
-    res.json({ competitions: listVisibleCompetitions(db) });
+  app.get('/api/competitions', (req, res) => {
+    const q = typeof req.query.q === 'string' ? req.query.q : '';
+    const list = q ? searchPublicCompetitions(db, q) : listVisibleCompetitions(db);
+    res.json({ competitions: list });
   });
 
   app.get('/api/competitions/:competitionSlug', (req, res) => {
