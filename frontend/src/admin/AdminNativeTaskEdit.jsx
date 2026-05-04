@@ -123,11 +123,13 @@ export default function AdminNativeTaskEdit() {
 
   return (
     <section className="panel">
-      <div className="panel-head">
-        <h2>{competitionSlug}/{task.slug}</h2>
+      <div style={{ padding: '14px 24px 0' }}>
         <Link to={`/admin/competitions/${encodeURIComponent(competitionSlug)}/native-tasks`} className="eyebrow-link">
           ← к списку задач
         </Link>
+      </div>
+      <div className="panel-head">
+        <h2>{competitionSlug}/{task.slug}</h2>
       </div>
 
       <section style={{ marginBottom: 24 }}>

@@ -49,6 +49,8 @@ export default function AdminNativeTasksList() {
     <section className="panel">
       <div className="panel-head">
         <h2>Native задачи: {competitionSlug}</h2>
+      </div>
+      <div style={{ padding: '16px 24px', display: 'flex', justifyContent: 'flex-end' }}>
         <button onClick={onCreate} className="control-btn">+ Создать задачу</button>
       </div>
       {error ? <p className="status error">{error}</p> : null}
