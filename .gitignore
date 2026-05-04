@@ -2,7 +2,9 @@ node_modules/
 dist/
 *.log
 .env
+.CLAUDE.md
 .env.*
 !.env.example
 .DS_Store
 .worktrees/
+.claude/
