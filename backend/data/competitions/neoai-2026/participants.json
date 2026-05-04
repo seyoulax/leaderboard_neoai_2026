@@ -34,7 +34,25 @@
     },
     {
         "id": "labzin-kirill",
-        "name": "Лабзин Кирилл Михайлович",
+        "name": "Лабзин Кирилл Михайлович (3005)",
+        "kaggleId": "kirill3005",
+        "photo": "/photos/anna-smirnova.jpg",
+        "role": "Участник",
+        "city": "Сочи",
+        "grade": "11 класс",
+        "achievements": [
+            "ВсОШ ИИ: Победитель",
+            "Всероссийская олимпиада по ИИ: Призер",
+            "AI Challenge: Победитель",
+            "НТО ИИ: Победитель",
+            "FAIO: Призер",
+            "DANO: Победитель"
+        ],
+        "bio": ""
+    },
+    {
+        "id": "labzin-kirill",
+        "name": "Лабзин Кирилл Михайлович (57678)",
         "kaggleId": "kirill57678",
         "photo": "/photos/anna-smirnova.jpg",
         "role": "Участник",
