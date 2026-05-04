@@ -57,7 +57,7 @@
 | Method | Path | Что |
 | --- | --- | --- |
 | GET | `/api/health` | Статус, состояние всех соревнований |
-| GET | `/api/competitions` | Видимые соревнования (поля: `slug`, `title`, `subtitle`, `type: 'kaggle' \| 'native'`, `visible`, `displayOrder`) |
+| GET | `/api/competitions` | Видимые соревнования (только `visibility='public' AND visible=1`). Поля: `slug`, `title`, `subtitle`, `type: 'kaggle' \| 'native'`, `visibility: 'public' \| 'unlisted'`, `visible`, `displayOrder`. **Поиск:** `?q=<term>` — case-insensitive LIKE по `title`. |
 
 ### Auth
 
@@ -73,13 +73,24 @@
 | Method | Path |
 | --- | --- |
 | GET | `/api/competitions/<slug>` |
-| GET | `/api/competitions/<slug>/leaderboard` |
+| GET | `/api/competitions/<slug>/leaderboard` (для `type=native` возвращает `tasks` из `native_tasks` + пустые `overall`/`privateOverall` — заполнятся в SP-3) |
 | GET | `/api/competitions/<slug>/tasks/<t>` |
 | GET | `/api/competitions/<slug>/boards` |
 | GET | `/api/competitions/<slug>/participants` |
 | POST | `/api/competitions/<slug>/refresh` |
 | GET | `/api/competitions/<slug>/card` |
 | POST | `/api/competitions/<slug>/card` |
+
+### Native task endpoints (публично)
+
+Применимы только если `competition.type='native'`.
+
+| Method | Path | Что |
+| --- | --- | --- |
+| GET | `/api/competitions/<slug>/native-tasks` | Список задач (`{slug, title, higherIsBetter}[]`) |
+| GET | `/api/competitions/<slug>/native-tasks/<task>` | Описание задачи + scoring anchors + `datasets[]` + `artifacts[]` (без `path`/`grader_path`/`ground_truth_path` — они приватные) |
+| GET | `/api/competitions/<slug>/native-tasks/<task>/files/<id>` | **Auth:** требует session cookie. Стримит файл (только `kind in ('dataset','artifact')`; grader/ground-truth недоступны) |
+| GET | `/api/competitions/<slug>/native-tasks/<task>/files.zip?kind=dataset\|artifact` | **Auth:** требует session cookie. Стримит ZIP всех файлов указанного kind |
 
 ### Админ (session cookie с `role='admin'` ИЛИ заголовок `x-admin-token`)
 
@@ -97,17 +108,42 @@
 
 JSON body limit для админских PUT — **50 MB** (нужно для больших Kaggle all-submissions CSV).
 
+### Native task admin endpoints
+
+Только для `competition.type='native'` (для `kaggle` возвращают 400 при попытке создать задачу).
+
+| Method | Path | Что |
+| --- | --- | --- |
+| GET | `/api/admin/competitions/<slug>/native-tasks` | Список (включая deleted=null) |
+| POST | `/api/admin/competitions/<slug>/native-tasks` | `{slug, title, descriptionMd?, higherIsBetter?, baseline*/author*?}` |
+| PUT | `/api/admin/competitions/<slug>/native-tasks/<task>` | Merge-update тех же полей |
+| DELETE | `/api/admin/competitions/<slug>/native-tasks/<task>` | Soft-delete (`deleted_at` set) |
+| POST | `/api/admin/competitions/<slug>/native-tasks/<task>/files?kind=dataset\|artifact` | **Multipart:** `file` + опциональные form-fields `display_name`/`description`. Sha256 + atomic rename. Лимит: `MAX_DATASET_BYTES`/`MAX_ARTIFACT_BYTES`. |
+| PUT | `/api/admin/competitions/<slug>/native-tasks/<task>/files/<id>` | JSON: `{displayName?, description?, displayOrder?}` |
+| DELETE | `/api/admin/competitions/<slug>/native-tasks/<task>/files/<id>` | Удаляет row + файл с диска |
+| PUT | `/api/admin/competitions/<slug>/native-tasks/<task>/grader` | Multipart `file` → пишется в `<task-dir>/grader<.ext>`, путь в `native_tasks.grader_path`. Лимит: `MAX_GRADER_BYTES` (100 KB по умолчанию). Замена прежнего файла. |
+| DELETE | `/api/admin/competitions/<slug>/native-tasks/<task>/grader` | Удаляет файл + сбрасывает `grader_path` в null |
+| PUT | `/api/admin/competitions/<slug>/native-tasks/<task>/ground-truth` | То же для `ground_truth_path`. Лимит: `MAX_GROUND_TRUTH_BYTES`. |
+| DELETE | `/api/admin/competitions/<slug>/native-tasks/<task>/ground-truth` | То же |
+
+**Type-lock.** `PUT /api/admin/competitions` (bulk replace) выбрасывает 400 при попытке сменить `type` существующего соревнования. `POST /api/admin/competitions` принимает `{competition: {..., visibility: 'public'\|'unlisted'}}`.
+
 ## Файлы данных
 
 ```
 data/
-  app.db                        # SQLite: users, sessions, competitions, competition_members
+  app.db                        # SQLite: users, sessions, competitions, competition_members, native_tasks, native_task_files
   competitions/<slug>/
     tasks.json
     boards.json
     participants.json
     state.json                  # currentParticipantId (для /obs/card)
-  private/<slug>/<task>.csv     # выгрузки приватного ЛБ
+  private/<slug>/<task>.csv     # выгрузки приватного ЛБ (kaggle)
+  native/<comp-slug>/<task-slug>/
+    dataset/<file-id>-<safe-name>      # датасеты
+    artifact/<file-id>-<safe-name>     # стартовые артефакты
+    grader.<ext>                       # admin-uploaded score.py (приватный)
+    ground_truth.<ext>                 # ground-truth для скоринга (приватный)
   _legacy-backup-<ts>/          # snapshot пред-миграционных файлов
 ```
 
@@ -137,4 +173,9 @@ Pseudo-rows в Kaggle leaderboard CSV (Rank=0 с именем команды, с
 | `SESSION_TTL_DAYS` | `30` | TTL session cookie |
 | `COOKIE_SECURE` | `auto` | `true` / `false` / `auto` (по `req.protocol` + `x-forwarded-proto`) |
 | `ADMIN_BOOTSTRAP_EMAIL` | (пусто) | При первом старте создаст админа если ни одного нет (идемпотентно). Если юзер с таким email уже есть — повышает его до admin. |
+| `NATIVE_DATA_DIR` | `./data/native` | Корень для файлов native задач |
+| `MAX_DATASET_BYTES` | `524288000` | Лимит upload датасета (~500 MB) |
+| `MAX_ARTIFACT_BYTES` | `26214400` | Лимит artifact (~25 MB) |
+| `MAX_GRADER_BYTES` | `102400` | Лимит `score.py` (100 KB) |
+| `MAX_GROUND_TRUTH_BYTES` | `524288000` | Лимит ground-truth |
 | `ADMIN_BOOTSTRAP_PASSWORD` | (пусто) | Пара к `ADMIN_BOOTSTRAP_EMAIL` |

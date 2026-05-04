@@ -126,6 +126,11 @@ docker compose -f docker-compose.host.yml up -d --build
 | `COOKIE_SECURE` | `auto` | `true`/`false`/`auto` (по `req.protocol` + `x-forwarded-proto`) |
 | `ADMIN_BOOTSTRAP_EMAIL` | (пусто) | При первом старте создаст админа если ни одного нет (идемпотентно) |
 | `ADMIN_BOOTSTRAP_PASSWORD` | (пусто) | То же |
+| `NATIVE_DATA_DIR` | `./data/native` | Корень для файлов native задач (датасеты, артефакты, grader, ground-truth) |
+| `MAX_DATASET_BYTES` | `524288000` | Лимит на загружаемый датасет (≈500 MB) |
+| `MAX_ARTIFACT_BYTES` | `26214400` | Лимит на стартовый артефакт (≈25 MB) |
+| `MAX_GRADER_BYTES` | `102400` | Лимит на `score.py` (100 KB) |
+| `MAX_GROUND_TRUTH_BYTES` | `524288000` | Лимит на ground-truth |
 
 ## Тушение / откат
 
