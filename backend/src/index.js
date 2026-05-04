@@ -20,6 +20,13 @@ const app = createApp({ db });
 app.listen(PORT, async () => {
   console.log(`Backend started on http://localhost:${PORT}`);
   try {
+    // 1) Legacy file-shape migration: flat tasks.json/boards.json → competitions/neoai-2026/.
+    //    Produces (or leaves alone) data/competitions.json which feeds step 2.
+    const result = await migrate(DATA_DIR);
+    if (result.migrated) {
+      console.log(`[migrate] OK: legacy → ${result.competitionSlug}, backup: ${result.backupDir}`);
+    }
+    // 2) One-shot competitions.json → SQLite (deletes the JSON file).
     const compMig = migrateCompetitionsJsonToDb({ db, dataDir: DATA_DIR });
     if (compMig.migrated) {
       console.log(`[migrate-db] competitions.json → DB (${compMig.count} rows), backup: ${compMig.backupFile}`);
@@ -31,10 +38,6 @@ app.listen(PORT, async () => {
     });
     if (admin.created) console.log(`[bootstrap] admin created: id=${admin.userId}`);
     else if (admin.promoted) console.log(`[bootstrap] existing user promoted to admin: id=${admin.userId}`);
-    const result = await migrate(DATA_DIR);
-    if (result.migrated) {
-      console.log(`[migrate] OK: legacy → ${result.competitionSlug}, backup: ${result.backupDir}`);
-    }
   } catch (e) {
     console.error('[startup] migration FAILED', e);
   }
