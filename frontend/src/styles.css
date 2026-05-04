@@ -648,6 +648,49 @@ tr.row-down > td {
   border-color: var(--accent);
 }
 
+.anchors-panel {
+  margin: 16px 24px;
+  padding: 14px 16px;
+  border: 1px solid var(--line-strong, var(--line));
+  border-radius: 12px;
+  background: var(--card-2, var(--card));
+}
+
+.anchors-title {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.anchors-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.anchors-col-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 8px;
+  letter-spacing: 0.04em;
+}
+
+.anchors-col > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 4px 0;
+  font-size: 13px;
+}
+
+.anchors-label {
+  color: var(--muted);
+}
+
 /* Admin: private upload sub-row */
 .admin-tasks-task {
   display: flex;

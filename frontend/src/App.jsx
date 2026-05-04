@@ -561,6 +561,31 @@ function BoardPage({ boards }) {
   );
 }
 
+function AnchorsPanel({ taskPublic, taskPrivate }) {
+  const fmt = (v) => (v == null || !Number.isFinite(v)) ? '—' : Number(v).toFixed(6);
+  const pub = taskPublic || {};
+  const priv = taskPrivate || {};
+  const hasAny = [pub.baselineScore, pub.authorScore, priv.baselineScore, priv.authorScore].some((v) => v != null);
+  if (!hasAny) return null;
+  return (
+    <div className="anchors-panel">
+      <div className="anchors-title">Anchors для нормализации</div>
+      <div className="anchors-grid">
+        <div className="anchors-col">
+          <div className="anchors-col-title">Public</div>
+          <div><span className="anchors-label">baseline</span><span className="mono">{fmt(pub.baselineScore)}</span></div>
+          <div><span className="anchors-label">author</span><span className="mono">{fmt(pub.authorScore)}</span></div>
+        </div>
+        <div className="anchors-col">
+          <div className="anchors-col-title">Private</div>
+          <div><span className="anchors-label">baseline</span><span className="mono">{fmt(priv.baselineScore)}</span></div>
+          <div><span className="anchors-label">author</span><span className="mono">{fmt(priv.authorScore)}</span></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TaskPage() {
   const { competitionSlug, slug } = useParams();
   const { data, loading, error } = usePolling(() => getTaskLeaderboard(competitionSlug, slug), [competitionSlug, slug]);
@@ -607,6 +632,8 @@ function TaskPage() {
       </div>
 
       <ErrorBanner errors={data.errors} />
+
+      <AnchorsPanel taskPublic={data.task} taskPrivate={data.privateTask} />
 
       {isPrivate && !privateAvailable ? (
         <p className="status" style={{ margin: 24 }}>Приват ещё не посчитался — для этой задачи private CSV не загружен.</p>
