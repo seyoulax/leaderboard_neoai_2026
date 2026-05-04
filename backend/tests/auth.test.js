@@ -16,6 +16,8 @@ import { runMigrations } from '../src/db/index.js';
 import { createUser } from '../src/db/usersRepo.js';
 import { createSession } from '../src/db/sessionsRepo.js';
 import { createAuthRouter } from '../src/routes/auth.js';
+import { bootstrapAdmin } from '../src/bootstrapAdmin.js';
+import { findUserByEmail, countAdmins } from '../src/db/usersRepo.js';
 
 function freshDb() {
   const db = new Database(':memory:');
@@ -274,4 +276,33 @@ test('auth routes: register duplicate email returns 400', async () => {
     });
     assert.equal(b.status, 400);
   });
+});
+
+// ─── bootstrapAdmin ──────────────────────────────────────────────
+
+test('bootstrapAdmin: creates admin when none exists', async () => {
+  const db = freshDb();
+  const result = await bootstrapAdmin({
+    db,
+    email: 'root@x.y',
+    password: 'hunter2hunter2',
+  });
+  assert.equal(result.created, true);
+  const u = findUserByEmail(db, 'root@x.y');
+  assert.equal(u.role, 'admin');
+});
+
+test('bootstrapAdmin: idempotent when admin already exists', async () => {
+  const db = freshDb();
+  await bootstrapAdmin({ db, email: 'a@a.a', password: 'hunter2hunter2' });
+  const result = await bootstrapAdmin({ db, email: 'b@b.b', password: 'hunter2hunter2' });
+  assert.equal(result.created, false);
+  assert.equal(countAdmins(db), 1);
+});
+
+test('bootstrapAdmin: noop when env empty', async () => {
+  const db = freshDb();
+  const result = await bootstrapAdmin({ db, email: '', password: '' });
+  assert.equal(result.created, false);
+  assert.equal(countAdmins(db), 0);
 });
