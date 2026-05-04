@@ -208,8 +208,8 @@ test('competitionsRepo.bulkReplaceCompetitions: missing slugs → soft-deleted',
 test('competitionsRepo.upsertCompetition writes new and updates existing', () => {
   const db = freshDb();
   upsertCompetition(db, { slug: 'a', title: 'A', type: 'kaggle' });
-  upsertCompetition(db, { slug: 'a', title: 'A2', type: 'native' });
+  upsertCompetition(db, { slug: 'a', title: 'A2', type: 'kaggle' });
   const c = getCompetition(db, 'a');
   assert.equal(c.title, 'A2');
-  assert.equal(c.type, 'native');
+  assert.equal(c.type, 'kaggle');
 });

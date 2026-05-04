@@ -146,6 +146,13 @@ import {
   updateFileMetadata,
 } from '../src/db/nativeTaskFilesRepo.js';
 
+import {
+  insertCompetition,
+  upsertCompetition,
+  listVisibleCompetitions,
+  searchPublicCompetitions,
+} from '../src/db/competitionsRepo.js';
+
 function seedTask(db) {
   seedComp(db);
   const t = insertNativeTask(db, { competitionSlug: 'c', slug: 't', title: 'T' });
@@ -202,4 +209,33 @@ test('files: updateMetadata changes display_name/description/order', () => {
   assert.equal(got.displayName, 'NEW');
   assert.equal(got.description, 'd');
   assert.equal(got.displayOrder, 5);
+});
+
+test('competitionsRepo.listVisibleCompetitions: только public + visible=1', () => {
+  const db = freshDb();
+  insertCompetition(db, { slug: 'a', title: 'A', type: 'kaggle', visibility: 'public', visible: true });
+  insertCompetition(db, { slug: 'b', title: 'B', type: 'native', visibility: 'unlisted', visible: true });
+  insertCompetition(db, { slug: 'c', title: 'C', type: 'kaggle', visibility: 'public', visible: false });
+  const list = listVisibleCompetitions(db).map((c) => c.slug);
+  assert.deepEqual(list, ['a']);
+});
+
+test('competitionsRepo.searchPublicCompetitions: case-insensitive LIKE по title', () => {
+  const db = freshDb();
+  insertCompetition(db, { slug: 'a', title: 'NEOAI 2026', type: 'kaggle', visibility: 'public' });
+  insertCompetition(db, { slug: 'b', title: 'Kaggle Forces', type: 'kaggle', visibility: 'public' });
+  insertCompetition(db, { slug: 'c', title: 'Hidden', type: 'native', visibility: 'unlisted' });
+  assert.deepEqual(searchPublicCompetitions(db, 'neo').map((c) => c.slug), ['a']);
+  assert.deepEqual(searchPublicCompetitions(db, 'KAGGLE').map((c) => c.slug), ['b']);
+  assert.deepEqual(searchPublicCompetitions(db, 'hidden').map((c) => c.slug), []);
+  assert.deepEqual(searchPublicCompetitions(db, '').map((c) => c.slug).sort(), ['a', 'b']);
+});
+
+test('competitionsRepo.upsertCompetition: type-lock — менять type существующего соревнования нельзя', () => {
+  const db = freshDb();
+  insertCompetition(db, { slug: 'a', title: 'A', type: 'kaggle' });
+  assert.throws(
+    () => upsertCompetition(db, { slug: 'a', title: 'A', type: 'native' }),
+    /type/i
+  );
 });

@@ -1,4 +1,4 @@
-const COLUMNS = `slug, title, subtitle, type,
+const COLUMNS = `slug, title, subtitle, type, visibility,
   CAST(visible AS INTEGER) AS visible,
   display_order AS displayOrder,
   created_at AS createdAt,
@@ -11,13 +11,14 @@ function rowToCompetition(row) {
 
 export function insertCompetition(db, c) {
   db.prepare(
-    `INSERT INTO competitions (slug, title, subtitle, type, visible, display_order)
-     VALUES (?, ?, ?, ?, ?, ?)`
+    `INSERT INTO competitions (slug, title, subtitle, type, visibility, visible, display_order)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`
   ).run(
     c.slug,
     c.title,
     c.subtitle ?? null,
     c.type,
+    c.visibility === 'unlisted' ? 'unlisted' : 'public',
     c.visible === false ? 0 : 1,
     Number.isFinite(c.displayOrder) ? c.displayOrder : 0
   );
@@ -25,16 +26,19 @@ export function insertCompetition(db, c) {
 }
 
 export function upsertCompetition(db, c) {
-  const existing = db.prepare('SELECT slug FROM competitions WHERE slug = ?').get(c.slug);
+  const existing = db.prepare('SELECT type FROM competitions WHERE slug = ?').get(c.slug);
+  if (existing && c.type && c.type !== existing.type) {
+    throw new Error(`type lock: cannot change competition '${c.slug}' type from ${existing.type} to ${c.type}`);
+  }
   if (existing) {
     db.prepare(
       `UPDATE competitions
-       SET title = ?, subtitle = ?, type = ?, visible = ?, display_order = ?, deleted_at = NULL
+       SET title = ?, subtitle = ?, visibility = ?, visible = ?, display_order = ?, deleted_at = NULL
        WHERE slug = ?`
     ).run(
       c.title,
       c.subtitle ?? null,
-      c.type,
+      c.visibility === 'unlisted' ? 'unlisted' : 'public',
       c.visible === false ? 0 : 1,
       Number.isFinite(c.displayOrder) ? c.displayOrder : 0,
       c.slug
@@ -63,7 +67,28 @@ export function listActiveCompetitions(db) {
 }
 
 export function listVisibleCompetitions(db) {
-  return listActiveCompetitions(db).filter((c) => c.visible);
+  return db
+    .prepare(
+      `SELECT ${COLUMNS} FROM competitions
+       WHERE deleted_at IS NULL AND visibility = 'public' AND visible = 1
+       ORDER BY display_order, slug`
+    )
+    .all()
+    .map(rowToCompetition);
+}
+
+export function searchPublicCompetitions(db, q) {
+  const term = String(q ?? '').trim();
+  if (!term) return listVisibleCompetitions(db);
+  return db
+    .prepare(
+      `SELECT ${COLUMNS} FROM competitions
+       WHERE deleted_at IS NULL AND visibility = 'public' AND visible = 1
+         AND title LIKE ? COLLATE NOCASE
+       ORDER BY display_order, slug`
+    )
+    .all(`%${term}%`)
+    .map(rowToCompetition);
 }
 
 export function softDeleteCompetition(db, slug) {
