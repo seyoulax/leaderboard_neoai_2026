@@ -76,16 +76,6 @@ jobs:
           source: docker-compose.prod.yml
           target: ${{ secrets.DEPLOY_PATH }}
 
-      - name: Sync participants.json to host
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          source: backend/data/competitions/neoai-2026/participants.json
-          target: ${{ secrets.DEPLOY_PATH }}
-          overwrite: true
-
       - name: Sync stackmorelayers static files
         uses: appleboy/scp-action@v0.1.7
         with:
