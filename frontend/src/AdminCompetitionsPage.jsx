@@ -12,7 +12,7 @@ export default function AdminCompetitionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
-  const [draft, setDraft] = useState({ slug: '', title: '', subtitle: '', order: 0, visible: true });
+  const [draft, setDraft] = useState({ slug: '', title: '', subtitle: '', order: 0, visible: true, type: 'kaggle' });
 
   async function refresh() {
     try {
@@ -52,10 +52,11 @@ export default function AdminCompetitionsPage() {
         title: draft.title.trim(),
         order: Number(draft.order) || 0,
         visible: !!draft.visible,
+        type: draft.type === 'native' ? 'native' : 'kaggle',
       };
       if (draft.subtitle.trim()) payload.subtitle = draft.subtitle.trim();
       await createAdminCompetition(payload);
-      setDraft({ slug: '', title: '', subtitle: '', order: 0, visible: true });
+      setDraft({ slug: '', title: '', subtitle: '', order: 0, visible: true, type: 'kaggle' });
       await refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -92,12 +93,16 @@ export default function AdminCompetitionsPage() {
           <input placeholder="subtitle (опц.)" value={draft.subtitle} onChange={(e) => setDraft({ ...draft, subtitle: e.target.value })} />
           <input type="number" placeholder="order" value={draft.order} onChange={(e) => setDraft({ ...draft, order: e.target.value })} />
           <label><input type="checkbox" checked={draft.visible} onChange={(e) => setDraft({ ...draft, visible: e.target.checked })} /> visible</label>
+          <fieldset className="admin-comp-type">
+            <label><input type="radio" name="type" value="kaggle" checked={draft.type === 'kaggle'} onChange={() => setDraft({ ...draft, type: 'kaggle' })} /> Kaggle</label>
+            <label><input type="radio" name="type" value="native" checked={draft.type === 'native'} onChange={() => setDraft({ ...draft, type: 'native' })} /> Native</label>
+          </fieldset>
           <button disabled={busy || !draft.slug || !draft.title} onClick={createNew}>Создать</button>
         </div>
       </div>
 
       <table className="admin-comp-table">
-        <thead><tr><th>slug</th><th>title</th><th>subtitle</th><th>order</th><th>visible</th><th></th></tr></thead>
+        <thead><tr><th>slug</th><th>title</th><th>subtitle</th><th>order</th><th>visible</th><th>тип</th><th></th></tr></thead>
         <tbody>
           {list.map((c, idx) => (
             <tr key={c.slug}>
@@ -106,6 +111,7 @@ export default function AdminCompetitionsPage() {
               <td><input value={c.subtitle || ''} onChange={(e) => updateAt(idx, 'subtitle', e.target.value)} /></td>
               <td><input type="number" value={c.order ?? 0} onChange={(e) => updateAt(idx, 'order', Number(e.target.value))} /></td>
               <td><input type="checkbox" checked={c.visible !== false} onChange={(e) => updateAt(idx, 'visible', e.target.checked)} /></td>
+              <td className="muted">{c.type || 'kaggle'}</td>
               <td><button onClick={() => remove(c.slug)}>🗑</button></td>
             </tr>
           ))}
