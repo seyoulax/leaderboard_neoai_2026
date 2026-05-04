@@ -565,21 +565,25 @@ function AnchorsPanel({ taskPublic, taskPrivate }) {
   const fmt = (v) => (v == null || !Number.isFinite(v)) ? '—' : Number(v).toFixed(6);
   const pub = taskPublic || {};
   const priv = taskPrivate || {};
-  const hasAny = [pub.baselineScore, pub.authorScore, priv.baselineScore, priv.authorScore].some((v) => v != null);
+  const bestPub = pub.entries?.[0]?.score;
+  const bestPriv = priv.entries?.[0]?.score;
+  const hasAny = [pub.baselineScore, pub.authorScore, bestPub, priv.baselineScore, priv.authorScore, bestPriv]
+    .some((v) => v != null);
   if (!hasAny) return null;
   return (
     <div className="anchors-panel">
-      <div className="anchors-title">Anchors для нормализации</div>
       <div className="anchors-grid">
         <div className="anchors-col">
           <div className="anchors-col-title">Public</div>
           <div><span className="anchors-label">baseline</span><span className="mono">{fmt(pub.baselineScore)}</span></div>
           <div><span className="anchors-label">author</span><span className="mono">{fmt(pub.authorScore)}</span></div>
+          <div><span className="anchors-label">best</span><span className="mono">{fmt(bestPub)}</span></div>
         </div>
         <div className="anchors-col">
           <div className="anchors-col-title">Private</div>
           <div><span className="anchors-label">baseline</span><span className="mono">{fmt(priv.baselineScore)}</span></div>
           <div><span className="anchors-label">author</span><span className="mono">{fmt(priv.authorScore)}</span></div>
+          <div><span className="anchors-label">best</span><span className="mono">{fmt(bestPriv)}</span></div>
         </div>
       </div>
     </div>
