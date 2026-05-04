@@ -36,6 +36,7 @@ import {
 } from './legacyRedirects';
 import { AuthProvider } from './auth/AuthContext.jsx';
 import LoginPage from './auth/LoginPage.jsx';
+import NativeTaskPage from './native/NativeTaskPage.jsx';
 import RegisterPage from './auth/RegisterPage.jsx';
 import UserMenu from './UserMenu.jsx';
 
@@ -1588,6 +1589,9 @@ export default function App() {
       {/* Auth */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+
+      {/* Native task public page (outside CompetitionShell — own header + nav) */}
+      <Route path="/competitions/:competitionSlug/native-tasks/:taskSlug" element={<NativeTaskPage />} />
 
       {/* Public per-competition routes */}
       <Route path="/competitions/:competitionSlug" element={<CompetitionShell />}>
