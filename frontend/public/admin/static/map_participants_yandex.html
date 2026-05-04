@@ -1,0 +1,3003 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_0ee95d1334203c24769653f5637af9b0 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+
+            <style>html, body {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            </style>
+
+            <style>#map {
+                position:absolute;
+                top:0;
+                bottom:0;
+                right:0;
+                left:0;
+                }
+            </style>
+
+            <script>
+                L_NO_TOUCH = false;
+                L_DISABLE_3D = false;
+            </script>
+
+        
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.1.0/leaflet.markercluster.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.1.0/MarkerCluster.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.1.0/MarkerCluster.Default.css"/>
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_0ee95d1334203c24769653f5637af9b0" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_0ee95d1334203c24769653f5637af9b0 = L.map(
+                "map_0ee95d1334203c24769653f5637af9b0",
+                {
+                    center: [60.0, 90.0],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "maxBounds": [
+[
+41.0,
+19.0,
+],
+[
+82.0,
+190.0,
+],
+],
+  "zoom": 3,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_67bcf600be5d936b12f037561ae8b3e2 = L.tileLayer(
+                "https://core-renderer-tiles.maps.yandex.net/tiles?l=map\u0026x={x}\u0026y={y}\u0026z={z}\u0026scale=1\u0026lang=ru_RU",
+                {
+  "minZoom": 0,
+  "maxZoom": 18,
+  "maxNativeZoom": 18,
+  "noWrap": false,
+  "attribution": "\u00a9 \u042f\u043d\u0434\u0435\u043a\u0441.\u041a\u0430\u0440\u0442\u044b",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_67bcf600be5d936b12f037561ae8b3e2.addTo(map_0ee95d1334203c24769653f5637af9b0);
+        
+    
+            var marker_cluster_8f85e9094dabe405a5511f75a7a4377c = L.markerClusterGroup(
+                {
+}
+            );
+        
+    
+            var marker_cc898f27932a5dc308fd3c374e03542e = L.marker(
+                [55.7558, 37.6173],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_4afb325618b456f90df3b4db2f10650b = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_f9d4621418f7a5317fc1e6fd88a28432 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_e69d072d90c2bc108c7c75a83297124c = $(`<div id="html_e69d072d90c2bc108c7c75a83297124c" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Гордеева Мария Денисовна</h4>         <p><b>Город:</b> Москва</p>         <p><b>Достижения:</b> ВсОШ ИИ: Призер Всероссийская олимпиада по ИИ: Финалист НТО ИИ: Победитель НТО БДиМО: Финалист DANO: Победитель</p>     </div>     </div>`)[0];
+                popup_f9d4621418f7a5317fc1e6fd88a28432.setContent(html_e69d072d90c2bc108c7c75a83297124c);
+            
+        
+
+        marker_cc898f27932a5dc308fd3c374e03542e.bindPopup(popup_f9d4621418f7a5317fc1e6fd88a28432)
+        ;
+
+        
+    
+    
+            marker_cc898f27932a5dc308fd3c374e03542e.bindTooltip(
+                `<div>
+                     Участник: Гордеева Мария Денисовна (Москва)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_cc898f27932a5dc308fd3c374e03542e.setIcon(icon_4afb325618b456f90df3b4db2f10650b);
+            
+    
+            var marker_6559d0198ee17acbd63466886681a6b3 = L.marker(
+                [55.7558, 37.6173],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_0521010ad7937b64f6b1dd67bae6c3af = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_ff2425c929f641296c5e92dc38368051 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_36ada9d437ceba9583cee36130b48794 = $(`<div id="html_36ada9d437ceba9583cee36130b48794" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Лаврентьев Владислав Евгеньевич</h4>         <p><b>Город:</b> Москва</p>         <p><b>Достижения:</b> ВсОШ ИИ: Призер Всероссийская олимпиада по ИИ: Финалист НТО ИИ: Финалист DANO: Финалист</p>     </div>     </div>`)[0];
+                popup_ff2425c929f641296c5e92dc38368051.setContent(html_36ada9d437ceba9583cee36130b48794);
+            
+        
+
+        marker_6559d0198ee17acbd63466886681a6b3.bindPopup(popup_ff2425c929f641296c5e92dc38368051)
+        ;
+
+        
+    
+    
+            marker_6559d0198ee17acbd63466886681a6b3.bindTooltip(
+                `<div>
+                     Участник: Лаврентьев Владислав Евгеньевич (Москва)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_6559d0198ee17acbd63466886681a6b3.setIcon(icon_0521010ad7937b64f6b1dd67bae6c3af);
+            
+    
+            var marker_b6e29cdc900ce469a874966974d4bacb = L.marker(
+                [43.5855, 39.7231],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_85087b776436268fc8af1259599f6963 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_2862480f399d26bb64561cf880ea037f = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_9746ca508286e597a0a0045988cce9f4 = $(`<div id="html_9746ca508286e597a0a0045988cce9f4" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Лабзин Кирилл Михайлович</h4>         <p><b>Город:</b> Сочи</p>         <p><b>Достижения:</b> ВсОШ ИИ: Победитель Всероссийская олимпиада по ИИ: Призер AI Challenge: Победитель НТО ИИ: Победитель FAIO: Призер DANO: Победитель</p>     </div>     </div>`)[0];
+                popup_2862480f399d26bb64561cf880ea037f.setContent(html_9746ca508286e597a0a0045988cce9f4);
+            
+        
+
+        marker_b6e29cdc900ce469a874966974d4bacb.bindPopup(popup_2862480f399d26bb64561cf880ea037f)
+        ;
+
+        
+    
+    
+            marker_b6e29cdc900ce469a874966974d4bacb.bindTooltip(
+                `<div>
+                     Участник: Лабзин Кирилл Михайлович (Сочи)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_b6e29cdc900ce469a874966974d4bacb.setIcon(icon_85087b776436268fc8af1259599f6963);
+            
+    
+            var marker_b7ce8fabf182d65289a6046f2bd6cd14 = L.marker(
+                [59.9386, 30.3141],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_0f7928c49b9e7ec45f17bfcb4ec1e59b = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_cc78df9d2427c0b302a7a243096580a0 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_ba7ee0caf5a2844d695af9b7aca1707d = $(`<div id="html_ba7ee0caf5a2844d695af9b7aca1707d" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Горохов Артём Станиславович</h4>         <p><b>Город:</b> Санкт-Петербург</p>         <p><b>Достижения:</b> ВсОШ ИИ: Призер Yandex Cup: Финалист Всероссийская олимпиада по ИИ: Призер НТО ИИ: Финалист НТО БДиМО: Финалист FAIO: Финалист DANO: Победитель</p>     </div>     </div>`)[0];
+                popup_cc78df9d2427c0b302a7a243096580a0.setContent(html_ba7ee0caf5a2844d695af9b7aca1707d);
+            
+        
+
+        marker_b7ce8fabf182d65289a6046f2bd6cd14.bindPopup(popup_cc78df9d2427c0b302a7a243096580a0)
+        ;
+
+        
+    
+    
+            marker_b7ce8fabf182d65289a6046f2bd6cd14.bindTooltip(
+                `<div>
+                     Участник: Горохов Артём Станиславович (Санкт-Петербург)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_b7ce8fabf182d65289a6046f2bd6cd14.setIcon(icon_0f7928c49b9e7ec45f17bfcb4ec1e59b);
+            
+    
+            var marker_2582d5b6473490e8b394ea5996bb462b = L.marker(
+                [53.2007, 45.0046],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_0b4f51d70872f7f5bc7e8dbd69d8f815 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_8a0eb10cdfee18d2553605d1267439e6 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_2fa4142e722b748ec8b18f9ee7910626 = $(`<div id="html_2fa4142e722b748ec8b18f9ee7910626" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Ефимов Егор Александрович</h4>         <p><b>Город:</b> Пенза</p>         <p><b>Достижения:</b> ВсОШ ИИ: Финалист Всероссийская олимпиада по ИИ: Финалист</p>     </div>     </div>`)[0];
+                popup_8a0eb10cdfee18d2553605d1267439e6.setContent(html_2fa4142e722b748ec8b18f9ee7910626);
+            
+        
+
+        marker_2582d5b6473490e8b394ea5996bb462b.bindPopup(popup_8a0eb10cdfee18d2553605d1267439e6)
+        ;
+
+        
+    
+    
+            marker_2582d5b6473490e8b394ea5996bb462b.bindTooltip(
+                `<div>
+                     Участник: Ефимов Егор Александрович (Пенза)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_2582d5b6473490e8b394ea5996bb462b.setIcon(icon_0b4f51d70872f7f5bc7e8dbd69d8f815);
+            
+    
+            var marker_2380ec323936e02aa6f358ffbaaff3de = L.marker(
+                [55.7558, 37.6173],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_b87d8bbd9488108414fef638210847af = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_8fc61143b403aaa243bfed57c0c36f46 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_70706bd191b5daa11a91db34bb01a38e = $(`<div id="html_70706bd191b5daa11a91db34bb01a38e" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Кроха Константин Владимирович</h4>         <p><b>Город:</b> Москва</p>         <p><b>Достижения:</b> ВсОШ ИИ: Финалист</p>     </div>     </div>`)[0];
+                popup_8fc61143b403aaa243bfed57c0c36f46.setContent(html_70706bd191b5daa11a91db34bb01a38e);
+            
+        
+
+        marker_2380ec323936e02aa6f358ffbaaff3de.bindPopup(popup_8fc61143b403aaa243bfed57c0c36f46)
+        ;
+
+        
+    
+    
+            marker_2380ec323936e02aa6f358ffbaaff3de.bindTooltip(
+                `<div>
+                     Участник: Кроха Константин Владимирович (Москва)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_2380ec323936e02aa6f358ffbaaff3de.setIcon(icon_b87d8bbd9488108414fef638210847af);
+            
+    
+            var marker_0ef885b4353be522121e61e9d5fb8a89 = L.marker(
+                [55.7558, 37.6173],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_3a50b3691a21cfae89bacc947b700a95 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_beb3f6b814027a1451a1fcfbc061516d = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_81e2a120fa6b950c1e58825407d24a07 = $(`<div id="html_81e2a120fa6b950c1e58825407d24a07" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Семененко Сергей Сергеевич</h4>         <p><b>Город:</b> Москва</p>         <p><b>Достижения:</b> ВсОШ ИИ: Финалист НТО БДиМО: Призер</p>     </div>     </div>`)[0];
+                popup_beb3f6b814027a1451a1fcfbc061516d.setContent(html_81e2a120fa6b950c1e58825407d24a07);
+            
+        
+
+        marker_0ef885b4353be522121e61e9d5fb8a89.bindPopup(popup_beb3f6b814027a1451a1fcfbc061516d)
+        ;
+
+        
+    
+    
+            marker_0ef885b4353be522121e61e9d5fb8a89.bindTooltip(
+                `<div>
+                     Участник: Семененко Сергей Сергеевич (Москва)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_0ef885b4353be522121e61e9d5fb8a89.setIcon(icon_3a50b3691a21cfae89bacc947b700a95);
+            
+    
+            var marker_338f0cfdfcd433c6c05e443c21a6a398 = L.marker(
+                [64.5393, 40.5168],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_6b1acb8cc5bfa443c7f4c46e4153624c = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_76a96cbba185406df9aac92cfcc955a2 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_380186355d469e6be9bbab4283de1432 = $(`<div id="html_380186355d469e6be9bbab4283de1432" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Шиловский Дмитрий Евгеньевич</h4>         <p><b>Город:</b> Архангельск</p>         <p><b>Достижения:</b> Всероссийская олимпиада по ИИ: Финалист</p>     </div>     </div>`)[0];
+                popup_76a96cbba185406df9aac92cfcc955a2.setContent(html_380186355d469e6be9bbab4283de1432);
+            
+        
+
+        marker_338f0cfdfcd433c6c05e443c21a6a398.bindPopup(popup_76a96cbba185406df9aac92cfcc955a2)
+        ;
+
+        
+    
+    
+            marker_338f0cfdfcd433c6c05e443c21a6a398.bindTooltip(
+                `<div>
+                     Участник: Шиловский Дмитрий Евгеньевич (Архангельск)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_338f0cfdfcd433c6c05e443c21a6a398.setIcon(icon_6b1acb8cc5bfa443c7f4c46e4153624c);
+            
+    
+            var marker_d8991b33078f889eeb088c0631a585ea = L.marker(
+                [59.9386, 30.3141],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_9f4ad2cf09a408af203284d530d70d0e = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_ca446c610951b2330448b6f78b5c528d = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_3a877e9d6bf5f5736e927e09d740ae28 = $(`<div id="html_3a877e9d6bf5f5736e927e09d740ae28" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Кирпиченко Елисей Андреевич</h4>         <p><b>Город:</b> Санкт-Петербург</p>         <p><b>Достижения:</b> ВсОШ ИИ: Финалист Yandex Cup: Победитель Всероссийская олимпиада по ИИ: Победитель НТО ИИ: Финалист НТО БДиМО: Финалист DANO: Финалист</p>     </div>     </div>`)[0];
+                popup_ca446c610951b2330448b6f78b5c528d.setContent(html_3a877e9d6bf5f5736e927e09d740ae28);
+            
+        
+
+        marker_d8991b33078f889eeb088c0631a585ea.bindPopup(popup_ca446c610951b2330448b6f78b5c528d)
+        ;
+
+        
+    
+    
+            marker_d8991b33078f889eeb088c0631a585ea.bindTooltip(
+                `<div>
+                     Участник: Кирпиченко Елисей Андреевич (Санкт-Петербург)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_d8991b33078f889eeb088c0631a585ea.setIcon(icon_9f4ad2cf09a408af203284d530d70d0e);
+            
+    
+            var marker_360a75ab2a02db054d6b7f6b2ece5cb5 = L.marker(
+                [53.1959, 50.1002],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_b26a5225d58a504723173e33cbdaae34 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_35b1915a67b077b7a17879cc5836aca4 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_75d8a8b06cc1af54af9e88b43c123c8a = $(`<div id="html_75d8a8b06cc1af54af9e88b43c123c8a" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Плотников Юрий Сергеевич</h4>         <p><b>Город:</b> Самара</p>         <p><b>Достижения:</b> DANO: Победитель</p>     </div>     </div>`)[0];
+                popup_35b1915a67b077b7a17879cc5836aca4.setContent(html_75d8a8b06cc1af54af9e88b43c123c8a);
+            
+        
+
+        marker_360a75ab2a02db054d6b7f6b2ece5cb5.bindPopup(popup_35b1915a67b077b7a17879cc5836aca4)
+        ;
+
+        
+    
+    
+            marker_360a75ab2a02db054d6b7f6b2ece5cb5.bindTooltip(
+                `<div>
+                     Участник: Плотников Юрий Сергеевич (Самара)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_360a75ab2a02db054d6b7f6b2ece5cb5.setIcon(icon_b26a5225d58a504723173e33cbdaae34);
+            
+    
+            var marker_384d5892a88fd6d8827a3215a3eee4a4 = L.marker(
+                [53.3644, 55.93],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_129f831ced29a22ab4d25966205ea322 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_5b6dcf970ade1d4b1db9e03c58f0817e = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_770f651212d1f15159ab416e39b267aa = $(`<div id="html_770f651212d1f15159ab416e39b267aa" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Торовин Александр Алексеевич</h4>         <p><b>Город:</b> Салават</p>         <p><b>Достижения:</b> ВсОШ ИИ: Призер Всероссийская олимпиада по ИИ: Финалист НТО ИИ: Финалист НТО БДиМО: Финалист</p>     </div>     </div>`)[0];
+                popup_5b6dcf970ade1d4b1db9e03c58f0817e.setContent(html_770f651212d1f15159ab416e39b267aa);
+            
+        
+
+        marker_384d5892a88fd6d8827a3215a3eee4a4.bindPopup(popup_5b6dcf970ade1d4b1db9e03c58f0817e)
+        ;
+
+        
+    
+    
+            marker_384d5892a88fd6d8827a3215a3eee4a4.bindTooltip(
+                `<div>
+                     Участник: Торовин Александр Алексеевич (Салават)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_384d5892a88fd6d8827a3215a3eee4a4.setIcon(icon_129f831ced29a22ab4d25966205ea322);
+            
+    
+            var marker_f765688d9cca108e07e5214e8ce6cc6a = L.marker(
+                [55.7558, 37.6173],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_203cc8fbccce72720b09dbdffb12e132 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_0698a1abbb4a3c102175d9efa44aabaa = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_6f5c17cce2bb499a3a0343bcdddcec7e = $(`<div id="html_6f5c17cce2bb499a3a0343bcdddcec7e" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Поваров Александр Григорьевич</h4>         <p><b>Город:</b> Москва</p>         <p><b>Достижения:</b> IAIO: Финалист ВсОШ ИИ: Победитель Всероссийская олимпиада по ИИ: Финалист FAIO: Финалист DANO: Победитель</p>     </div>     </div>`)[0];
+                popup_0698a1abbb4a3c102175d9efa44aabaa.setContent(html_6f5c17cce2bb499a3a0343bcdddcec7e);
+            
+        
+
+        marker_f765688d9cca108e07e5214e8ce6cc6a.bindPopup(popup_0698a1abbb4a3c102175d9efa44aabaa)
+        ;
+
+        
+    
+    
+            marker_f765688d9cca108e07e5214e8ce6cc6a.bindTooltip(
+                `<div>
+                     Участник: Поваров Александр Григорьевич (Москва)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_f765688d9cca108e07e5214e8ce6cc6a.setIcon(icon_203cc8fbccce72720b09dbdffb12e132);
+            
+    
+            var marker_a4778802b85dba45be4dc781ca184ab1 = L.marker(
+                [55.7558, 37.6173],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_db42d3334a29042177f6e4666c5eed7a = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_7cccc3ff22ea9d88f3bd4313f13a8a41 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_882ba0a216a96ad3983a3dbf4b29505d = $(`<div id="html_882ba0a216a96ad3983a3dbf4b29505d" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Большаков Александр Алексеевич</h4>         <p><b>Город:</b> Москва</p>         <p><b>Достижения:</b> ВсОШ ИИ: Финалист</p>     </div>     </div>`)[0];
+                popup_7cccc3ff22ea9d88f3bd4313f13a8a41.setContent(html_882ba0a216a96ad3983a3dbf4b29505d);
+            
+        
+
+        marker_a4778802b85dba45be4dc781ca184ab1.bindPopup(popup_7cccc3ff22ea9d88f3bd4313f13a8a41)
+        ;
+
+        
+    
+    
+            marker_a4778802b85dba45be4dc781ca184ab1.bindTooltip(
+                `<div>
+                     Участник: Большаков Александр Алексеевич (Москва)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_a4778802b85dba45be4dc781ca184ab1.setIcon(icon_db42d3334a29042177f6e4666c5eed7a);
+            
+    
+            var marker_01430636a6529c9836254e94ba1f2faf = L.marker(
+                [47.2225, 39.7188],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_5f464e722693b1dc0bda301786dc49e1 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_49d6f91253d06506d7880b1efbe18af9 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_7393efd7343358c137f5651f005c55f2 = $(`<div id="html_7393efd7343358c137f5651f005c55f2" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Дядченко Марк Юрьевич</h4>         <p><b>Город:</b> Ростов-на-Дону</p>         <p><b>Достижения:</b> ВсОШ ИИ: Финалист Yandex Cup: Победитель Всероссийская олимпиада по ИИ: Победитель НТО ИИ: Победитель</p>     </div>     </div>`)[0];
+                popup_49d6f91253d06506d7880b1efbe18af9.setContent(html_7393efd7343358c137f5651f005c55f2);
+            
+        
+
+        marker_01430636a6529c9836254e94ba1f2faf.bindPopup(popup_49d6f91253d06506d7880b1efbe18af9)
+        ;
+
+        
+    
+    
+            marker_01430636a6529c9836254e94ba1f2faf.bindTooltip(
+                `<div>
+                     Участник: Дядченко Марк Юрьевич (Ростов-на-Дону)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_01430636a6529c9836254e94ba1f2faf.setIcon(icon_5f464e722693b1dc0bda301786dc49e1);
+            
+    
+            var marker_b7096e292a1e858a80faa8986f89a84e = L.marker(
+                [55.7558, 37.6173],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_f301bbcfcf350431e4fd6f5595e14daf = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_bac2eebd400ff149c9b5316c94213c34 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_0af133e07e3146a0f7f693067a4eae84 = $(`<div id="html_0af133e07e3146a0f7f693067a4eae84" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Чистов Никита Леонидович</h4>         <p><b>Город:</b> Москва</p>         <p><b>Достижения:</b> ВсОШ ИИ: Финалист</p>     </div>     </div>`)[0];
+                popup_bac2eebd400ff149c9b5316c94213c34.setContent(html_0af133e07e3146a0f7f693067a4eae84);
+            
+        
+
+        marker_b7096e292a1e858a80faa8986f89a84e.bindPopup(popup_bac2eebd400ff149c9b5316c94213c34)
+        ;
+
+        
+    
+    
+            marker_b7096e292a1e858a80faa8986f89a84e.bindTooltip(
+                `<div>
+                     Участник: Чистов Никита Леонидович (Москва)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_b7096e292a1e858a80faa8986f89a84e.setIcon(icon_f301bbcfcf350431e4fd6f5595e14daf);
+            
+    
+            var marker_7805ca7223167e349112eff991a94a97 = L.marker(
+                [55.7558, 37.6173],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_e9688a11d784b6c8fe15bff8b0dd6c4f = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_448de4583b6561ed7708d4c2f009ebaa = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_7a3d28f616326fa45b320fbf5f6da304 = $(`<div id="html_7a3d28f616326fa45b320fbf5f6da304" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Якупов Эльдар Филаретович</h4>         <p><b>Город:</b> Москва</p>         <p><b>Достижения:</b> ВсОШ ИИ: Финалист</p>     </div>     </div>`)[0];
+                popup_448de4583b6561ed7708d4c2f009ebaa.setContent(html_7a3d28f616326fa45b320fbf5f6da304);
+            
+        
+
+        marker_7805ca7223167e349112eff991a94a97.bindPopup(popup_448de4583b6561ed7708d4c2f009ebaa)
+        ;
+
+        
+    
+    
+            marker_7805ca7223167e349112eff991a94a97.bindTooltip(
+                `<div>
+                     Участник: Якупов Эльдар Филаретович (Москва)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_7805ca7223167e349112eff991a94a97.setIcon(icon_e9688a11d784b6c8fe15bff8b0dd6c4f);
+            
+    
+            var marker_0a542b66efba1fa312e62796102564be = L.marker(
+                [55.0302, 82.9204],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_bf688b980b1287f16ff558f6071b2d06 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_0c51b6f9ba578dd851278417817c5970 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_15159ae11a8f267cee5fb79b66ed8e85 = $(`<div id="html_15159ae11a8f267cee5fb79b66ed8e85" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Вершинин Михаил Денисович</h4>         <p><b>Город:</b> Новосибирск</p>         <p><b>Достижения:</b> IOAI: Победитель IAIO: Призер ВсОШ ИИ: Призер Всероссийская олимпиада по ИИ: Призер FAIO: Призер DANO: Победитель</p>     </div>     </div>`)[0];
+                popup_0c51b6f9ba578dd851278417817c5970.setContent(html_15159ae11a8f267cee5fb79b66ed8e85);
+            
+        
+
+        marker_0a542b66efba1fa312e62796102564be.bindPopup(popup_0c51b6f9ba578dd851278417817c5970)
+        ;
+
+        
+    
+    
+            marker_0a542b66efba1fa312e62796102564be.bindTooltip(
+                `<div>
+                     Участник: Вершинин Михаил Денисович (Новосибирск)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_0a542b66efba1fa312e62796102564be.setIcon(icon_bf688b980b1287f16ff558f6071b2d06);
+            
+    
+            var marker_1d0349853a3deb1ae94305210f05e536 = L.marker(
+                [43.4056, 39.9547],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_e16c5e43eee5cb26b8190e617e774145 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_a5a67861660cbb60d490965f0932bdb3 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_fac1bcc2759f2fcdc761e8d1bd0bbfc1 = $(`<div id="html_fac1bcc2759f2fcdc761e8d1bd0bbfc1" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Джалилов Артём Ильясович</h4>         <p><b>Город:</b> Сириус</p>         <p><b>Достижения:</b> IAIO: Призер ВсОШ ИИ: Призер Всероссийская олимпиада по ИИ: Призер НТО ИИ: Призер FAIO: Призер DANO: Призер</p>     </div>     </div>`)[0];
+                popup_a5a67861660cbb60d490965f0932bdb3.setContent(html_fac1bcc2759f2fcdc761e8d1bd0bbfc1);
+            
+        
+
+        marker_1d0349853a3deb1ae94305210f05e536.bindPopup(popup_a5a67861660cbb60d490965f0932bdb3)
+        ;
+
+        
+    
+    
+            marker_1d0349853a3deb1ae94305210f05e536.bindTooltip(
+                `<div>
+                     Участник: Джалилов Артём Ильясович (Сириус)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_1d0349853a3deb1ae94305210f05e536.setIcon(icon_e16c5e43eee5cb26b8190e617e774145);
+            
+    
+            var marker_9b722f983bebca25774852cc3bc92fbb = L.marker(
+                [55.0302, 82.9204],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_f6688f5ef550262397575cf4899b8061 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_1c0490848139fb73a656039fab8b1594 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_654319122e0281dc4ad92122a5f19ced = $(`<div id="html_654319122e0281dc4ad92122a5f19ced" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Мастов Арсений Викторович</h4>         <p><b>Город:</b> Новосибирск</p>         <p><b>Достижения:</b> ВсОШ ИИ: Призер DANO: Финалист</p>     </div>     </div>`)[0];
+                popup_1c0490848139fb73a656039fab8b1594.setContent(html_654319122e0281dc4ad92122a5f19ced);
+            
+        
+
+        marker_9b722f983bebca25774852cc3bc92fbb.bindPopup(popup_1c0490848139fb73a656039fab8b1594)
+        ;
+
+        
+    
+    
+            marker_9b722f983bebca25774852cc3bc92fbb.bindTooltip(
+                `<div>
+                     Участник: Мастов Арсений Викторович (Новосибирск)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_9b722f983bebca25774852cc3bc92fbb.setIcon(icon_f6688f5ef550262397575cf4899b8061);
+            
+    
+            var marker_b523bfd833fbb5459a6b90dd95abd28d = L.marker(
+                [52.2896, 104.2806],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_ef506dec7445c82d34aa5b080b4fad18 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_a01cd3e45a79e4820049bac1af7e0baa = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_058bd53d9d0e66fcc113827b698db0f4 = $(`<div id="html_058bd53d9d0e66fcc113827b698db0f4" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Моргунов Евгений Георгиевич</h4>         <p><b>Город:</b> Иркутск</p>         <p><b>Достижения:</b> ВсОШ ИИ: Победитель</p>     </div>     </div>`)[0];
+                popup_a01cd3e45a79e4820049bac1af7e0baa.setContent(html_058bd53d9d0e66fcc113827b698db0f4);
+            
+        
+
+        marker_b523bfd833fbb5459a6b90dd95abd28d.bindPopup(popup_a01cd3e45a79e4820049bac1af7e0baa)
+        ;
+
+        
+    
+    
+            marker_b523bfd833fbb5459a6b90dd95abd28d.bindTooltip(
+                `<div>
+                     Участник: Моргунов Евгений Георгиевич (Иркутск)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_b523bfd833fbb5459a6b90dd95abd28d.setIcon(icon_ef506dec7445c82d34aa5b080b4fad18);
+            
+    
+            var marker_ecd49dddac8aec12b0f0c887a5804624 = L.marker(
+                [47.2225, 39.7188],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_61e12d3b4a640e0e3abb08a162bdab6e = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_c74dc012796b5dd0e65bf6736b9e60fa = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_cdc96f8a0141f406ccfad6ec37df6d45 = $(`<div id="html_cdc96f8a0141f406ccfad6ec37df6d45" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Соколов Илья Андреевич</h4>         <p><b>Город:</b> Ростов-на-Дону</p>         <p><b>Достижения:</b> ВсОШ Программирование: Призер DANO: Призер</p>     </div>     </div>`)[0];
+                popup_c74dc012796b5dd0e65bf6736b9e60fa.setContent(html_cdc96f8a0141f406ccfad6ec37df6d45);
+            
+        
+
+        marker_ecd49dddac8aec12b0f0c887a5804624.bindPopup(popup_c74dc012796b5dd0e65bf6736b9e60fa)
+        ;
+
+        
+    
+    
+            marker_ecd49dddac8aec12b0f0c887a5804624.bindTooltip(
+                `<div>
+                     Участник: Соколов Илья Андреевич (Ростов-на-Дону)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_ecd49dddac8aec12b0f0c887a5804624.setIcon(icon_61e12d3b4a640e0e3abb08a162bdab6e);
+            
+    
+            var marker_c0ea0dda3c6af94c65d1fc3a204c8aa5 = L.marker(
+                [55.8893, 37.4449],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_38fb132ecadead8e35d61e7f30536c59 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_bb9faba657d5fb0b7e0665c96828dc63 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_6d1998fe1abe4808a516713d72b24b46 = $(`<div id="html_6d1998fe1abe4808a516713d72b24b46" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Кондрашов Михаил Николаевич</h4>         <p><b>Город:</b> Химки</p>         <p><b>Достижения:</b> AI Challenge: Победитель НТО ИИ: Призер НТО БДиМО: Финалист</p>     </div>     </div>`)[0];
+                popup_bb9faba657d5fb0b7e0665c96828dc63.setContent(html_6d1998fe1abe4808a516713d72b24b46);
+            
+        
+
+        marker_c0ea0dda3c6af94c65d1fc3a204c8aa5.bindPopup(popup_bb9faba657d5fb0b7e0665c96828dc63)
+        ;
+
+        
+    
+    
+            marker_c0ea0dda3c6af94c65d1fc3a204c8aa5.bindTooltip(
+                `<div>
+                     Участник: Кондрашов Михаил Николаевич (Химки)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_c0ea0dda3c6af94c65d1fc3a204c8aa5.setIcon(icon_38fb132ecadead8e35d61e7f30536c59);
+            
+    
+            var marker_eadd94cbc9d1b0372729e17a5f626738 = L.marker(
+                [59.9386, 30.3141],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_afab5326bed904072450f8bd29ce854e = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_595fbf0c5552832f365939089d1053b5 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_a4057cd48c3bff026b5d132f50d9508c = $(`<div id="html_a4057cd48c3bff026b5d132f50d9508c" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Богданов Альберт Азатович</h4>         <p><b>Город:</b> Санкт-Петербург</p>         <p><b>Достижения:</b> IAIO: Финалист ВсОШ ИИ: Призер Всероссийская олимпиада по ИИ: Финалист НТО ИИ: Финалист НТО БДиМО: Финалист</p>     </div>     </div>`)[0];
+                popup_595fbf0c5552832f365939089d1053b5.setContent(html_a4057cd48c3bff026b5d132f50d9508c);
+            
+        
+
+        marker_eadd94cbc9d1b0372729e17a5f626738.bindPopup(popup_595fbf0c5552832f365939089d1053b5)
+        ;
+
+        
+    
+    
+            marker_eadd94cbc9d1b0372729e17a5f626738.bindTooltip(
+                `<div>
+                     Участник: Богданов Альберт Азатович (Санкт-Петербург)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_eadd94cbc9d1b0372729e17a5f626738.setIcon(icon_afab5326bed904072450f8bd29ce854e);
+            
+    
+            var marker_01f1a407b9c0ad8bc5c35895ef38e60c = L.marker(
+                [55.7558, 37.6173],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_2566e3df5771bf3589a6b0275304ef0e = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_a9ea960937694e6a13c21b4f06469689 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_8ddf8cd3946c77ea8bfb32869136eaf6 = $(`<div id="html_8ddf8cd3946c77ea8bfb32869136eaf6" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Ерлыков Александр Антонович</h4>         <p><b>Город:</b> Москва</p>         <p><b>Достижения:</b> ВсОШ ИИ: Финалист DANO: Победитель</p>     </div>     </div>`)[0];
+                popup_a9ea960937694e6a13c21b4f06469689.setContent(html_8ddf8cd3946c77ea8bfb32869136eaf6);
+            
+        
+
+        marker_01f1a407b9c0ad8bc5c35895ef38e60c.bindPopup(popup_a9ea960937694e6a13c21b4f06469689)
+        ;
+
+        
+    
+    
+            marker_01f1a407b9c0ad8bc5c35895ef38e60c.bindTooltip(
+                `<div>
+                     Участник: Ерлыков Александр Антонович (Москва)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_01f1a407b9c0ad8bc5c35895ef38e60c.setIcon(icon_2566e3df5771bf3589a6b0275304ef0e);
+            
+    
+            var marker_065c91282b01a02a29a0cf8b486271f8 = L.marker(
+                [45.0428, 41.9734],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_ade280be4dd67f4e96987118806ec49e = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_4a9a71accab22aaae447faea7752da5a = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_20f78d0e91660d08eedf0d66ecf75b81 = $(`<div id="html_20f78d0e91660d08eedf0d66ecf75b81" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Апальков Владислав Алексеевич</h4>         <p><b>Город:</b> Ставрополь</p>         <p><b>Достижения:</b> ВсОШ ИИ: Финалист НТО ИИ: Финалист Innopolis: Финалист DANO: Финалист</p>     </div>     </div>`)[0];
+                popup_4a9a71accab22aaae447faea7752da5a.setContent(html_20f78d0e91660d08eedf0d66ecf75b81);
+            
+        
+
+        marker_065c91282b01a02a29a0cf8b486271f8.bindPopup(popup_4a9a71accab22aaae447faea7752da5a)
+        ;
+
+        
+    
+    
+            marker_065c91282b01a02a29a0cf8b486271f8.bindTooltip(
+                `<div>
+                     Участник: Апальков Владислав Алексеевич (Ставрополь)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_065c91282b01a02a29a0cf8b486271f8.setIcon(icon_ade280be4dd67f4e96987118806ec49e);
+            
+    
+            var marker_ef8a56e68a628c1f9f535e1d779f35bd = L.marker(
+                [53.2007, 45.0046],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_e8cad5d2c2dcb03ae2dad68d295ef2d2 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_d098ec42167f71bfbf7eba0a3de9edcf = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_dbf69dc55b71706677cee681486af1c7 = $(`<div id="html_dbf69dc55b71706677cee681486af1c7" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Ивахин Кирилл Алексеевич</h4>         <p><b>Город:</b> Пенза</p>         <p><b>Достижения:</b> ВсОШ ИИ: Финалист Всероссийская олимпиада по ИИ: Финалист</p>     </div>     </div>`)[0];
+                popup_d098ec42167f71bfbf7eba0a3de9edcf.setContent(html_dbf69dc55b71706677cee681486af1c7);
+            
+        
+
+        marker_ef8a56e68a628c1f9f535e1d779f35bd.bindPopup(popup_d098ec42167f71bfbf7eba0a3de9edcf)
+        ;
+
+        
+    
+    
+            marker_ef8a56e68a628c1f9f535e1d779f35bd.bindTooltip(
+                `<div>
+                     Участник: Ивахин Кирилл Алексеевич (Пенза)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_ef8a56e68a628c1f9f535e1d779f35bd.setIcon(icon_e8cad5d2c2dcb03ae2dad68d295ef2d2);
+            
+    
+            var marker_e6d9da17541397afcbf48f5446046a43 = L.marker(
+                [55.0302, 82.9204],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_6cd0ba292402d8dc13af2942ca8fd3ea = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_edae3507c87ca1083fe548e29d6457eb = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_1b2c627cd938e5a86dfe883f608cacaa = $(`<div id="html_1b2c627cd938e5a86dfe883f608cacaa" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Сусляков Семён Сергеевич</h4>         <p><b>Город:</b> Новосибирск</p>         <p><b>Достижения:</b> ВсОШ ИИ: Призер Всероссийская олимпиада по ИИ: Финалист НТО ИИ: Финалист НТО БДиМО: Финалист DANO: Финалист</p>     </div>     </div>`)[0];
+                popup_edae3507c87ca1083fe548e29d6457eb.setContent(html_1b2c627cd938e5a86dfe883f608cacaa);
+            
+        
+
+        marker_e6d9da17541397afcbf48f5446046a43.bindPopup(popup_edae3507c87ca1083fe548e29d6457eb)
+        ;
+
+        
+    
+    
+            marker_e6d9da17541397afcbf48f5446046a43.bindTooltip(
+                `<div>
+                     Участник: Сусляков Семён Сергеевич (Новосибирск)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_e6d9da17541397afcbf48f5446046a43.setIcon(icon_6cd0ba292402d8dc13af2942ca8fd3ea);
+            
+    
+            var marker_dcd05a9a54ce0a98ffb8d92b9b792d11 = L.marker(
+                [53.1959, 50.1002],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_ff5aa40e0f88d3f33d3be1ba23db711b = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_1a7b65901a461ea6f7ff869bda4ddb95 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_2e7c829cdd187ddb97d3de82b9893188 = $(`<div id="html_2e7c829cdd187ddb97d3de82b9893188" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Маханьков Кирилл Андреевич</h4>         <p><b>Город:</b> Самара</p>         <p><b>Достижения:</b> НТО ИИ: Призер НТО БДиМО: Победитель</p>     </div>     </div>`)[0];
+                popup_1a7b65901a461ea6f7ff869bda4ddb95.setContent(html_2e7c829cdd187ddb97d3de82b9893188);
+            
+        
+
+        marker_dcd05a9a54ce0a98ffb8d92b9b792d11.bindPopup(popup_1a7b65901a461ea6f7ff869bda4ddb95)
+        ;
+
+        
+    
+    
+            marker_dcd05a9a54ce0a98ffb8d92b9b792d11.bindTooltip(
+                `<div>
+                     Участник: Маханьков Кирилл Андреевич (Самара)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_dcd05a9a54ce0a98ffb8d92b9b792d11.setIcon(icon_ff5aa40e0f88d3f33d3be1ba23db711b);
+            
+    
+            var marker_a8ed9865a938b3c469484ddb64cd6d0e = L.marker(
+                [59.9386, 30.3141],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_040110537e342e7a1754d2fe176f4b8c = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_709b8fc71036fe420b6a85f50af36380 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_4b21c8e68cb293ce828a42e1764fb4a5 = $(`<div id="html_4b21c8e68cb293ce828a42e1764fb4a5" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Поталов Михаил Сергеевич</h4>         <p><b>Город:</b> Санкт-Петербург</p>         <p><b>Достижения:</b> ВсОШ ИИ: Победитель</p>     </div>     </div>`)[0];
+                popup_709b8fc71036fe420b6a85f50af36380.setContent(html_4b21c8e68cb293ce828a42e1764fb4a5);
+            
+        
+
+        marker_a8ed9865a938b3c469484ddb64cd6d0e.bindPopup(popup_709b8fc71036fe420b6a85f50af36380)
+        ;
+
+        
+    
+    
+            marker_a8ed9865a938b3c469484ddb64cd6d0e.bindTooltip(
+                `<div>
+                     Участник: Поталов Михаил Сергеевич (Санкт-Петербург)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_a8ed9865a938b3c469484ddb64cd6d0e.setIcon(icon_040110537e342e7a1754d2fe176f4b8c);
+            
+    
+            var marker_377401896b21821158a8974ba1b3ae21 = L.marker(
+                [55.7558, 37.6173],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_547a9d63b3d3a74667c0ef698e9a2606 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_30de97c47b09a7802c9a31923edd2b4d = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_1e2ee35c3b81127897689afad1822eec = $(`<div id="html_1e2ee35c3b81127897689afad1822eec" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Сунгуров Владислав Антонович</h4>         <p><b>Город:</b> Москва</p>         <p><b>Достижения:</b> ВсОШ ИИ: Призер FAIO: Финалист DANO: Призер</p>     </div>     </div>`)[0];
+                popup_30de97c47b09a7802c9a31923edd2b4d.setContent(html_1e2ee35c3b81127897689afad1822eec);
+            
+        
+
+        marker_377401896b21821158a8974ba1b3ae21.bindPopup(popup_30de97c47b09a7802c9a31923edd2b4d)
+        ;
+
+        
+    
+    
+            marker_377401896b21821158a8974ba1b3ae21.bindTooltip(
+                `<div>
+                     Участник: Сунгуров Владислав Антонович (Москва)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_377401896b21821158a8974ba1b3ae21.setIcon(icon_547a9d63b3d3a74667c0ef698e9a2606);
+            
+    
+            var marker_96ad17c946cc391064813626731e5160 = L.marker(
+                [55.0302, 82.9204],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_3258e003386694cd7c8602e19d89df57 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_b8a130977994ec4346561348b9dfed52 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_07e83346baae1e3cf6161620cd836815 = $(`<div id="html_07e83346baae1e3cf6161620cd836815" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Гончаров Артём Максимович</h4>         <p><b>Город:</b> Новосибирск</p>         <p><b>Достижения:</b> ВсОШ ИИ: Финалист Yandex Cup: Финалист Всероссийская олимпиада по ИИ: Победитель FAIO: Призер DANO: Финалист</p>     </div>     </div>`)[0];
+                popup_b8a130977994ec4346561348b9dfed52.setContent(html_07e83346baae1e3cf6161620cd836815);
+            
+        
+
+        marker_96ad17c946cc391064813626731e5160.bindPopup(popup_b8a130977994ec4346561348b9dfed52)
+        ;
+
+        
+    
+    
+            marker_96ad17c946cc391064813626731e5160.bindTooltip(
+                `<div>
+                     Участник: Гончаров Артём Максимович (Новосибирск)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_96ad17c946cc391064813626731e5160.setIcon(icon_3258e003386694cd7c8602e19d89df57);
+            
+    
+            var marker_5272be845f09f06e72d028b517b67e33 = L.marker(
+                [55.7558, 37.6173],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_767f360ded26ec404a0ee6b9a0007157 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_db2d915a5c359af21d7aba30bc9a194a = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_9b3be73be0be95889271d5427d370600 = $(`<div id="html_9b3be73be0be95889271d5427d370600" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Кулиев Эльмир Первиз Оглы</h4>         <p><b>Город:</b> Москва</p>         <p><b>Достижения:</b> НТО БДиМО: Призер</p>     </div>     </div>`)[0];
+                popup_db2d915a5c359af21d7aba30bc9a194a.setContent(html_9b3be73be0be95889271d5427d370600);
+            
+        
+
+        marker_5272be845f09f06e72d028b517b67e33.bindPopup(popup_db2d915a5c359af21d7aba30bc9a194a)
+        ;
+
+        
+    
+    
+            marker_5272be845f09f06e72d028b517b67e33.bindTooltip(
+                `<div>
+                     Участник: Кулиев Эльмир Первиз Оглы (Москва)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_5272be845f09f06e72d028b517b67e33.setIcon(icon_767f360ded26ec404a0ee6b9a0007157);
+            
+    
+            var marker_8f42c11333e6853d894e07c062901524 = L.marker(
+                [55.0302, 82.9204],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_e4a26487ce1275856b6f3bd472e7f040 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_210685a06389fb1d20f570bbb3dd59d8 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_7eebce0e048592d7c02014ad312b7e8f = $(`<div id="html_7eebce0e048592d7c02014ad312b7e8f" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Кузнецов Никита Николаевич</h4>         <p><b>Город:</b> Новосибирск</p>         <p><b>Достижения:</b> Всероссийская олимпиада по ИИ: Финалист НТО ИИ: Финалист НТО БДиМО: Финалист DANO: Финалист</p>     </div>     </div>`)[0];
+                popup_210685a06389fb1d20f570bbb3dd59d8.setContent(html_7eebce0e048592d7c02014ad312b7e8f);
+            
+        
+
+        marker_8f42c11333e6853d894e07c062901524.bindPopup(popup_210685a06389fb1d20f570bbb3dd59d8)
+        ;
+
+        
+    
+    
+            marker_8f42c11333e6853d894e07c062901524.bindTooltip(
+                `<div>
+                     Участник: Кузнецов Никита Николаевич (Новосибирск)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_8f42c11333e6853d894e07c062901524.setIcon(icon_e4a26487ce1275856b6f3bd472e7f040);
+            
+    
+            var marker_a4db109187aeae14693f6ad6323395df = L.marker(
+                [56.8524, 53.2069],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_8226eae6e15391fc7ff27c5ce66185c6 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_599bf8e2e3d9314a110f1076d48cd61b = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_50937283db3cff9b73c2a8f185f99f3d = $(`<div id="html_50937283db3cff9b73c2a8f185f99f3d" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Колегов Алексей Михайлович</h4>         <p><b>Город:</b> Ижевск</p>         <p><b>Достижения:</b> ВсОШ ИИ: Призер Yandex Cup: Финалист Всероссийская олимпиада по ИИ: Призер DANO: Победитель</p>     </div>     </div>`)[0];
+                popup_599bf8e2e3d9314a110f1076d48cd61b.setContent(html_50937283db3cff9b73c2a8f185f99f3d);
+            
+        
+
+        marker_a4db109187aeae14693f6ad6323395df.bindPopup(popup_599bf8e2e3d9314a110f1076d48cd61b)
+        ;
+
+        
+    
+    
+            marker_a4db109187aeae14693f6ad6323395df.bindTooltip(
+                `<div>
+                     Участник: Колегов Алексей Михайлович (Ижевск)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_a4db109187aeae14693f6ad6323395df.setIcon(icon_8226eae6e15391fc7ff27c5ce66185c6);
+            
+    
+            var marker_62a19fc19b9c245a69a299dcabd3b7d3 = L.marker(
+                [55.7558, 37.6173],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_4bf9d1fce32fb067091881ee10dea47f = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_8aca649b9e6d379e0476be256df14853 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_b841c485468bbe1cad5d50daae814523 = $(`<div id="html_b841c485468bbe1cad5d50daae814523" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Бушин Андрей Евгеньевич</h4>         <p><b>Город:</b> Москва</p>         <p><b>Достижения:</b> ВсОШ ИИ: Призер DANO: Финалист</p>     </div>     </div>`)[0];
+                popup_8aca649b9e6d379e0476be256df14853.setContent(html_b841c485468bbe1cad5d50daae814523);
+            
+        
+
+        marker_62a19fc19b9c245a69a299dcabd3b7d3.bindPopup(popup_8aca649b9e6d379e0476be256df14853)
+        ;
+
+        
+    
+    
+            marker_62a19fc19b9c245a69a299dcabd3b7d3.bindTooltip(
+                `<div>
+                     Участник: Бушин Андрей Евгеньевич (Москва)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_62a19fc19b9c245a69a299dcabd3b7d3.setIcon(icon_4bf9d1fce32fb067091881ee10dea47f);
+            
+    
+            var marker_ada0869a84793c237da14bee19fb1051 = L.marker(
+                [52.9685, 36.069],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_5bb4d5782849577759415ca8f251cce6 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_1d98296f9326a6d97885ef23962b21c5 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_5e4d39cfa0a61560f1f76889e63b008d = $(`<div id="html_5e4d39cfa0a61560f1f76889e63b008d" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Воропаев Ярослав Александрович</h4>         <p><b>Город:</b> Орёл</p>         <p><b>Достижения:</b> ВсОШ ИИ: Призер Всероссийская олимпиада по ИИ: Призер НТО ИИ: Победитель НТО БДиМО: Финалист FAIO: Финалист</p>     </div>     </div>`)[0];
+                popup_1d98296f9326a6d97885ef23962b21c5.setContent(html_5e4d39cfa0a61560f1f76889e63b008d);
+            
+        
+
+        marker_ada0869a84793c237da14bee19fb1051.bindPopup(popup_1d98296f9326a6d97885ef23962b21c5)
+        ;
+
+        
+    
+    
+            marker_ada0869a84793c237da14bee19fb1051.bindTooltip(
+                `<div>
+                     Участник: Воропаев Ярослав Александрович (Орёл)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_ada0869a84793c237da14bee19fb1051.setIcon(icon_5bb4d5782849577759415ca8f251cce6);
+            
+    
+            var marker_92d8bdd2d2d3750c859347840e13a197 = L.marker(
+                [55.7963, 49.1088],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_0687b756d6c5d0db393587df366dccc5 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_68f1b51753a9e42ef51e393dd72a2391 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_e52ef7c33bbaa80665b3d81d5247b124 = $(`<div id="html_e52ef7c33bbaa80665b3d81d5247b124" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Нуруллин Руслан Николаевич</h4>         <p><b>Город:</b> Казань</p>         <p><b>Достижения:</b> ВсОШ ИИ: Призер DANO: Финалист</p>     </div>     </div>`)[0];
+                popup_68f1b51753a9e42ef51e393dd72a2391.setContent(html_e52ef7c33bbaa80665b3d81d5247b124);
+            
+        
+
+        marker_92d8bdd2d2d3750c859347840e13a197.bindPopup(popup_68f1b51753a9e42ef51e393dd72a2391)
+        ;
+
+        
+    
+    
+            marker_92d8bdd2d2d3750c859347840e13a197.bindTooltip(
+                `<div>
+                     Участник: Нуруллин Руслан Николаевич (Казань)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_92d8bdd2d2d3750c859347840e13a197.setIcon(icon_0687b756d6c5d0db393587df366dccc5);
+            
+    
+            var marker_5eb07aeea169fbd03a8723664228c83d = L.marker(
+                [59.9386, 30.3141],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_5360a20057f2ca1edc2d9723610c261d = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_ad93bc821600c23073cb9626f10fec2d = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_f213f7d6dea677a21d03570649028d2a = $(`<div id="html_f213f7d6dea677a21d03570649028d2a" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Атанов Андрей Андреевич</h4>         <p><b>Город:</b> Санкт-Петербург</p>         <p><b>Достижения:</b> НТО БДиМО: Финалист DANO: Финалист</p>     </div>     </div>`)[0];
+                popup_ad93bc821600c23073cb9626f10fec2d.setContent(html_f213f7d6dea677a21d03570649028d2a);
+            
+        
+
+        marker_5eb07aeea169fbd03a8723664228c83d.bindPopup(popup_ad93bc821600c23073cb9626f10fec2d)
+        ;
+
+        
+    
+    
+            marker_5eb07aeea169fbd03a8723664228c83d.bindTooltip(
+                `<div>
+                     Участник: Атанов Андрей Андреевич (Санкт-Петербург)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_5eb07aeea169fbd03a8723664228c83d.setIcon(icon_5360a20057f2ca1edc2d9723610c261d);
+            
+    
+            var marker_43f21df1acaa81be250965a1f7a08173 = L.marker(
+                [55.0302, 82.9204],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_56ba848758ddc9b920739b2f4fd1abbe = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_8e8c56f23e8771fcd4b09136407cb5dd = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_30aa7cd20a755b2cd25daf47dc76e647 = $(`<div id="html_30aa7cd20a755b2cd25daf47dc76e647" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Катцын Сергей Андреевич</h4>         <p><b>Город:</b> Новосибирск</p>         <p><b>Достижения:</b> Всероссийская олимпиада по ИИ: Финалист НТО ИИ: Призер НТО БДиМО: Победитель</p>     </div>     </div>`)[0];
+                popup_8e8c56f23e8771fcd4b09136407cb5dd.setContent(html_30aa7cd20a755b2cd25daf47dc76e647);
+            
+        
+
+        marker_43f21df1acaa81be250965a1f7a08173.bindPopup(popup_8e8c56f23e8771fcd4b09136407cb5dd)
+        ;
+
+        
+    
+    
+            marker_43f21df1acaa81be250965a1f7a08173.bindTooltip(
+                `<div>
+                     Участник: Катцын Сергей Андреевич (Новосибирск)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_43f21df1acaa81be250965a1f7a08173.setIcon(icon_56ba848758ddc9b920739b2f4fd1abbe);
+            
+    
+            var marker_5a496f8a123d0d4dd7e35d3cc7c1bad1 = L.marker(
+                [55.0302, 82.9204],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_60afce789028696b86045885bc6afb2b = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_ffe61295096ddd34b0709f0fbe4e6e9f = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_8a7c7d94d03226c84a1c3b468ab1ddd9 = $(`<div id="html_8a7c7d94d03226c84a1c3b468ab1ddd9" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Родионов Семен</h4>         <p><b>Город:</b> Новосибирск</p>         <p><b>Достижения:</b> Всероссийская олимпиада по ИИ: Победитель НТО ИИ: Финалист НТО БДиМО: Призер FAIO: Призер</p>     </div>     </div>`)[0];
+                popup_ffe61295096ddd34b0709f0fbe4e6e9f.setContent(html_8a7c7d94d03226c84a1c3b468ab1ddd9);
+            
+        
+
+        marker_5a496f8a123d0d4dd7e35d3cc7c1bad1.bindPopup(popup_ffe61295096ddd34b0709f0fbe4e6e9f)
+        ;
+
+        
+    
+    
+            marker_5a496f8a123d0d4dd7e35d3cc7c1bad1.bindTooltip(
+                `<div>
+                     Участник: Родионов Семен (Новосибирск)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_5a496f8a123d0d4dd7e35d3cc7c1bad1.setIcon(icon_60afce789028696b86045885bc6afb2b);
+            
+    
+            var marker_60e84535dfb23b3a2d7b8682f1b816ea = L.marker(
+                [55.7558, 37.6173],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_723d2c810478318ddec1aafcf4fbe7d0 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_6ca164ab2cceadbf43478a03b4451c20 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_d0467f22c3c6740c658acb20f60ad742 = $(`<div id="html_d0467f22c3c6740c658acb20f60ad742" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Щеглов Сергей Денисович</h4>         <p><b>Город:</b> Москва</p>         <p><b>Достижения:</b> ВсОШ ИИ: Призер DANO: Призер</p>     </div>     </div>`)[0];
+                popup_6ca164ab2cceadbf43478a03b4451c20.setContent(html_d0467f22c3c6740c658acb20f60ad742);
+            
+        
+
+        marker_60e84535dfb23b3a2d7b8682f1b816ea.bindPopup(popup_6ca164ab2cceadbf43478a03b4451c20)
+        ;
+
+        
+    
+    
+            marker_60e84535dfb23b3a2d7b8682f1b816ea.bindTooltip(
+                `<div>
+                     Участник: Щеглов Сергей Денисович (Москва)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_60e84535dfb23b3a2d7b8682f1b816ea.setIcon(icon_723d2c810478318ddec1aafcf4fbe7d0);
+            
+    
+            var marker_a3317375bc71432ea60e0ed64383bd6f = L.marker(
+                [55.7558, 37.6173],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_bdef61ea79ac1befc44a1950d787e45b = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_96c53f1260a844e5ab2859b5728b8098 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_f0baef3773907fb8c4d30445152efe79 = $(`<div id="html_f0baef3773907fb8c4d30445152efe79" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Коковкин Лев Алексеевич</h4>         <p><b>Город:</b> Москва</p>         <p><b>Достижения:</b> Всероссийская олимпиада по ИИ: Финалист НТО ИИ: Финалист</p>     </div>     </div>`)[0];
+                popup_96c53f1260a844e5ab2859b5728b8098.setContent(html_f0baef3773907fb8c4d30445152efe79);
+            
+        
+
+        marker_a3317375bc71432ea60e0ed64383bd6f.bindPopup(popup_96c53f1260a844e5ab2859b5728b8098)
+        ;
+
+        
+    
+    
+            marker_a3317375bc71432ea60e0ed64383bd6f.bindTooltip(
+                `<div>
+                     Участник: Коковкин Лев Алексеевич (Москва)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_a3317375bc71432ea60e0ed64383bd6f.setIcon(icon_bdef61ea79ac1befc44a1950d787e45b);
+            
+    
+            var marker_7f694e0a09c7642a75783c9496f43d9f = L.marker(
+                [59.9386, 30.3141],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_73d6f4f0652c990b1cbd35bebde17741 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_5b2955921d94774c9bb10fbbffd2aee3 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_61f6a3950d79d60f35127c879b659268 = $(`<div id="html_61f6a3950d79d60f35127c879b659268" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Ильин Иван Ярославич</h4>         <p><b>Город:</b> Санкт-Петербург</p>         <p><b>Достижения:</b> ВсОШ ИИ: Победитель</p>     </div>     </div>`)[0];
+                popup_5b2955921d94774c9bb10fbbffd2aee3.setContent(html_61f6a3950d79d60f35127c879b659268);
+            
+        
+
+        marker_7f694e0a09c7642a75783c9496f43d9f.bindPopup(popup_5b2955921d94774c9bb10fbbffd2aee3)
+        ;
+
+        
+    
+    
+            marker_7f694e0a09c7642a75783c9496f43d9f.bindTooltip(
+                `<div>
+                     Участник: Ильин Иван Ярославич (Санкт-Петербург)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_7f694e0a09c7642a75783c9496f43d9f.setIcon(icon_73d6f4f0652c990b1cbd35bebde17741);
+            
+    
+            var marker_a310ca285b3df596f0d26c7cfb1d41d0 = L.marker(
+                [56.1325, 47.2531],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_ea8fb24a5bbd0abafee957bc5f1808b5 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_e954004ffcb58d68dee25e6faa8af60e = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_7d887733b25d85e0e83af7cc5082c17b = $(`<div id="html_7d887733b25d85e0e83af7cc5082c17b" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Львов Станислав Александрович</h4>         <p><b>Город:</b> Чебоксары</p>         <p><b>Достижения:</b> ВсОШ ИИ: Финалист НТО ИИ: Финалист</p>     </div>     </div>`)[0];
+                popup_e954004ffcb58d68dee25e6faa8af60e.setContent(html_7d887733b25d85e0e83af7cc5082c17b);
+            
+        
+
+        marker_a310ca285b3df596f0d26c7cfb1d41d0.bindPopup(popup_e954004ffcb58d68dee25e6faa8af60e)
+        ;
+
+        
+    
+    
+            marker_a310ca285b3df596f0d26c7cfb1d41d0.bindTooltip(
+                `<div>
+                     Участник: Львов Станислав Александрович (Чебоксары)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_a310ca285b3df596f0d26c7cfb1d41d0.setIcon(icon_ea8fb24a5bbd0abafee957bc5f1808b5);
+            
+    
+            var marker_5934b4786b9ced80349acca9f3d2136c = L.marker(
+                [56.9696, 60.5815],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_645dd5478f2c81e5c2bd347a472aa5aa = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_7bfc3f6cbf02be217bb1f24db2dff8e8 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_19f8d14924639f57cf4101f73988e4e3 = $(`<div id="html_19f8d14924639f57cf4101f73988e4e3" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Окулов Никита Владимирович</h4>         <p><b>Город:</b> Верхняя Пышма</p>         <p><b>Достижения:</b> ВсОШ ИИ: Призер</p>     </div>     </div>`)[0];
+                popup_7bfc3f6cbf02be217bb1f24db2dff8e8.setContent(html_19f8d14924639f57cf4101f73988e4e3);
+            
+        
+
+        marker_5934b4786b9ced80349acca9f3d2136c.bindPopup(popup_7bfc3f6cbf02be217bb1f24db2dff8e8)
+        ;
+
+        
+    
+    
+            marker_5934b4786b9ced80349acca9f3d2136c.bindTooltip(
+                `<div>
+                     Участник: Окулов Никита Владимирович (Верхняя Пышма)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_5934b4786b9ced80349acca9f3d2136c.setIcon(icon_645dd5478f2c81e5c2bd347a472aa5aa);
+            
+    
+            var marker_34ebbac82b972b65b73caea265f327ea = L.marker(
+                [55.7558, 37.6173],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_f0e0f38ec2290678449c8ca484ca4450 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_7d1c1da2158b91b1eb95709255896502 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_453117ab97f356ae0621a17d1e655cec = $(`<div id="html_453117ab97f356ae0621a17d1e655cec" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Скажутин Даниил Андреевич</h4>         <p><b>Город:</b> Москва</p>         <p><b>Достижения:</b> ВсОШ ИИ: Призер</p>     </div>     </div>`)[0];
+                popup_7d1c1da2158b91b1eb95709255896502.setContent(html_453117ab97f356ae0621a17d1e655cec);
+            
+        
+
+        marker_34ebbac82b972b65b73caea265f327ea.bindPopup(popup_7d1c1da2158b91b1eb95709255896502)
+        ;
+
+        
+    
+    
+            marker_34ebbac82b972b65b73caea265f327ea.bindTooltip(
+                `<div>
+                     Участник: Скажутин Даниил Андреевич (Москва)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_34ebbac82b972b65b73caea265f327ea.setIcon(icon_f0e0f38ec2290678449c8ca484ca4450);
+            
+    
+            var marker_d8e3a0b3d0bf34dbca79601bdff665f4 = L.marker(
+                [48.7071, 44.517],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_c492917b91082a74b16307417e6222fa = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_f513e90374d5d794757b8c8a96054dcc = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_12601bb647b10b02e038d0cf231b55c8 = $(`<div id="html_12601bb647b10b02e038d0cf231b55c8" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Пудовкин Никита Олегович</h4>         <p><b>Город:</b> Волгоград</p>         <p><b>Достижения:</b> ВсОШ Программирование: Призер НТО ИИ: Призер Innopolis: Финалист DANO: Победитель</p>     </div>     </div>`)[0];
+                popup_f513e90374d5d794757b8c8a96054dcc.setContent(html_12601bb647b10b02e038d0cf231b55c8);
+            
+        
+
+        marker_d8e3a0b3d0bf34dbca79601bdff665f4.bindPopup(popup_f513e90374d5d794757b8c8a96054dcc)
+        ;
+
+        
+    
+    
+            marker_d8e3a0b3d0bf34dbca79601bdff665f4.bindTooltip(
+                `<div>
+                     Участник: Пудовкин Никита Олегович (Волгоград)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_d8e3a0b3d0bf34dbca79601bdff665f4.setIcon(icon_c492917b91082a74b16307417e6222fa);
+            
+    
+            var marker_b93e1cebae8f0a0824ccc9ca83ebdf28 = L.marker(
+                [42.9831, 47.5046],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_a872b7ee0f148c461310fc1fce9b43d0 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_48ff3dd72912938e881868e7a96d2b92 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_e2dd6d3c632e0c59cdbf6cbb3a2081b5 = $(`<div id="html_e2dd6d3c632e0c59cdbf6cbb3a2081b5" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Гасанов Зайнутдин Исламович</h4>         <p><b>Город:</b> Махачкала</p>         <p><b>Достижения:</b> Всероссийская олимпиада по ИИ: Финалист</p>     </div>     </div>`)[0];
+                popup_48ff3dd72912938e881868e7a96d2b92.setContent(html_e2dd6d3c632e0c59cdbf6cbb3a2081b5);
+            
+        
+
+        marker_b93e1cebae8f0a0824ccc9ca83ebdf28.bindPopup(popup_48ff3dd72912938e881868e7a96d2b92)
+        ;
+
+        
+    
+    
+            marker_b93e1cebae8f0a0824ccc9ca83ebdf28.bindTooltip(
+                `<div>
+                     Участник: Гасанов Зайнутдин Исламович (Махачкала)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_b93e1cebae8f0a0824ccc9ca83ebdf28.setIcon(icon_a872b7ee0f148c461310fc1fce9b43d0);
+            
+    
+            var marker_addcb0d2d477e78cee94716b07c13529 = L.marker(
+                [55.7558, 37.6173],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_39e9e4a308b97dcc82fbebda37ee789f = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_7dd327cc96ccac7aa6928cda3f58df04 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_fd8f89c9a98ef262979a2be345766bf7 = $(`<div id="html_fd8f89c9a98ef262979a2be345766bf7" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Хачатрян Саргис Каренович</h4>         <p><b>Город:</b> Москва</p>         <p><b>Достижения:</b> ВсОШ ИИ: Призер</p>     </div>     </div>`)[0];
+                popup_7dd327cc96ccac7aa6928cda3f58df04.setContent(html_fd8f89c9a98ef262979a2be345766bf7);
+            
+        
+
+        marker_addcb0d2d477e78cee94716b07c13529.bindPopup(popup_7dd327cc96ccac7aa6928cda3f58df04)
+        ;
+
+        
+    
+    
+            marker_addcb0d2d477e78cee94716b07c13529.bindTooltip(
+                `<div>
+                     Участник: Хачатрян Саргис Каренович (Москва)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_addcb0d2d477e78cee94716b07c13529.setIcon(icon_39e9e4a308b97dcc82fbebda37ee789f);
+            
+    
+            var marker_b3fdbcc1c699455e19b5e7d30992e675 = L.marker(
+                [55.7337, 52.4116],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_8969f35943aeaec07021588e81b05aa1 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_92ef68d0c9d41460243912bca8bf1c50 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_65a2a2d8f5a25fc4522d6e66ee11418a = $(`<div id="html_65a2a2d8f5a25fc4522d6e66ee11418a" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Купцов Михаил Валерьевич</h4>         <p><b>Город:</b> Набережные Челны</p>         <p><b>Достижения:</b> ВсОШ ИИ: Призер</p>     </div>     </div>`)[0];
+                popup_92ef68d0c9d41460243912bca8bf1c50.setContent(html_65a2a2d8f5a25fc4522d6e66ee11418a);
+            
+        
+
+        marker_b3fdbcc1c699455e19b5e7d30992e675.bindPopup(popup_92ef68d0c9d41460243912bca8bf1c50)
+        ;
+
+        
+    
+    
+            marker_b3fdbcc1c699455e19b5e7d30992e675.bindTooltip(
+                `<div>
+                     Участник: Купцов Михаил Валерьевич (Набережные Челны)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_b3fdbcc1c699455e19b5e7d30992e675.setIcon(icon_8969f35943aeaec07021588e81b05aa1);
+            
+    
+            var marker_6a9b462346a4f5a6ec7a632b60650d6a = L.marker(
+                [55.7558, 37.6173],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_c9b9a1ecf5e73c8f94629c27ff9fd155 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_891cdbf4d7b5a2b12cf75312d5d9d1cf = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_23168a43af907918ce3de64f7e0fac81 = $(`<div id="html_23168a43af907918ce3de64f7e0fac81" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Лемперт Алексей Игоревич</h4>         <p><b>Город:</b> Москва</p>         <p><b>Достижения:</b> ВсОШ ИИ: Финалист</p>     </div>     </div>`)[0];
+                popup_891cdbf4d7b5a2b12cf75312d5d9d1cf.setContent(html_23168a43af907918ce3de64f7e0fac81);
+            
+        
+
+        marker_6a9b462346a4f5a6ec7a632b60650d6a.bindPopup(popup_891cdbf4d7b5a2b12cf75312d5d9d1cf)
+        ;
+
+        
+    
+    
+            marker_6a9b462346a4f5a6ec7a632b60650d6a.bindTooltip(
+                `<div>
+                     Участник: Лемперт Алексей Игоревич (Москва)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_6a9b462346a4f5a6ec7a632b60650d6a.setIcon(icon_c9b9a1ecf5e73c8f94629c27ff9fd155);
+            
+    
+            var marker_5b25c0e0855c105b926ee08030a8bc9f = L.marker(
+                [55.0302, 82.9204],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_6752a55b0005999d0e28a46a4d97a839 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_9fac39fc871ae592675b7f1da90ce9c8 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_d78eef4337106da6c601b6264cc14c1b = $(`<div id="html_d78eef4337106da6c601b6264cc14c1b" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Быков Константин Эдуардович</h4>         <p><b>Город:</b> Новосибирск</p>         <p><b>Достижения:</b> ВсОШ ИИ: Призер Всероссийская олимпиада по ИИ: Финалист DANO: Призер</p>     </div>     </div>`)[0];
+                popup_9fac39fc871ae592675b7f1da90ce9c8.setContent(html_d78eef4337106da6c601b6264cc14c1b);
+            
+        
+
+        marker_5b25c0e0855c105b926ee08030a8bc9f.bindPopup(popup_9fac39fc871ae592675b7f1da90ce9c8)
+        ;
+
+        
+    
+    
+            marker_5b25c0e0855c105b926ee08030a8bc9f.bindTooltip(
+                `<div>
+                     Участник: Быков Константин Эдуардович (Новосибирск)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_5b25c0e0855c105b926ee08030a8bc9f.setIcon(icon_6752a55b0005999d0e28a46a4d97a839);
+            
+    
+            var marker_909a390a46db605ad0c042c99c30471b = L.marker(
+                [58.0105, 56.2502],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_ad1763ef9b0ad66db982c932eab22a98 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_d0b5d21f96d868077c45d44bf6115a76 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_c246e2588ddbc1aa4f679d35811edc4d = $(`<div id="html_c246e2588ddbc1aa4f679d35811edc4d" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Наймушин Андрей Сергеевич</h4>         <p><b>Город:</b> Пермь</p>         <p><b>Достижения:</b> AI Challenge: Призер НТО ИИ: Призер</p>     </div>     </div>`)[0];
+                popup_d0b5d21f96d868077c45d44bf6115a76.setContent(html_c246e2588ddbc1aa4f679d35811edc4d);
+            
+        
+
+        marker_909a390a46db605ad0c042c99c30471b.bindPopup(popup_d0b5d21f96d868077c45d44bf6115a76)
+        ;
+
+        
+    
+    
+            marker_909a390a46db605ad0c042c99c30471b.bindTooltip(
+                `<div>
+                     Участник: Наймушин Андрей Сергеевич (Пермь)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_909a390a46db605ad0c042c99c30471b.setIcon(icon_ad1763ef9b0ad66db982c932eab22a98);
+            
+    
+            var marker_7cd10cff1c8c3e8dd5cbd3db6c2f9378 = L.marker(
+                [55.0302, 82.9204],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_1c1abb85e9272ab0c2561c5f608a708f = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_d2037ce7c86784faf03cc85607d6be9e = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_e9293124c41f6b2985216d8efa4a129c = $(`<div id="html_e9293124c41f6b2985216d8efa4a129c" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Четверяков Андрей Петрович</h4>         <p><b>Город:</b> Новосибирск</p>         <p><b>Достижения:</b> AI Challenge: Победитель НТО ИИ: Финалист НТО БДиМО: Победитель</p>     </div>     </div>`)[0];
+                popup_d2037ce7c86784faf03cc85607d6be9e.setContent(html_e9293124c41f6b2985216d8efa4a129c);
+            
+        
+
+        marker_7cd10cff1c8c3e8dd5cbd3db6c2f9378.bindPopup(popup_d2037ce7c86784faf03cc85607d6be9e)
+        ;
+
+        
+    
+    
+            marker_7cd10cff1c8c3e8dd5cbd3db6c2f9378.bindTooltip(
+                `<div>
+                     Участник: Четверяков Андрей Петрович (Новосибирск)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_7cd10cff1c8c3e8dd5cbd3db6c2f9378.setIcon(icon_1c1abb85e9272ab0c2561c5f608a708f);
+            
+    
+            var marker_9c58ca8d267fc3f0340ace907f6d1f51 = L.marker(
+                [55.7558, 37.6173],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_c51fda31c075138fc813797f7c0292b6 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_26ebc20f628abda0f850f0871cdad656 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_56e5f297aa9569a41ab12731b5824414 = $(`<div id="html_56e5f297aa9569a41ab12731b5824414" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Киреев Кирилл Андреевич</h4>         <p><b>Город:</b> Москва</p>         <p><b>Достижения:</b> Всероссийская олимпиада по ИИ: Призер НТО ИИ: Финалист НТО БДиМО: Финалист</p>     </div>     </div>`)[0];
+                popup_26ebc20f628abda0f850f0871cdad656.setContent(html_56e5f297aa9569a41ab12731b5824414);
+            
+        
+
+        marker_9c58ca8d267fc3f0340ace907f6d1f51.bindPopup(popup_26ebc20f628abda0f850f0871cdad656)
+        ;
+
+        
+    
+    
+            marker_9c58ca8d267fc3f0340ace907f6d1f51.bindTooltip(
+                `<div>
+                     Участник: Киреев Кирилл Андреевич (Москва)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_9c58ca8d267fc3f0340ace907f6d1f51.setIcon(icon_c51fda31c075138fc813797f7c0292b6);
+            
+    
+            var marker_4a489a9d0480db3c9a28e823b5eab755 = L.marker(
+                [53.1959, 50.1002],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_4576e1d146011e2decfe38ef8572cb01 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_9f00dfdf4500f0bc371c47258cea5064 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_b5bcc021a6da078a2276f86f79d75649 = $(`<div id="html_b5bcc021a6da078a2276f86f79d75649" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Кулишов Егор Дмитриевич</h4>         <p><b>Город:</b> Самара</p>         <p><b>Достижения:</b> ВсОШ ИИ: Финалист Всероссийская олимпиада по ИИ: Финалист НТО ИИ: Победитель НТО БДиМО: Финалист DANO: Финалист</p>     </div>     </div>`)[0];
+                popup_9f00dfdf4500f0bc371c47258cea5064.setContent(html_b5bcc021a6da078a2276f86f79d75649);
+            
+        
+
+        marker_4a489a9d0480db3c9a28e823b5eab755.bindPopup(popup_9f00dfdf4500f0bc371c47258cea5064)
+        ;
+
+        
+    
+    
+            marker_4a489a9d0480db3c9a28e823b5eab755.bindTooltip(
+                `<div>
+                     Участник: Кулишов Егор Дмитриевич (Самара)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_4a489a9d0480db3c9a28e823b5eab755.setIcon(icon_4576e1d146011e2decfe38ef8572cb01);
+            
+    
+            var marker_942c934119ccd15afdf93ed73d2a766e = L.marker(
+                [59.9386, 30.3141],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_3126a1891b019db2eb3a022570f5a9a8 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_ce1efee9cddafab0c6cc782d695a40e7 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_303d50335f61c724f03bc59bc0caa8b0 = $(`<div id="html_303d50335f61c724f03bc59bc0caa8b0" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Тамразов Роман Каренович</h4>         <p><b>Город:</b> Санкт-Петербург</p>         <p><b>Достижения:</b> НТО БДиМО: Финалист</p>     </div>     </div>`)[0];
+                popup_ce1efee9cddafab0c6cc782d695a40e7.setContent(html_303d50335f61c724f03bc59bc0caa8b0);
+            
+        
+
+        marker_942c934119ccd15afdf93ed73d2a766e.bindPopup(popup_ce1efee9cddafab0c6cc782d695a40e7)
+        ;
+
+        
+    
+    
+            marker_942c934119ccd15afdf93ed73d2a766e.bindTooltip(
+                `<div>
+                     Участник: Тамразов Роман Каренович (Санкт-Петербург)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_942c934119ccd15afdf93ed73d2a766e.setIcon(icon_3126a1891b019db2eb3a022570f5a9a8);
+            
+    
+            var marker_ca3ade6bcf43bfc3c3898c47870f8575 = L.marker(
+                [59.9386, 30.3141],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_8553e61b14c74141294917f9836505c3 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_309d542f7a7b16153abaddbd3fae85a1 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_c35a5f1284ae7d0b73747936c28de2fb = $(`<div id="html_c35a5f1284ae7d0b73747936c28de2fb" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Наземцев Артём Дмитриевич</h4>         <p><b>Город:</b> Санкт-Петербург</p>         <p><b>Достижения:</b> ВсОШ ИИ: Победитель НТО ИИ: Финалист</p>     </div>     </div>`)[0];
+                popup_309d542f7a7b16153abaddbd3fae85a1.setContent(html_c35a5f1284ae7d0b73747936c28de2fb);
+            
+        
+
+        marker_ca3ade6bcf43bfc3c3898c47870f8575.bindPopup(popup_309d542f7a7b16153abaddbd3fae85a1)
+        ;
+
+        
+    
+    
+            marker_ca3ade6bcf43bfc3c3898c47870f8575.bindTooltip(
+                `<div>
+                     Участник: Наземцев Артём Дмитриевич (Санкт-Петербург)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_ca3ade6bcf43bfc3c3898c47870f8575.setIcon(icon_8553e61b14c74141294917f9836505c3);
+            
+    
+            var marker_9e8edccba7f04dcf6a062edd08a05531 = L.marker(
+                [55.7963, 49.1088],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_db69a2f8f580272e131fa99e715f9026 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_4ceea9cc1e337626cd23bf824294ae58 = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_4d78f5d92283ab617d3f8781d5409cdd = $(`<div id="html_4d78f5d92283ab617d3f8781d5409cdd" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Талашкевич Кирилл Дмитриевич</h4>         <p><b>Город:</b> Казань</p>         <p><b>Достижения:</b> ВсОШ ИИ: Призер DANO: Призер</p>     </div>     </div>`)[0];
+                popup_4ceea9cc1e337626cd23bf824294ae58.setContent(html_4d78f5d92283ab617d3f8781d5409cdd);
+            
+        
+
+        marker_9e8edccba7f04dcf6a062edd08a05531.bindPopup(popup_4ceea9cc1e337626cd23bf824294ae58)
+        ;
+
+        
+    
+    
+            marker_9e8edccba7f04dcf6a062edd08a05531.bindTooltip(
+                `<div>
+                     Участник: Талашкевич Кирилл Дмитриевич (Казань)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_9e8edccba7f04dcf6a062edd08a05531.setIcon(icon_db69a2f8f580272e131fa99e715f9026);
+            
+    
+            var marker_cfa729ddc40539f11d5e60bd45df32eb = L.marker(
+                [48.574, 39.3078],
+                {
+}
+            ).addTo(marker_cluster_8f85e9094dabe405a5511f75a7a4377c);
+        
+    
+            var icon_6a56ecec167c9b40341e71ac981d7965 = L.AwesomeMarkers.icon(
+                {
+  "markerColor": "red",
+  "iconColor": "white",
+  "icon": "info-sign",
+  "prefix": "glyphicon",
+  "extraClasses": "fa-rotate-0",
+}
+            );
+        
+    
+        var popup_9f60d49e0db5d33afe320827ad9d42ce = L.popup({
+  "maxWidth": 250,
+});
+
+        
+            
+                var html_ba0152ee3de04bdd596b38ad26f4546c = $(`<div id="html_ba0152ee3de04bdd596b38ad26f4546c" style="width: 100.0%; height: 100.0%;">     <div style="font-family: Arial; width: 200px;">         <h4>Камышан Евгений Владиславович</h4>         <p><b>Город:</b> Луганск</p>         <p><b>Достижения:</b> ВсОШ ИИ: Призёр Всероссийская олимпиада по ИИ: Финалист НТО ИИ: Призёр НТО БДиМО: Финалист</p>     </div>     </div>`)[0];
+                popup_9f60d49e0db5d33afe320827ad9d42ce.setContent(html_ba0152ee3de04bdd596b38ad26f4546c);
+            
+        
+
+        marker_cfa729ddc40539f11d5e60bd45df32eb.bindPopup(popup_9f60d49e0db5d33afe320827ad9d42ce)
+        ;
+
+        
+    
+    
+            marker_cfa729ddc40539f11d5e60bd45df32eb.bindTooltip(
+                `<div>
+                     Участник: Камышан Евгений Владиславович (Луганск)
+                 </div>`,
+                {
+  "sticky": true,
+}
+            );
+        
+    
+                marker_cfa729ddc40539f11d5e60bd45df32eb.setIcon(icon_6a56ecec167c9b40341e71ac981d7965);
+            
+    
+            marker_cluster_8f85e9094dabe405a5511f75a7a4377c.addTo(map_0ee95d1334203c24769653f5637af9b0);
+        
+</script>
+</html>
