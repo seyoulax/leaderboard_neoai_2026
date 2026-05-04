@@ -10,8 +10,10 @@
   },
   "dependencies": {
     "adm-zip": "^0.5.16",
+    "archiver": "^7.0.1",
     "bcryptjs": "^2.4.3",
     "better-sqlite3": "^11.10.0",
+    "busboy": "^1.6.0",
     "cookie": "^0.6.0",
     "cors": "^2.8.5",
     "csv-parse": "^5.5.6",
