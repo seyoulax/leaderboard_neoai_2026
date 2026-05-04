@@ -189,5 +189,70 @@ export function createNativeTasksAdminRouter({ db }) {
     });
   });
 
+  function singleSlotEndpoint(slot, maxEnvKey) {
+    return (req, res) => {
+      const r = requireNativeComp(db, req.params.competitionSlug);
+      if (r.error) return res.status(r.error.status).json({ error: r.error.message });
+      const task = getNativeTask(db, req.params.competitionSlug, req.params.taskSlug);
+      if (!task) return res.status(404).json({ error: 'task not found' });
+      const taskDir = path.join(NATIVE_DATA_DIR(), req.params.competitionSlug, req.params.taskSlug);
+      const fallback = slot === 'grader' ? 102400 : 524288000;
+      const maxBytes = Number(process.env[maxEnvKey] || fallback);
+      acceptSingleFile(req, res, {
+        maxBytes,
+        destDir: taskDir,
+        makeFinalName: (info) => `.pending-${Date.now()}-${safeFilename(info.filename)}`,
+        onAccepted: async ({ finalPath, originalFilename }) => {
+          try {
+            const ext = path.extname(originalFilename) || '';
+            const target = path.join(taskDir, `${slot.replace('-', '_')}${ext}`);
+            const fsp = await import('node:fs/promises');
+            const prevPath = slot === 'grader' ? task.graderPath : task.groundTruthPath;
+            if (prevPath && prevPath !== target) {
+              await fsp.rm(prevPath, { force: true }).catch(() => {});
+            }
+            await fsp.rename(finalPath, target);
+            updateNativeTask(db, req.params.competitionSlug, req.params.taskSlug,
+              slot === 'grader' ? { graderPath: target } : { groundTruthPath: target }
+            );
+            res.json({ ok: true, path: target });
+          } catch (e) {
+            res.status(500).json({ error: e.message });
+          }
+        },
+        onError: (err, status) => res.status(status || 500).json({ error: err.message }),
+      });
+    };
+  }
+
+  router.put('/:taskSlug/grader', singleSlotEndpoint('grader', 'MAX_GRADER_BYTES'));
+  router.put('/:taskSlug/ground-truth', singleSlotEndpoint('ground-truth', 'MAX_GROUND_TRUTH_BYTES'));
+
+  router.delete('/:taskSlug/grader', async (req, res) => {
+    const r = requireNativeComp(db, req.params.competitionSlug);
+    if (r.error) return res.status(r.error.status).json({ error: r.error.message });
+    const task = getNativeTask(db, req.params.competitionSlug, req.params.taskSlug);
+    if (!task) return res.status(404).json({ error: 'task not found' });
+    if (task.graderPath) {
+      const fsp = await import('node:fs/promises');
+      await fsp.rm(task.graderPath, { force: true }).catch(() => {});
+    }
+    updateNativeTask(db, req.params.competitionSlug, req.params.taskSlug, { graderPath: null });
+    res.json({ ok: true });
+  });
+
+  router.delete('/:taskSlug/ground-truth', async (req, res) => {
+    const r = requireNativeComp(db, req.params.competitionSlug);
+    if (r.error) return res.status(r.error.status).json({ error: r.error.message });
+    const task = getNativeTask(db, req.params.competitionSlug, req.params.taskSlug);
+    if (!task) return res.status(404).json({ error: 'task not found' });
+    if (task.groundTruthPath) {
+      const fsp = await import('node:fs/promises');
+      await fsp.rm(task.groundTruthPath, { force: true }).catch(() => {});
+    }
+    updateNativeTask(db, req.params.competitionSlug, req.params.taskSlug, { groundTruthPath: null });
+    res.json({ ok: true });
+  });
+
   return router;
 }

@@ -166,6 +166,117 @@ test('admin native-tasks: DELETE file removes row + disk file', async () => {
   server.close();
 });
 
+function rawFileBody(filename, content, mime = 'application/octet-stream') {
+  const boundary = '----X';
+  const body = Buffer.concat([
+    Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${filename}"\r\nContent-Type: ${mime}\r\n\r\n`),
+    Buffer.from(content),
+    Buffer.from(`\r\n--${boundary}--\r\n`),
+  ]);
+  return { body, boundary };
+}
+
+test('admin native-tasks: PUT grader writes path; replaces previous', async () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sp2-'));
+  process.env.NATIVE_DATA_DIR = tmp;
+  const { app } = setup();
+  const server = await start(app);
+  const port = server.address().port;
+  const base = `http://127.0.0.1:${port}/api/admin/competitions/comp/native-tasks`;
+  await fetch(base, { method: 'POST', headers: ADMIN_HEADERS, body: JSON.stringify({ slug: 't', title: 'T' }) });
+  const a = rawFileBody('score.py', 'print(1)');
+  const r1 = await fetch(`${base}/t/grader`, {
+    method: 'PUT',
+    headers: { 'content-type': `multipart/form-data; boundary=${a.boundary}`, 'x-admin-token': 'shared' },
+    body: a.body,
+  });
+  assert.equal(r1.status, 200);
+  const j1 = await r1.json();
+  assert.ok(j1.path.endsWith('grader.py'));
+  assert.ok(fs.existsSync(j1.path));
+  const list = await fetch(base, { headers: ADMIN_HEADERS });
+  const lj = await list.json();
+  assert.ok(lj.tasks[0].graderPath);
+  // replace
+  const b = rawFileBody('score2.py', 'print(2)');
+  const r2 = await fetch(`${base}/t/grader`, {
+    method: 'PUT',
+    headers: { 'content-type': `multipart/form-data; boundary=${b.boundary}`, 'x-admin-token': 'shared' },
+    body: b.body,
+  });
+  assert.equal(r2.status, 200);
+  fs.rmSync(tmp, { recursive: true, force: true });
+  server.close();
+});
+
+test('admin native-tasks: DELETE grader → graderPath null + file gone', async () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sp2-'));
+  process.env.NATIVE_DATA_DIR = tmp;
+  const { app } = setup();
+  const server = await start(app);
+  const port = server.address().port;
+  const base = `http://127.0.0.1:${port}/api/admin/competitions/comp/native-tasks`;
+  await fetch(base, { method: 'POST', headers: ADMIN_HEADERS, body: JSON.stringify({ slug: 't', title: 'T' }) });
+  const a = rawFileBody('score.py', 'print(1)');
+  const upload = await fetch(`${base}/t/grader`, {
+    method: 'PUT',
+    headers: { 'content-type': `multipart/form-data; boundary=${a.boundary}`, 'x-admin-token': 'shared' },
+    body: a.body,
+  });
+  const uploadJ = await upload.json();
+  assert.ok(fs.existsSync(uploadJ.path));
+  const d = await fetch(`${base}/t/grader`, { method: 'DELETE', headers: ADMIN_HEADERS });
+  assert.equal(d.status, 200);
+  assert.equal(fs.existsSync(uploadJ.path), false);
+  const list = await fetch(base, { headers: ADMIN_HEADERS });
+  const lj = await list.json();
+  assert.equal(lj.tasks[0].graderPath, null);
+  fs.rmSync(tmp, { recursive: true, force: true });
+  server.close();
+});
+
+test('admin native-tasks: PUT ground-truth same shape', async () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sp2-'));
+  process.env.NATIVE_DATA_DIR = tmp;
+  const { app } = setup();
+  const server = await start(app);
+  const port = server.address().port;
+  const base = `http://127.0.0.1:${port}/api/admin/competitions/comp/native-tasks`;
+  await fetch(base, { method: 'POST', headers: ADMIN_HEADERS, body: JSON.stringify({ slug: 't', title: 'T' }) });
+  const a = rawFileBody('truth.csv', 'id,y\n1,2\n');
+  const r = await fetch(`${base}/t/ground-truth`, {
+    method: 'PUT',
+    headers: { 'content-type': `multipart/form-data; boundary=${a.boundary}`, 'x-admin-token': 'shared' },
+    body: a.body,
+  });
+  assert.equal(r.status, 200);
+  const j = await r.json();
+  assert.ok(j.path.endsWith('ground_truth.csv'));
+  fs.rmSync(tmp, { recursive: true, force: true });
+  server.close();
+});
+
+test('admin native-tasks: PUT grader exceeds MAX_GRADER_BYTES → 413', async () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sp2-'));
+  process.env.NATIVE_DATA_DIR = tmp;
+  process.env.MAX_GRADER_BYTES = '5';
+  const { app } = setup();
+  const server = await start(app);
+  const port = server.address().port;
+  const base = `http://127.0.0.1:${port}/api/admin/competitions/comp/native-tasks`;
+  await fetch(base, { method: 'POST', headers: ADMIN_HEADERS, body: JSON.stringify({ slug: 't', title: 'T' }) });
+  const a = rawFileBody('big.py', '0123456789');
+  const r = await fetch(`${base}/t/grader`, {
+    method: 'PUT',
+    headers: { 'content-type': `multipart/form-data; boundary=${a.boundary}`, 'x-admin-token': 'shared' },
+    body: a.body,
+  });
+  assert.equal(r.status, 413);
+  delete process.env.MAX_GRADER_BYTES;
+  fs.rmSync(tmp, { recursive: true, force: true });
+  server.close();
+});
+
 test('admin native-tasks: POST file kind=invalid → 400', async () => {
   const { app } = setup();
   const server = await start(app);
