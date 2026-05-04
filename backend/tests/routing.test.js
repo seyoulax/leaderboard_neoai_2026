@@ -4,6 +4,9 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import http from 'node:http';
+import Database from 'better-sqlite3';
+import { runMigrations } from '../src/db/index.js';
+import { insertCompetition } from '../src/db/competitionsRepo.js';
 
 let server;
 let baseUrl;
@@ -18,10 +21,6 @@ async function fetchJson(p, opts = {}) {
 before(async () => {
   dataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'neoai-rt-'));
   await fs.mkdir(path.join(dataDir, 'competitions/test-comp'), { recursive: true });
-  await fs.writeFile(
-    path.join(dataDir, 'competitions.json'),
-    JSON.stringify([{ slug: 'test-comp', title: 'Test', order: 0, visible: true }], null, 2)
-  );
   await fs.writeFile(path.join(dataDir, 'competitions/test-comp/tasks.json'), '[]');
   await fs.writeFile(path.join(dataDir, 'competitions/test-comp/boards.json'), '[]');
   await fs.writeFile(path.join(dataDir, 'competitions/test-comp/participants.json'), '[]');
@@ -32,8 +31,18 @@ before(async () => {
   process.env.KAGGLE_CMD = '/bin/false';
   process.env.REQUEST_GAP_MS = '0';
 
+  const db = new Database(':memory:');
+  runMigrations(db);
+  insertCompetition(db, {
+    slug: 'test-comp',
+    title: 'Test',
+    type: 'kaggle',
+    visible: true,
+    displayOrder: 0,
+  });
+
   const mod = await import('../src/app.js');
-  const app = mod.createApp();
+  const app = mod.createApp({ db });
   await mod.bootstrapForTests();
 
   server = http.createServer(app);
