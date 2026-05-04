@@ -15,6 +15,7 @@ import { loadUser, requireAuth, requireAdmin } from '../src/auth/middleware.js';
 import { runMigrations } from '../src/db/index.js';
 import { createUser } from '../src/db/usersRepo.js';
 import { createSession } from '../src/db/sessionsRepo.js';
+import { createAuthRouter } from '../src/routes/auth.js';
 
 function freshDb() {
   const db = new Database(':memory:');
@@ -176,5 +177,101 @@ test('middleware.requireAdmin: x-admin-token fallback', async () => {
     assert.equal(r2.status, 401);
     const r3 = await fetch(`http://127.0.0.1:${port}/admin`);
     assert.equal(r3.status, 401);
+  });
+});
+
+// ─── auth routes (integration) ───────────────────────────────────
+
+function makeAuthApp(db) {
+  const app = express();
+  app.use(express.json());
+  app.use(loadUser({ db }));
+  app.use('/api/auth', createAuthRouter({ db }));
+  return app;
+}
+
+async function fetchJson(url, opts = {}) {
+  const r = await fetch(url, opts);
+  const text = await r.text();
+  let json = null;
+  try { json = JSON.parse(text); } catch {}
+  return { status: r.status, json, headers: r.headers };
+}
+
+test('auth routes: register → me → logout flow', async () => {
+  const db = freshDb();
+  const app = makeAuthApp(db);
+  await withServer(app, async (port) => {
+    const base = `http://127.0.0.1:${port}`;
+    const reg = await fetchJson(`${base}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: 'a@a.a', password: 'hunter2hunter2', displayName: 'A' }),
+    });
+    assert.equal(reg.status, 200);
+    assert.equal(reg.json.user.email, 'a@a.a');
+    const setCookie = reg.headers.get('set-cookie');
+    assert.match(setCookie, /^session=/);
+    const cookie = setCookie.split(';')[0];
+
+    const me = await fetchJson(`${base}/api/auth/me`, { headers: { cookie } });
+    assert.equal(me.json.user.email, 'a@a.a');
+
+    const lo = await fetchJson(`${base}/api/auth/logout`, {
+      method: 'POST', headers: { cookie },
+    });
+    assert.equal(lo.status, 200);
+    const cleared = lo.headers.get('set-cookie');
+    assert.match(cleared, /Max-Age=0/);
+
+    const me2 = await fetchJson(`${base}/api/auth/me`, { headers: { cookie } });
+    assert.equal(me2.json.user, null);
+  });
+});
+
+test('auth routes: register validation', async () => {
+  const db = freshDb();
+  const app = makeAuthApp(db);
+  await withServer(app, async (port) => {
+    const r = await fetchJson(`http://127.0.0.1:${port}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: 'bad', password: 'short', displayName: '' }),
+    });
+    assert.equal(r.status, 400);
+  });
+});
+
+test('auth routes: login wrong password', async () => {
+  const db = freshDb();
+  const app = makeAuthApp(db);
+  await withServer(app, async (port) => {
+    await fetchJson(`http://127.0.0.1:${port}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: 'a@a.a', password: 'hunter2hunter2', displayName: 'A' }),
+    });
+    const r = await fetchJson(`http://127.0.0.1:${port}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ email: 'a@a.a', password: 'wrong' }),
+    });
+    assert.equal(r.status, 401);
+  });
+});
+
+test('auth routes: register duplicate email returns 400', async () => {
+  const db = freshDb();
+  const app = makeAuthApp(db);
+  await withServer(app, async (port) => {
+    const body = JSON.stringify({ email: 'a@a.a', password: 'hunter2hunter2', displayName: 'A' });
+    const a = await fetchJson(`http://127.0.0.1:${port}/api/auth/register`, {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body,
+    });
+    assert.equal(a.status, 200);
+    const b = await fetchJson(`http://127.0.0.1:${port}/api/auth/register`, {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body,
+    });
+    assert.equal(b.status, 400);
   });
 });
