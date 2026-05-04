@@ -13,6 +13,7 @@ import {
   commitFilePath,
   getFileById,
   deleteFileById,
+  updateFileMetadata,
 } from '../db/nativeTaskFilesRepo.js';
 import { acceptSingleFile } from '../upload/multipartFile.js';
 import { safeFilename } from '../upload/safeFilename.js';
@@ -108,6 +109,34 @@ export function createNativeTasksAdminRouter({ db }) {
     const existing = getNativeTask(db, req.params.competitionSlug, req.params.taskSlug);
     if (!existing) return res.status(404).json({ error: 'task not found' });
     softDeleteNativeTask(db, req.params.competitionSlug, req.params.taskSlug);
+    res.json({ ok: true });
+  });
+
+  router.put('/:taskSlug/files/:fileId', (req, res) => {
+    const r = requireNativeComp(db, req.params.competitionSlug);
+    if (r.error) return res.status(r.error.status).json({ error: r.error.message });
+    const file = getFileById(db, Number(req.params.fileId));
+    if (!file) return res.status(404).json({ error: 'file not found' });
+    const patch = {};
+    if ('displayName' in req.body) patch.displayName = String(req.body.displayName).trim();
+    if ('description' in req.body) patch.description = String(req.body.description);
+    if ('displayOrder' in req.body) patch.displayOrder = Number(req.body.displayOrder) || 0;
+    const updated = updateFileMetadata(db, file.id, patch);
+    res.json({ file: updated });
+  });
+
+  router.delete('/:taskSlug/files/:fileId', async (req, res) => {
+    const r = requireNativeComp(db, req.params.competitionSlug);
+    if (r.error) return res.status(r.error.status).json({ error: r.error.message });
+    const file = getFileById(db, Number(req.params.fileId));
+    if (!file) return res.status(404).json({ error: 'file not found' });
+    deleteFileById(db, file.id);
+    try {
+      const fsp = await import('node:fs/promises');
+      await fsp.rm(file.path, { force: true });
+    } catch (e) {
+      console.warn(`[delete file] disk cleanup failed: ${e.message}`);
+    }
     res.json({ ok: true });
   });
 

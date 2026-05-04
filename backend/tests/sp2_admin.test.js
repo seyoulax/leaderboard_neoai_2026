@@ -116,6 +116,56 @@ test('admin native-tasks: POST file (dataset) saves on disk + row', async () => 
   server.close();
 });
 
+test('admin native-tasks: PUT file updates metadata', async () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sp2-'));
+  process.env.NATIVE_DATA_DIR = tmp;
+  const { app } = setup();
+  const server = await start(app);
+  const port = server.address().port;
+  const base = `http://127.0.0.1:${port}/api/admin/competitions/comp/native-tasks`;
+  await fetch(base, { method: 'POST', headers: ADMIN_HEADERS, body: JSON.stringify({ slug: 't', title: 'T' }) });
+  const { body, boundary } = multipartBody('a.csv', 'x');
+  const u = await fetch(`${base}/t/files?kind=dataset`, {
+    method: 'POST',
+    headers: { 'content-type': `multipart/form-data; boundary=${boundary}`, 'x-admin-token': 'shared' },
+    body,
+  });
+  const file = (await u.json()).file;
+  const p = await fetch(`${base}/t/files/${file.id}`, {
+    method: 'PUT', headers: ADMIN_HEADERS,
+    body: JSON.stringify({ displayName: 'NEW', description: 'd', displayOrder: 5 }),
+  });
+  const j = await p.json();
+  assert.equal(j.file.displayName, 'NEW');
+  assert.equal(j.file.description, 'd');
+  assert.equal(j.file.displayOrder, 5);
+  fs.rmSync(tmp, { recursive: true, force: true });
+  server.close();
+});
+
+test('admin native-tasks: DELETE file removes row + disk file', async () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sp2-'));
+  process.env.NATIVE_DATA_DIR = tmp;
+  const { app } = setup();
+  const server = await start(app);
+  const port = server.address().port;
+  const base = `http://127.0.0.1:${port}/api/admin/competitions/comp/native-tasks`;
+  await fetch(base, { method: 'POST', headers: ADMIN_HEADERS, body: JSON.stringify({ slug: 't', title: 'T' }) });
+  const { body, boundary } = multipartBody('a.csv', 'x');
+  const u = await fetch(`${base}/t/files?kind=dataset`, {
+    method: 'POST',
+    headers: { 'content-type': `multipart/form-data; boundary=${boundary}`, 'x-admin-token': 'shared' },
+    body,
+  });
+  const file = (await u.json()).file;
+  assert.ok(fs.existsSync(file.path));
+  const d = await fetch(`${base}/t/files/${file.id}`, { method: 'DELETE', headers: ADMIN_HEADERS });
+  assert.equal(d.status, 200);
+  assert.equal(fs.existsSync(file.path), false);
+  fs.rmSync(tmp, { recursive: true, force: true });
+  server.close();
+});
+
 test('admin native-tasks: POST file kind=invalid → 400', async () => {
   const { app } = setup();
   const server = await start(app);
