@@ -7,6 +7,7 @@ import { validateCompetitions } from './competitions.js';
 import { loadUser, requireAdmin } from './auth/middleware.js';
 import { createAuthRouter } from './routes/auth.js';
 import { createNativeTasksAdminRouter } from './routes/nativeTasksAdmin.js';
+import { createNativeTasksPublicRouter } from './routes/nativeTasksPublic.js';
 import {
   listActiveCompetitions,
   listVisibleCompetitions,
@@ -937,6 +938,7 @@ export function createApp({ db } = {}) {
   });
 
   app.use('/api/admin/competitions/:competitionSlug/native-tasks', adminMw, createNativeTasksAdminRouter({ db }));
+  app.use('/api/competitions/:competitionSlug/native-tasks', createNativeTasksPublicRouter({ db }));
 
   return app;
 }
