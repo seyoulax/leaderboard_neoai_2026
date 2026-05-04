@@ -1067,3 +1067,123 @@ tr.row-down > td {
   letter-spacing: 0.04em;
 }
 .native-task .panel + .panel { margin-top: 16px; }
+
+/* ─── admin native task editor ─────────────────────────────── */
+.native-edit {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 24px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.native-edit-back { padding-top: 8px; }
+.native-edit-header {
+  padding: 8px 0 4px;
+}
+.native-edit-header .eyebrow {
+  margin: 0 0 8px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.native-edit-header h1 {
+  margin: 0 0 6px;
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.native-edit-header .muted code {
+  background: rgba(255, 255, 255, 0.06);
+  padding: 1px 8px;
+  border-radius: 4px;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+}
+
+.native-edit-panel { background: linear-gradient(155deg, #1a1a1a 0%, #131313 100%); }
+.native-edit-body { padding: 20px 24px 22px; display: flex; flex-direction: column; gap: 18px; }
+
+.native-field { display: flex; flex-direction: column; gap: 8px; }
+.native-field-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.native-edit-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+/* scoring anchors */
+.native-anchors {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 18px 18px;
+  background: rgba(255, 255, 255, 0.02);
+  margin: 0;
+}
+.native-anchors legend {
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.native-anchors-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-top: 4px;
+}
+.native-anchor { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+.native-anchor input[type="number"] { font-family: ui-monospace, monospace; font-size: 13px; }
+.native-anchor-checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink);
+  align-self: end;
+  padding-bottom: 8px;
+}
+.native-anchor-checkbox input[type="checkbox"] { margin: 0; accent-color: var(--accent); }
+
+/* file picker (label-as-button) */
+.native-file-picker { cursor: pointer; user-select: none; }
+.native-file-picker.busy { cursor: wait; opacity: 0.6; }
+
+/* slot status (grader / ground-truth) */
+.native-slot-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.native-slot-badge {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.native-slot-badge-on { background: var(--accent-soft); color: var(--accent); }
+.native-slot-badge-off { background: rgba(255, 255, 255, 0.06); color: var(--muted); }
+.native-slot-path {
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}

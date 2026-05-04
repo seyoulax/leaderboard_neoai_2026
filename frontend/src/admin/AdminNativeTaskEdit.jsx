@@ -122,45 +122,77 @@ export default function AdminNativeTaskEdit() {
   if (!task) return <p className="status">Загрузка…</p>;
 
   return (
-    <section className="panel">
-      <div style={{ padding: '14px 24px 0' }}>
-        <Link to={`/admin/competitions/${encodeURIComponent(competitionSlug)}/native-tasks`} className="eyebrow-link">
+    <div className="native-edit">
+      <div className="native-edit-back">
+        <Link
+          to={`/admin/competitions/${encodeURIComponent(competitionSlug)}/native-tasks`}
+          className="eyebrow-link"
+        >
           ← к списку задач
         </Link>
       </div>
-      <div className="panel-head">
-        <h2>{competitionSlug}/{task.slug}</h2>
-      </div>
 
-      <section style={{ marginBottom: 24 }}>
-        <h3>Метаданные</h3>
-        <label className="admin-field">
-          <span className="admin-field-label">title</span>
-          <input
-            className="control-input"
-            value={task.title}
-            onChange={(e) => setTask({ ...task, title: e.target.value })}
-          />
-        </label>
-        <label className="admin-field" style={{ marginTop: 12 }}>
-          <span className="admin-field-label">description (markdown)</span>
-          <MarkdownEditor value={task.descriptionMd || ''} onChange={(v) => setTask({ ...task, descriptionMd: v })} />
-        </label>
-        <fieldset className="admin-comp-type" style={{ marginTop: 16 }}>
-          <legend>Scoring anchors</legend>
-          <label>baseline pub <input type="number" step="any" value={task.baselineScorePublic ?? ''} onChange={setNum('baselineScorePublic')} /></label>
-          <label>author pub <input type="number" step="any" value={task.authorScorePublic ?? ''} onChange={setNum('authorScorePublic')} /></label>
-          <label>baseline priv <input type="number" step="any" value={task.baselineScorePrivate ?? ''} onChange={setNum('baselineScorePrivate')} /></label>
-          <label>author priv <input type="number" step="any" value={task.authorScorePrivate ?? ''} onChange={setNum('authorScorePrivate')} /></label>
-          <label><input type="checkbox" checked={!!task.higherIsBetter} onChange={(e) => setTask({ ...task, higherIsBetter: e.target.checked })} /> higherIsBetter</label>
-        </fieldset>
-        <button className="control-btn" disabled={savingMeta} onClick={saveMeta} style={{ marginTop: 12 }}>
-          {savingMeta ? 'Сохраняем…' : 'Сохранить метаданные'}
-        </button>
+      <header className="native-edit-header">
+        <p className="eyebrow">{competitionSlug}</p>
+        <h1>{task.title || task.slug}</h1>
+        <p className="muted">slug: <code>{task.slug}</code></p>
+      </header>
+
+      <section className="panel native-edit-panel">
+        <div className="panel-head"><h2>Метаданные</h2></div>
+        <div className="native-edit-body">
+          <label className="native-field">
+            <span className="native-field-label">Название</span>
+            <input
+              className="control-input"
+              value={task.title}
+              onChange={(e) => setTask({ ...task, title: e.target.value })}
+              placeholder="например: Прогноз цен на жильё"
+            />
+          </label>
+
+          <label className="native-field">
+            <span className="native-field-label">Описание задачи (markdown)</span>
+            <MarkdownEditor value={task.descriptionMd || ''} onChange={(v) => setTask({ ...task, descriptionMd: v })} />
+          </label>
+
+          <fieldset className="native-anchors">
+            <legend>Scoring anchors <span className="muted">(опц., для нормировки баллов)</span></legend>
+            <div className="native-anchors-grid">
+              <label className="native-anchor">
+                <span>baseline pub</span>
+                <input className="control-input" type="number" step="any" value={task.baselineScorePublic ?? ''} onChange={setNum('baselineScorePublic')} />
+              </label>
+              <label className="native-anchor">
+                <span>author pub</span>
+                <input className="control-input" type="number" step="any" value={task.authorScorePublic ?? ''} onChange={setNum('authorScorePublic')} />
+              </label>
+              <label className="native-anchor">
+                <span>baseline priv</span>
+                <input className="control-input" type="number" step="any" value={task.baselineScorePrivate ?? ''} onChange={setNum('baselineScorePrivate')} />
+              </label>
+              <label className="native-anchor">
+                <span>author priv</span>
+                <input className="control-input" type="number" step="any" value={task.authorScorePrivate ?? ''} onChange={setNum('authorScorePrivate')} />
+              </label>
+              <label className="native-anchor native-anchor-checkbox">
+                <input type="checkbox" checked={!!task.higherIsBetter} onChange={(e) => setTask({ ...task, higherIsBetter: e.target.checked })} />
+                <span>higher is better</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <div className="native-edit-actions">
+            <button className="control-btn" disabled={savingMeta} onClick={saveMeta}>
+              {savingMeta ? 'Сохраняем…' : 'Сохранить метаданные'}
+            </button>
+          </div>
+        </div>
       </section>
 
       <FileSection
         title="Датасеты"
+        subtitle="данные для участников: train.csv, test.csv, и т.п."
         kind="dataset"
         files={files.datasets}
         busy={busyKind === 'dataset'}
@@ -168,7 +200,8 @@ export default function AdminNativeTaskEdit() {
         onDelete={deleteFile}
       />
       <FileSection
-        title="Стартовый набор (artifacts)"
+        title="Стартовый набор"
+        subtitle="код-бойлерплейт: starter.ipynb, helpers.py"
         kind="artifact"
         files={files.artifacts}
         busy={busyKind === 'artifact'}
@@ -177,7 +210,8 @@ export default function AdminNativeTaskEdit() {
       />
 
       <SlotSection
-        title="Grader (score.py)"
+        title="Grader"
+        subtitle="score.py — приватный, на проверку сабмитов (SP-3)"
         slot="grader"
         currentPath={task.graderPath}
         busy={busyKind === 'grader'}
@@ -187,67 +221,117 @@ export default function AdminNativeTaskEdit() {
       />
       <SlotSection
         title="Ground truth"
+        subtitle="приватный — правильные ответы, читает только grader"
         slot="ground-truth"
         currentPath={task.groundTruthPath}
         busy={busyKind === 'ground-truth'}
         onUpload={(f) => uploadSlot('ground-truth', f)}
         onDelete={() => deleteSlot('ground-truth')}
       />
-    </section>
+    </div>
   );
 }
 
-function FileSection({ title, kind, files, busy, onUpload, onDelete }) {
+function FilePicker({ accept, busy, onChange, label }) {
   return (
-    <section style={{ marginBottom: 24 }}>
-      <h3>{title}</h3>
-      {files.length > 0 ? (
-        <table className="file-table">
-          <thead><tr><th>Имя</th><th>Размер</th><th></th></tr></thead>
-          <tbody>
-            {files.map((f) => (
-              <tr key={f.id}>
-                <td>{f.displayName}{f.description ? <span className="muted"> — {f.description}</span> : null}</td>
-                <td className="mono">{fmtSize(f.sizeBytes)}</td>
-                <td><button onClick={() => onDelete(f.id)}>🗑</button></td>
+    <label className={`control-btn control-btn-ghost native-file-picker ${busy ? 'busy' : ''}`}>
+      {busy ? '…' : (label || '↑ Выбрать файл')}
+      <input
+        type="file"
+        accept={accept}
+        disabled={busy}
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = '';
+          if (f) onChange(f);
+        }}
+        style={{ display: 'none' }}
+      />
+    </label>
+  );
+}
+
+function FileSection({ title, subtitle, kind, files, busy, onUpload, onDelete }) {
+  return (
+    <section className="panel native-edit-panel">
+      <div className="panel-head">
+        <h2>{title}</h2>
+        {subtitle ? <span>{subtitle}</span> : null}
+      </div>
+      <div className="native-edit-body">
+        {files.length > 0 ? (
+          <table className="file-table">
+            <thead>
+              <tr>
+                <th>Имя</th>
+                <th style={{ width: 140 }}>Размер</th>
+                <th style={{ width: 60 }}></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        <p className="status">Файлов нет</p>
-      )}
-      <p style={{ marginTop: 12 }}>
-        <input
-          type="file"
-          disabled={busy}
-          onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) onUpload(f); }}
-        />
-        {busy ? <span className="muted"> загружается…</span> : null}
-      </p>
+            </thead>
+            <tbody>
+              {files.map((f) => (
+                <tr key={f.id}>
+                  <td>
+                    <strong>{f.displayName}</strong>
+                    {f.description ? <span className="muted"> — {f.description}</span> : null}
+                    <div className="muted" style={{ fontSize: 12, marginTop: 2 }}>{f.originalFilename}</div>
+                  </td>
+                  <td className="mono">{fmtSize(f.sizeBytes)}</td>
+                  <td>
+                    <button className="control-btn control-btn-ghost" onClick={() => onDelete(f.id)} title="удалить">×</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p className="muted" style={{ margin: '4px 0 16px' }}>Файлов нет — добавь первый.</p>
+        )}
+        <div className="native-edit-actions">
+          <FilePicker
+            busy={busy}
+            onChange={onUpload}
+            label={files.length > 0 ? '↑ Добавить ещё' : '↑ Загрузить файл'}
+          />
+        </div>
+      </div>
     </section>
   );
 }
 
-function SlotSection({ title, slot, currentPath, busy, accept, onUpload, onDelete }) {
+function SlotSection({ title, subtitle, slot, currentPath, busy, accept, onUpload, onDelete }) {
+  const exists = !!currentPath;
   return (
-    <section style={{ marginBottom: 24 }}>
-      <h3>{title}</h3>
-      <p>
-        Текущий: {currentPath ? <code>{currentPath}</code> : <span className="muted">(нет)</span>}
-        {currentPath ? (
-          <button onClick={onDelete} style={{ marginLeft: 12 }}>🗑</button>
-        ) : null}
-      </p>
-      <p>
-        <input
-          type="file"
-          accept={accept}
-          disabled={busy}
-          onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) onUpload(f); }}
-        />
-        {busy ? <span className="muted"> загружается…</span> : null}
-      </p>
+    <section className="panel native-edit-panel">
+      <div className="panel-head">
+        <h2>{title}</h2>
+        {subtitle ? <span>{subtitle}</span> : null}
+      </div>
+      <div className="native-edit-body">
+        <div className="native-slot-status">
+          {exists ? (
+            <>
+              <span className="native-slot-badge native-slot-badge-on">загружен</span>
+              <code className="native-slot-path" title={currentPath}>{currentPath}</code>
+            </>
+          ) : (
+            <>
+              <span className="native-slot-badge native-slot-badge-off">не загружен</span>
+            </>
+          )}
+        </div>
+        <div className="native-edit-actions">
+          <FilePicker
+            accept={accept}
+            busy={busy}
+            onChange={onUpload}
+            label={exists ? '↑ Заменить' : '↑ Загрузить'}
+          />
+          {exists && (
+            <button className="control-btn control-btn-ghost" onClick={onDelete}>Удалить</button>
+          )}
+        </div>
+      </div>
     </section>
   );
 }
