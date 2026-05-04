@@ -38,6 +38,8 @@ export function validateCompetitions(input) {
     }
     result.order = typeof c.order === 'number' && Number.isFinite(c.order) ? c.order : 0;
     result.visible = c.visible === undefined ? true : c.visible === true;
+    result.type = c.type === 'native' ? 'native' : 'kaggle';
+    result.visibility = c.visibility === 'unlisted' ? 'unlisted' : 'public';
     return result;
   });
 }

@@ -730,13 +730,13 @@ export function createApp({ db } = {}) {
   app.put('/api/admin/competitions', adminMw, async (req, res) => {
     try {
       const validated = validateCompetitions(req.body?.competitions);
-      const enriched = validated.map((c, idx) => {
-        const incoming = (req.body?.competitions || [])[idx] || {};
+      const enriched = validated.map((c) => {
         return {
           slug: c.slug,
           title: c.title,
           subtitle: c.subtitle ?? null,
-          type: incoming.type === 'native' ? 'native' : 'kaggle',
+          type: c.type,
+          visibility: c.visibility,
           visible: c.visible !== false,
           displayOrder: Number.isFinite(c.order) ? c.order : 0,
         };
@@ -770,7 +770,8 @@ export function createApp({ db } = {}) {
         slug: validated.slug,
         title: validated.title,
         subtitle: validated.subtitle ?? null,
-        type: next.type === 'native' ? 'native' : 'kaggle',
+        type: validated.type,
+        visibility: validated.visibility,
         visible: validated.visible !== false,
         displayOrder: Number.isFinite(validated.order) ? validated.order : 0,
       });
