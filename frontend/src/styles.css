@@ -1605,3 +1605,355 @@ tr.row-down > td {
   color: var(--ink);
   font-family: inherit;
 }
+
+/* ─── Site header (replaces .header-user-menu absolute corner) ───── */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 80;
+  background: rgba(14, 14, 14, 0.85);
+  backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--line);
+}
+.site-header-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+.site-header-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+}
+.site-header-brand:hover { color: var(--accent); }
+.site-header-mark {
+  color: var(--accent);
+  font-size: 14px;
+  text-shadow: 0 0 12px var(--accent-glow);
+}
+.site-header-nav {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-right: auto;
+}
+.site-header-link {
+  text-decoration: none;
+  color: var(--muted);
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: color 0.18s, background 0.18s;
+}
+.site-header-link:hover { color: var(--ink); background: rgba(255, 255, 255, 0.05); }
+.site-header-link.active {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* hide legacy absolute corner — replaced by .site-header */
+.header-user-menu { display: none; }
+
+@media (max-width: 720px) {
+  .site-header-inner { padding: 12px 16px; gap: 12px; flex-wrap: wrap; }
+  .site-header-nav { gap: 2px; }
+  .site-header-link { padding: 6px 10px; font-size: 12px; }
+}
+
+/* ─── Cabinet (/me, /me/competitions, /me/submissions) ─────────── */
+.me-page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 32px 24px 48px;
+}
+.me-page > h1 {
+  margin: 0 0 20px;
+  font-size: clamp(28px, 3.6vw, 42px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.me-nav {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 24px;
+  padding: 6px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  width: fit-content;
+  font-size: 13px;
+}
+.me-nav a {
+  text-decoration: none;
+  color: var(--muted);
+  padding: 7px 14px;
+  border-radius: 9px;
+  font-weight: 500;
+  transition: color 0.18s, background 0.18s;
+}
+.me-nav a:hover { color: var(--ink); background: rgba(255, 255, 255, 0.04); }
+.me-nav a.active {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* Form sections inside cabinet */
+.profile-section,
+.password-section {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--card);
+  padding: 24px 28px;
+  margin-bottom: 20px;
+}
+.profile-section h2,
+.password-section h2 {
+  margin: 0 0 18px;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+.profile-section form,
+.password-section form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  align-items: end;
+}
+.profile-section label,
+.password-section label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.profile-section input,
+.password-section input {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+  transition: border-color 0.18s, background 0.18s;
+}
+.profile-section input:focus,
+.password-section input:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: rgba(125, 95, 255, 0.06);
+}
+.profile-section button,
+.password-section button {
+  align-self: end;
+  padding: 10px 24px;
+  border-radius: 10px;
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s;
+  text-transform: none;
+  letter-spacing: normal;
+}
+.profile-section button:hover:not(:disabled),
+.password-section button:hover:not(:disabled) {
+  background: var(--accent);
+  color: #fff;
+}
+.profile-section button:disabled,
+.password-section button:disabled { opacity: 0.5; cursor: not-allowed; }
+.profile-section .success,
+.password-section .success {
+  grid-column: 1 / -1;
+  color: #4ade80;
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+}
+.profile-section .error,
+.password-section .error {
+  grid-column: 1 / -1;
+  color: var(--danger);
+  background: var(--danger-bg);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* Cabinet tables (MyCompetitions, MySubmissionsCabinet) */
+.me-page section {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--card);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.me-page section h2 {
+  margin: 0;
+  padding: 22px 24px;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  border-bottom: 1px solid var(--line);
+}
+.me-page section table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.me-page section th,
+.me-page section td {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 13px;
+  border-bottom: 1px solid var(--line);
+}
+.me-page section th {
+  color: var(--muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 11px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.me-page section tr:last-child td { border-bottom: 0; }
+.me-page section tr:hover td { background: rgba(255, 255, 255, 0.02); }
+.me-page section a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+.me-page section a:hover { text-decoration: underline; }
+.me-page section button {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.18s, border-color 0.18s, background 0.18s;
+}
+.me-page section button:hover { color: var(--danger); border-color: var(--danger); background: var(--danger-bg); }
+.me-page .dim {
+  padding: 24px;
+  color: var(--muted);
+  text-align: center;
+  border: 1px dashed var(--line);
+  border-radius: 14px;
+  background: var(--card);
+  font-size: 13px;
+}
+.me-page .error {
+  padding: 14px 18px;
+  color: var(--danger);
+  background: var(--danger-bg);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  border-radius: 12px;
+  font-size: 13px;
+}
+
+/* ─── Join button on competition / native task page ───────────── */
+.join-button {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 20px;
+  border-radius: 999px;
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, transform 0.12s;
+}
+.join-button:hover { background: var(--accent); color: #fff; transform: translateY(-1px); }
+.join-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 20px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  transition: color 0.18s, border-color 0.18s, background 0.18s;
+}
+.join-link:hover { color: var(--ink); border-color: var(--accent); background: var(--accent-soft); }
+.join-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 16px;
+  border-radius: 999px;
+  background: rgba(74, 222, 128, 0.12);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  color: #4ade80;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+.join-status::before { content: '✓'; margin-right: 6px; font-weight: 700; }
+
+/* ─── Selected checkbox (MySubmissions per-task) ───────────────── */
+.submissions-table input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.submissions-table input[type='checkbox']:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ─── Bonus column / inputs styling polish ──────────────────────── */
+input[type='number'].control-input {
+  font-variant-numeric: tabular-nums;
+}
+
+/* AdminBonusPage — toggle row + members table */
+.panel > div > label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 14px;
+}
+.panel > div > label input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
