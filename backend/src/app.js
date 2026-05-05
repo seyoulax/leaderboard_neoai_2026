@@ -63,6 +63,44 @@ function publicCsvDirFor(slug) {
   return path.join(PUBLIC_CSV_DIR_BASE, slug);
 }
 
+function cacheSnapshotFile(slug) {
+  return path.join(competitionDir(slug), '_cache-snapshot.json');
+}
+
+const SNAPSHOT_FIELDS = [
+  'updatedAt', 'tasks',
+  'overall', 'byTask',
+  'privateOverall', 'privateByTask', 'privateTaskSlugs',
+  'oursOverall', 'oursByTask',
+  'oursPrivateOverall', 'oursPrivateByTask',
+  'groupsMeta', 'groupsResults',
+  'errors',
+];
+
+async function writeCacheSnapshot(slug, cc) {
+  try {
+    const file = cacheSnapshotFile(slug);
+    const snap = {};
+    for (const k of SNAPSHOT_FIELDS) snap[k] = cc[k];
+    const tmp = `${file}.tmp`;
+    await fs.writeFile(tmp, JSON.stringify(snap), 'utf8');
+    await fs.rename(tmp, file);
+  } catch (e) {
+    console.error(`[snapshot] write failed for ${slug}:`, e instanceof Error ? e.message : e);
+  }
+}
+
+async function readCacheSnapshot(slug) {
+  try {
+    const raw = await fs.readFile(cacheSnapshotFile(slug), 'utf8');
+    return JSON.parse(raw);
+  } catch (e) {
+    if (e.code === 'ENOENT') return null;
+    console.error(`[snapshot] read failed for ${slug}:`, e instanceof Error ? e.message : e);
+    return null;
+  }
+}
+
 function validateTasks(input) {
   if (!Array.isArray(input) || input.length === 0) {
     throw new Error('tasks must be a non-empty array');
@@ -700,7 +738,7 @@ async function refreshCompetition(slug) {
     groupsMeta.push({ slug: g.slug, title: g.title, order: g.order ?? 0 });
   }
 
-  cache.byCompetition.set(slug, {
+  const next = {
     updatedAt: new Date().toISOString(),
     tasks,
     overall: result.overall,
@@ -719,7 +757,11 @@ async function refreshCompetition(slug) {
     cycleBoardSlug: state.cycleBoardSlug,
     cardBoardSlug: state.cardBoardSlug,
     errors,
-  });
+  };
+  cache.byCompetition.set(slug, next);
+  // Persist snapshot to disk (fire-and-forget) so the next backend boot can
+  // serve the previous data immediately while a fresh refresh is in flight.
+  writeCacheSnapshot(slug, next).catch(() => {});
 
   console.log(`[refresh] ${slug} OK${errors.length ? ` (${errors.length} task errors)` : ''}`);
 }
@@ -1471,6 +1513,28 @@ export async function bootstrapForTests() {
     if (!cache.byCompetition.has(c.slug)) {
       cache.byCompetition.set(c.slug, emptyCompetitionCache());
     }
+  }
+}
+
+export async function hydrateFromSnapshots() {
+  cache.competitionsIndex = listActiveCompetitions(getDbHandle());
+  for (const c of cache.competitionsIndex) {
+    const snap = await readCacheSnapshot(c.slug);
+    if (!snap) continue;
+    const empty = emptyCompetitionCache();
+    const merged = { ...empty, ...snap };
+    // Bring in non-snapshot stateful bits from disk (state.json, participants).
+    try {
+      const state = await readCompetitionState(competitionDir(c.slug));
+      merged.currentParticipantId = state.currentParticipantId;
+      merged.cycleBoardSlug = state.cycleBoardSlug;
+      merged.cardBoardSlug = state.cardBoardSlug;
+    } catch {}
+    try {
+      merged.participants = await loadParticipantsFor(c.slug);
+    } catch {}
+    cache.byCompetition.set(c.slug, merged);
+    console.log(`[snapshot] hydrated ${c.slug} (updatedAt=${merged.updatedAt || '—'})`);
   }
 }
 

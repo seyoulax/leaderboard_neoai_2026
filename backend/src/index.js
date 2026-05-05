@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import path from 'node:path';
-import { createApp, refreshAll, DATA_DIR } from './app.js';
+import { createApp, refreshAll, hydrateFromSnapshots, DATA_DIR } from './app.js';
 import { migrate } from './migrate.js';
 import { getDb } from './db/index.js';
 import { migrateCompetitionsJsonToDb } from './dataMigration/competitionsJsonToDb.js';
@@ -42,7 +42,14 @@ app.listen(PORT, async () => {
   } catch (e) {
     console.error('[startup] migration FAILED', e);
   }
-  await refreshAll();
+  // Bring last-known cache from disk so HTTP can serve immediately while the
+  // first Kaggle sweep runs in the background (no more "бэк прогревается" gap).
+  try {
+    await hydrateFromSnapshots();
+  } catch (e) {
+    console.error('[startup] snapshot hydrate FAILED', e);
+  }
+  refreshAll().catch((e) => console.error('[startup] initial refreshAll failed', e));
   setInterval(refreshAll, REFRESH_MS);
   setInterval(() => {
     try { cleanupExpired(db); } catch (e) { console.error('[sessions] cleanup failed', e); }
