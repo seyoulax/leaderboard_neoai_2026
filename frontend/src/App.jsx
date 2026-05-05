@@ -52,6 +52,7 @@ import NativeTaskPage from './native/NativeTaskPage.jsx';
 import AdminNativeTasksList from './admin/AdminNativeTasksList.jsx';
 import AdminNativeTaskEdit from './admin/AdminNativeTaskEdit.jsx';
 import RegisterPage from './auth/RegisterPage.jsx';
+import MePage, { MeCompetitionsPage, MeSubmissionsPage } from './me/MePage.jsx';
 import UserMenu from './UserMenu.jsx';
 
 const REFRESH_MS = 30_000;
@@ -2543,6 +2544,9 @@ export default function App() {
       {/* Auth */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/me" element={<MePage />} />
+      <Route path="/me/competitions" element={<MeCompetitionsPage />} />
+      <Route path="/me/submissions" element={<MeSubmissionsPage />} />
 
       {/* Native task public page (outside CompetitionShell — own header + nav) */}
       <Route path="/competitions/:competitionSlug/native-tasks/:taskSlug" element={<NativeTaskPage />} />
