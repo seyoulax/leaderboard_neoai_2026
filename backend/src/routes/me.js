@@ -6,6 +6,10 @@ import {
   updateUserPassword,
 } from '../db/usersRepo.js';
 import { hashPassword, verifyPassword } from '../auth/bcrypt.js';
+import { listMembershipsForUser } from '../db/membersRepo.js';
+import { getCompetition } from '../db/competitionsRepo.js';
+import { listAllSubmissionsForUser } from '../db/submissionsRepo.js';
+import { buildNativeLeaderboard } from '../scoring/nativeLeaderboard.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -76,6 +80,42 @@ export function createMeRouter({ db }) {
     const hash = await hashPassword(next);
     updateUserPassword(db, req.user.id, hash);
     res.json({ ok: true });
+  });
+
+  router.get('/competitions', requireAuth, (req, res) => {
+    const memberships = listMembershipsForUser(db, req.user.id);
+    const out = [];
+    for (const m of memberships) {
+      const c = getCompetition(db, m.competitionSlug);
+      if (!c || c.deletedAt) continue;
+      let totalPoints = null;
+      let place = null;
+      if (c.type === 'native') {
+        const lb = buildNativeLeaderboard(db, c.slug, 'public');
+        const row = lb.overall.find((e) => e.participantKey === `user:${req.user.id}`);
+        if (row) {
+          totalPoints = row.totalPoints;
+          place = row.place;
+        }
+      }
+      out.push({
+        slug: c.slug,
+        title: c.title,
+        type: c.type,
+        visibility: c.visibility,
+        joinedAt: m.joinedAt,
+        totalPoints,
+        place,
+      });
+    }
+    res.json({ competitions: out });
+  });
+
+  router.get('/submissions', requireAuth, (req, res) => {
+    const limit = Number(req.query.limit) || 50;
+    const offset = Number(req.query.offset) || 0;
+    const list = listAllSubmissionsForUser(db, req.user.id, { limit, offset });
+    res.json({ submissions: list });
   });
 
   return router;
