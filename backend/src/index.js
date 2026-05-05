@@ -6,6 +6,7 @@ import { getDb } from './db/index.js';
 import { migrateCompetitionsJsonToDb } from './dataMigration/competitionsJsonToDb.js';
 import { bootstrapAdmin } from './bootstrapAdmin.js';
 import { cleanupExpired } from './db/sessionsRepo.js';
+import { startWorker } from './scoring/worker.js';
 
 dotenv.config();
 
@@ -46,4 +47,6 @@ app.listen(PORT, async () => {
   setInterval(() => {
     try { cleanupExpired(db); } catch (e) { console.error('[sessions] cleanup failed', e); }
   }, 60 * 60 * 1000);
+  startWorker(db);
+  console.log(`[worker] started (tick=${process.env.WORKER_TICK_MS || 2000}ms)`);
 });
