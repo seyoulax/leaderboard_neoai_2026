@@ -35,3 +35,31 @@ export function updateKaggleId(db, id, kaggleId) {
 export function countAdmins(db) {
   return db.prepare("SELECT COUNT(*) AS n FROM users WHERE role = 'admin'").get().n;
 }
+
+const PROFILE_UPDATABLE = {
+  email: 'email',
+  displayName: 'display_name',
+  kaggleId: 'kaggle_id',
+};
+
+export function updateUserProfile(db, id, patch) {
+  const sets = [];
+  const vals = [];
+  for (const [k, col] of Object.entries(PROFILE_UPDATABLE)) {
+    if (!(k in patch)) continue;
+    let v = patch[k];
+    if (k === 'kaggleId') v = v == null ? null : String(v).trim().toLowerCase() || null;
+    if (k === 'email') v = String(v).trim().toLowerCase();
+    if (k === 'displayName') v = String(v).trim();
+    sets.push(`${col} = ?`);
+    vals.push(v);
+  }
+  if (!sets.length) return findUserById(db, id);
+  vals.push(id);
+  db.prepare(`UPDATE users SET ${sets.join(', ')} WHERE id = ?`).run(...vals);
+  return findUserById(db, id);
+}
+
+export function updateUserPassword(db, id, passwordHash) {
+  db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(passwordHash, id);
+}
