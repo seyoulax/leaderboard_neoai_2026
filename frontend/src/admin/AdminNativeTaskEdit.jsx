@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { adminNativeTasks, nativeTasks } from '../api.js';
+import { adminNativeTasks, nativeTasks, adminSubmissions } from '../api.js';
 import MarkdownEditor from '../markdown/MarkdownEditor.jsx';
 
 function fmtSize(b) {
@@ -15,6 +15,7 @@ export default function AdminNativeTaskEdit() {
   const { competitionSlug, taskSlug } = useParams();
   const [task, setTask] = useState(null);
   const [files, setFiles] = useState({ datasets: [], artifacts: [] });
+  const [submissions, setSubmissions] = useState([]);
   const [error, setError] = useState(null);
   const [savingMeta, setSavingMeta] = useState(false);
   const [busyKind, setBusyKind] = useState(null);
@@ -31,6 +32,10 @@ export default function AdminNativeTaskEdit() {
       setTask(found);
       const pub = await nativeTasks.getPublic(competitionSlug, taskSlug);
       setFiles({ datasets: pub.task.datasets || [], artifacts: pub.task.artifacts || [] });
+      try {
+        const subs = await adminSubmissions.list(competitionSlug, taskSlug);
+        setSubmissions(subs.submissions || []);
+      } catch {}
     } catch (e) {
       setError(e.message || String(e));
     }
@@ -91,7 +96,8 @@ export default function AdminNativeTaskEdit() {
       const fd = new FormData();
       fd.append('file', file);
       if (slot === 'grader') await adminNativeTasks.uploadGrader(competitionSlug, taskSlug, fd);
-      else await adminNativeTasks.uploadGroundTruth(competitionSlug, taskSlug, fd);
+      else if (slot === 'ground-truth') await adminNativeTasks.uploadGroundTruth(competitionSlug, taskSlug, fd);
+      else if (slot === 'ground-truth-private') await adminNativeTasks.uploadGroundTruthPrivate(competitionSlug, taskSlug, fd);
       await load();
     } catch (e) {
       window.alert(`${slot} upload failed: ${e.message || e}`);
@@ -104,10 +110,40 @@ export default function AdminNativeTaskEdit() {
     if (!window.confirm(`Удалить ${slot}?`)) return;
     try {
       if (slot === 'grader') await adminNativeTasks.deleteGrader(competitionSlug, taskSlug);
-      else await adminNativeTasks.deleteGroundTruth(competitionSlug, taskSlug);
+      else if (slot === 'ground-truth') await adminNativeTasks.deleteGroundTruth(competitionSlug, taskSlug);
+      else if (slot === 'ground-truth-private') await adminNativeTasks.deleteGroundTruthPrivate(competitionSlug, taskSlug);
       await load();
     } catch (e) {
       window.alert(`Не удалось удалить ${slot}: ${e.message || e}`);
+    }
+  }
+
+  async function rescoreOne(id) {
+    try {
+      await adminSubmissions.rescore(competitionSlug, taskSlug, id);
+      await load();
+    } catch (e) {
+      window.alert(`rescore failed: ${e.message || e}`);
+    }
+  }
+
+  async function deleteSubmission(id) {
+    if (!window.confirm('Удалить сабмит?')) return;
+    try {
+      await adminSubmissions.delete(competitionSlug, taskSlug, id);
+      await load();
+    } catch (e) {
+      window.alert(`delete failed: ${e.message || e}`);
+    }
+  }
+
+  async function rescoreAll() {
+    if (!window.confirm('Пере-скорить все сабмиты задачи?')) return;
+    try {
+      await adminSubmissions.rescoreAll(competitionSlug, taskSlug);
+      await load();
+    } catch (e) {
+      window.alert(`rescore-all failed: ${e.message || e}`);
     }
   }
 
@@ -220,15 +256,81 @@ export default function AdminNativeTaskEdit() {
         onDelete={() => deleteSlot('grader')}
       />
       <SlotSection
-        title="Ground truth"
-        subtitle="приватный — правильные ответы, читает только grader"
+        title="Ground truth (public)"
+        subtitle="ответы для public-метрики — основной grading"
         slot="ground-truth"
         currentPath={task.groundTruthPath}
         busy={busyKind === 'ground-truth'}
         onUpload={(f) => uploadSlot('ground-truth', f)}
         onDelete={() => deleteSlot('ground-truth')}
       />
+      <SlotSection
+        title="Ground truth (private)"
+        subtitle="опц. — отдельная private-метрика, появляется в private-LB"
+        slot="ground-truth-private"
+        currentPath={task.groundTruthPrivatePath}
+        busy={busyKind === 'ground-truth-private'}
+        onUpload={(f) => uploadSlot('ground-truth-private', f)}
+        onDelete={() => deleteSlot('ground-truth-private')}
+      />
+
+      <SubmissionsSection
+        submissions={submissions}
+        onRescore={rescoreOne}
+        onDelete={deleteSubmission}
+        onRescoreAll={rescoreAll}
+      />
     </div>
+  );
+}
+
+function SubmissionsSection({ submissions, onRescore, onDelete, onRescoreAll }) {
+  return (
+    <section className="panel native-edit-panel">
+      <div className="panel-head">
+        <h2>Сабмиты ({submissions.length})</h2>
+        <span>worker запустит pending автоматически каждые 2с</span>
+      </div>
+      <div className="native-edit-body">
+        {submissions.length > 0 ? (
+          <table className="submissions-table">
+            <thead>
+              <tr>
+                <th>ID</th><th>User</th><th>Файл</th><th>Статус</th><th>Public</th><th>Private</th><th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {submissions.map((s) => (
+                <tr key={s.id}>
+                  <td className="muted mono">#{s.id}</td>
+                  <td className="muted mono">u{s.userId}</td>
+                  <td className="mono">{s.originalFilename}</td>
+                  <td>
+                    <span className={`status-badge status-${s.status}`}>{s.status}</span>
+                    {s.status === 'failed' && s.errorMessage && (
+                      <div className="error-text" title={s.logExcerpt || ''}>{s.errorMessage}</div>
+                    )}
+                  </td>
+                  <td className="mono">{s.pointsPublic == null ? '—' : Number(s.pointsPublic).toFixed(2)}</td>
+                  <td className="mono">{s.pointsPrivate == null ? '—' : Number(s.pointsPrivate).toFixed(2)}</td>
+                  <td>
+                    <button className="control-btn control-btn-ghost" onClick={() => onRescore(s.id)}>↻</button>
+                    <button className="control-btn control-btn-ghost" onClick={() => onDelete(s.id)} style={{ marginLeft: 4 }}>×</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p className="muted">Сабмитов ещё нет.</p>
+        )}
+        {submissions.length > 0 && (
+          <div className="native-edit-actions">
+            <button className="control-btn control-btn-ghost" onClick={onRescoreAll}>↻ Re-score all</button>
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
 
