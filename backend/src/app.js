@@ -169,6 +169,7 @@ function validateTasks(input) {
       title,
       competition,
       higherIsBetter: task.higherIsBetter !== false,
+      visible: task.visible !== false,
     };
     if (baselineScorePublic !== null) result.baselineScorePublic = baselineScorePublic;
     if (authorScorePublic !== null) result.authorScorePublic = authorScorePublic;
@@ -642,7 +643,10 @@ export async function refreshAll() {
 }
 
 async function refreshCompetition(slug) {
-  const tasks = await loadTasksFor(slug);
+  const allTasks = await loadTasksFor(slug);
+  // Hidden tasks are kept in tasks.json (admin can edit), but excluded from
+  // public refresh (no kaggle fetch, no LB columns, no per-task page).
+  const tasks = allTasks.filter((t) => t.visible !== false);
   const compCache = getCompCache(slug);
   const previousByTask = compCache.byTask || {};
   const taskRows = [];

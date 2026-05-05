@@ -1649,6 +1649,7 @@ function AdminTasksPage() {
         title: t.title || '',
         competition: t.competition || '',
         higherIsBetter: t.higherIsBetter !== false,
+        visible: t.visible !== false,
         baselineScorePublic: pick(t.baselineScorePublic, fallbackBase),
         authorScorePublic: pick(t.authorScorePublic, fallbackAuthor),
         baselineScorePrivate: pick(t.baselineScorePrivate, fallbackBase),
@@ -1698,7 +1699,7 @@ function AdminTasksPage() {
   function add() {
     setTasks((prev) => [
       ...prev,
-      { slug: '', title: '', competition: '', higherIsBetter: true, baselineScorePublic: '', authorScorePublic: '', baselineScorePrivate: '', authorScorePrivate: '' },
+      { slug: '', title: '', competition: '', higherIsBetter: true, visible: true, baselineScorePublic: '', authorScorePublic: '', baselineScorePrivate: '', authorScorePrivate: '' },
     ]);
   }
 
@@ -1741,6 +1742,7 @@ function AdminTasksPage() {
           <span style={{ flex: '0 0 220px' }}>title</span>
           <span style={{ flex: 1 }}>competition</span>
           <span style={{ flex: '0 0 110px', textAlign: 'center' }}>higherIsBetter</span>
+          <span style={{ flex: '0 0 80px', textAlign: 'center' }}>visible</span>
           <span style={{ flex: '0 0 90px' }}>pub baseline</span>
           <span style={{ flex: '0 0 90px' }}>pub author</span>
           <span style={{ flex: '0 0 90px' }}>priv baseline</span>
@@ -1778,6 +1780,16 @@ function AdminTasksPage() {
                 type="checkbox"
                 checked={task.higherIsBetter}
                 onChange={(e) => update(idx, { higherIsBetter: e.target.checked })}
+              />
+            </label>
+            <label
+              style={{ flex: '0 0 80px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+              title="Когда выключено — задача скрыта от пользователей: не появляется как колонка на ЛБ, страница задачи и борды её игнорируют."
+            >
+              <input
+                type="checkbox"
+                checked={task.visible}
+                onChange={(e) => update(idx, { visible: e.target.checked })}
               />
             </label>
             <input
