@@ -169,6 +169,16 @@ export async function saveAdminParticipants(slug, participants) {
   });
 }
 
+export async function getAdminParticipantGroups(slug) {
+  return adminFetch(`${adminCompBase(slug)}/participant-groups`);
+}
+export async function saveAdminParticipantGroups(slug, groups) {
+  return adminFetch(`${adminCompBase(slug)}/participant-groups`, {
+    method: 'PUT',
+    body: JSON.stringify({ groups }),
+  });
+}
+
 export async function getAdminPrivate(slug, taskSlug) {
   return adminFetch(`${adminCompBase(slug)}/tasks/${encodeURIComponent(taskSlug)}/private`);
 }

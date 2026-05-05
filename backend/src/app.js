@@ -325,6 +325,64 @@ async function saveCategoriesFor(slug, categories) {
   await fs.rename(tmp, file);
 }
 
+function validateParticipantGroups(input) {
+  if (!Array.isArray(input)) throw new Error('participant groups must be an array');
+  const seen = new Set();
+  return input.map((g, idx) => {
+    if (!g || typeof g !== 'object') throw new Error(`group #${idx + 1}: must be an object`);
+    const slug = typeof g.slug === 'string' ? g.slug.trim() : '';
+    const title = typeof g.title === 'string' ? g.title.trim() : '';
+    if (!slug) throw new Error(`group #${idx + 1}: slug is required`);
+    if (!/^[a-z0-9][a-z0-9-]*$/i.test(slug)) {
+      throw new Error(`group #${idx + 1}: slug must be alphanumeric/hyphens`);
+    }
+    if (slug === 'all' || slug === 'ours') {
+      throw new Error(`group slug '${slug}' is reserved`);
+    }
+    if (!title) throw new Error(`group #${idx + 1}: title is required`);
+    if (seen.has(slug)) throw new Error(`duplicate group slug: ${slug}`);
+    seen.add(slug);
+
+    const ids = Array.isArray(g.kaggleIds) ? g.kaggleIds : [];
+    const cleanIds = [];
+    const seenIds = new Set();
+    for (const k of ids) {
+      if (typeof k !== 'string') continue;
+      const t = k.trim();
+      if (!t) continue;
+      const norm = t.toLowerCase();
+      if (seenIds.has(norm)) continue;
+      seenIds.add(norm);
+      cleanIds.push(t);
+    }
+
+    const order = Number.isFinite(Number(g.order)) ? Number(g.order) : 0;
+    return { slug, title, kaggleIds: cleanIds, order };
+  });
+}
+
+async function loadParticipantGroupsFor(slug) {
+  const file = path.join(competitionDir(slug), 'participant-groups.json');
+  try {
+    const raw = await fs.readFile(file, 'utf8');
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return validateParticipantGroups(parsed);
+  } catch (e) {
+    if (e.code === 'ENOENT') return [];
+    throw e;
+  }
+}
+
+async function saveParticipantGroupsFor(slug, groups) {
+  await fs.mkdir(competitionDir(slug), { recursive: true });
+  const file = path.join(competitionDir(slug), 'participant-groups.json');
+  const body = JSON.stringify(groups, null, 2) + '\n';
+  const tmp = `${file}.tmp`;
+  await fs.writeFile(tmp, body, 'utf8');
+  await fs.rename(tmp, file);
+}
+
 async function loadParticipantsFor(slug) {
   const file = path.join(competitionDir(slug), 'participants.json');
   try {
@@ -370,6 +428,8 @@ function emptyCompetitionCache() {
     oursPrivateOverall: [],
     oursPrivateByTask: {},
     participants: [],
+    groupsMeta: [],
+    groupsResults: {},
     currentParticipantId: null,
     cycleBoardSlug: null,
     errors: [],
@@ -601,6 +661,34 @@ async function refreshCompetition(slug) {
     overall: compCache.oursPrivateOverall,
   });
 
+  // Per-participant-group leaderboards: scores re-normalized within each group.
+  const groups = await loadParticipantGroupsFor(slug).catch(() => []);
+  const prevGroupsResults = compCache.groupsResults || {};
+  const groupsResults = {};
+  const groupsMeta = [];
+  for (const g of groups) {
+    const groupSet = new Set(g.kaggleIds.map((s) => s.trim().toLowerCase()).filter(Boolean));
+    const pub = buildLeaderboards(projectTaskRowsToOurs(taskRows, groupSet), { variant: 'public' });
+    applyDisplayNames(pub, oursDisplayMap);
+    annotateWithDeltas(pub, {
+      byTask: prevGroupsResults[g.slug]?.byTask || {},
+      overall: prevGroupsResults[g.slug]?.overall || [],
+    });
+    const priv = buildLeaderboards(projectTaskRowsToOurs(privateTaskRows, groupSet), { variant: 'private' });
+    applyDisplayNames(priv, oursDisplayMap);
+    annotateWithDeltas(priv, {
+      byTask: prevGroupsResults[g.slug]?.privateByTask || {},
+      overall: prevGroupsResults[g.slug]?.privateOverall || [],
+    });
+    groupsResults[g.slug] = {
+      overall: pub.overall,
+      byTask: pub.byTask,
+      privateOverall: priv.overall,
+      privateByTask: priv.byTask,
+    };
+    groupsMeta.push({ slug: g.slug, title: g.title, order: g.order ?? 0 });
+  }
+
   cache.byCompetition.set(slug, {
     updatedAt: new Date().toISOString(),
     tasks,
@@ -614,6 +702,8 @@ async function refreshCompetition(slug) {
     oursPrivateOverall: oursPrivateResult.overall,
     oursPrivateByTask: oursPrivateResult.byTask,
     participants,
+    groupsMeta,
+    groupsResults,
     currentParticipantId: state.currentParticipantId,
     cycleBoardSlug: state.cycleBoardSlug,
     errors,
@@ -744,6 +834,8 @@ export function createApp({ db } = {}) {
       oursByTask: cc.oursByTask,
       oursPrivateOverall: cc.oursPrivateOverall,
       oursPrivateByTask: cc.oursPrivateByTask,
+      groupsMeta: cc.groupsMeta || [],
+      groupsResults: cc.groupsResults || {},
       errors: cc.errors,
     });
   });
@@ -788,12 +880,26 @@ export function createApp({ db } = {}) {
       typeof e.message === 'string' && e.message.toLowerCase().startsWith(`${wanted}:`)
     );
 
+    const groupsTask = {};
+    const groupsPrivateTask = {};
+    for (const g of cc.groupsMeta || []) {
+      const gr = (cc.groupsResults || {})[g.slug];
+      if (!gr) continue;
+      const gKey = Object.keys(gr.byTask || {}).find((k) => k.toLowerCase() === wanted);
+      if (gKey) groupsTask[g.slug] = gr.byTask[gKey];
+      const gpKey = Object.keys(gr.privateByTask || {}).find((k) => k.toLowerCase() === wanted);
+      if (gpKey) groupsPrivateTask[g.slug] = gr.privateByTask[gpKey];
+    }
+
     res.json({
       updatedAt: cc.updatedAt,
       task: task || fallback,
       privateTask,
       oursTask,
       oursPrivateTask,
+      groupsMeta: cc.groupsMeta || [],
+      groupsTask,
+      groupsPrivateTask,
       errors: taskErrors.length ? taskErrors : cc.errors,
     });
   });
@@ -1052,6 +1158,30 @@ export function createApp({ db } = {}) {
       res.json({ categories });
     } catch (e) {
       res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
+  app.get('/api/admin/competitions/:competitionSlug/participant-groups', adminMw, async (req, res) => {
+    const slug = ensureKnownSlug(req, res); if (!slug) return;
+    try {
+      const groups = await loadParticipantGroupsFor(slug);
+      res.json({ groups });
+    } catch (e) {
+      res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
+  app.put('/api/admin/competitions/:competitionSlug/participant-groups', adminMw, async (req, res) => {
+    const slug = ensureKnownSlug(req, res); if (!slug) return;
+    try {
+      const groups = validateParticipantGroups(req.body?.groups);
+      await saveParticipantGroupsFor(slug, groups);
+      res.json({ ok: true, groups });
+      refreshCompetition(slug).catch((e) =>
+        console.error(`[refresh after participant-groups save ${slug}] FAILED`, e)
+      );
+    } catch (e) {
+      res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
     }
   });
 

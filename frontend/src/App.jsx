@@ -24,6 +24,8 @@ import {
   getAdminPublicCsv,
   uploadAdminPublicCsv,
   deleteAdminPublicCsv,
+  getAdminParticipantGroups,
+  saveAdminParticipantGroups,
   setAdminCycleBoard,
   getCycleConfig,
   AdminAuthError,
@@ -152,23 +154,49 @@ function matchesNickname(row, query) {
   return (row.nickname || '').toLowerCase().includes(q);
 }
 
-function FilterToggle({ value, onChange }) {
+function FilterToggle({ value, onChange, groups }) {
+  const sortedGroups = (groups || []).slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   return (
-    <div className="mode-toggle">
-      <button
-        className={`mode-toggle-btn ${value === 'all' ? 'active' : ''}`}
-        onClick={() => onChange('all')}
-      >
-        Все
-      </button>
-      <button
-        className={`mode-toggle-btn ${value === 'ours' ? 'active' : ''}`}
-        onClick={() => onChange('ours')}
-      >
-        Только наши
-      </button>
-    </div>
+    <select
+      className="search-box filter-select"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      title="Фильтр участников"
+    >
+      <option value="all">Все</option>
+      <option value="ours">Только наши</option>
+      {sortedGroups.map((g) => (
+        <option key={g.slug} value={`group:${g.slug}`}>{g.title}</option>
+      ))}
+    </select>
   );
+}
+
+function pickOverall(data, mode, filter) {
+  const isPrivate = mode === 'private';
+  if (filter && filter.startsWith('group:')) {
+    const slug = filter.slice(6);
+    const gr = (data?.groupsResults || {})[slug];
+    if (!gr) return [];
+    return isPrivate ? (gr.privateOverall || []) : (gr.overall || []);
+  }
+  if (filter === 'ours') {
+    return isPrivate ? (data?.oursPrivateOverall || []) : (data?.oursOverall || []);
+  }
+  return isPrivate ? (data?.privateOverall || []) : (data?.overall || []);
+}
+
+function pickTaskEntries(data, mode, filter) {
+  const isPrivate = mode === 'private';
+  if (filter && filter.startsWith('group:')) {
+    const slug = filter.slice(6);
+    const map = isPrivate ? (data?.groupsPrivateTask || {}) : (data?.groupsTask || {});
+    return map[slug]?.entries || [];
+  }
+  if (filter === 'ours') {
+    return isPrivate ? (data?.oursPrivateTask?.entries || []) : (data?.oursTask?.entries || []);
+  }
+  return isPrivate ? (data?.privateTask?.entries || []) : (data?.task?.entries || []);
 }
 
 function usePolling(loader, deps = []) {
@@ -367,10 +395,7 @@ function OverallPage() {
   if (!data?.updatedAt) return <p className="status">Бэк прогревается — идёт первое обновление с Kaggle, попробуй через минуту…</p>;
 
   const isPrivate = mode === 'private';
-  const isOurs = filter === 'ours';
-  const overallSrc = isPrivate
-    ? (isOurs ? (data.oursPrivateOverall || []) : (data.privateOverall || []))
-    : (isOurs ? (data.oursOverall || []) : data.overall);
+  const overallSrc = pickOverall(data, mode, filter);
   const overall = (overallSrc || []).filter((r) => matchesNickname(r, query));
   const privateAvailable = (data.privateTaskSlugs || []).length > 0;
 
@@ -395,7 +420,7 @@ function OverallPage() {
         <h2>Общий рейтинг</h2>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
           <SearchBox value={query} onChange={setQuery} />
-          <FilterToggle value={filter} onChange={setFilter} />
+          <FilterToggle value={filter} onChange={setFilter} groups={data.groupsMeta} />
           <ModeToggle mode={mode} onChange={setMode} />
           <DownloadButton onClick={exportCSV} />
           <span>Updated: {new Date(data.updatedAt).toLocaleString()}</span>
@@ -468,7 +493,7 @@ function CyclingOverallPage() {
   if (error) return <p className="status error">{error}</p>;
   if (!data?.updatedAt) return <p className="status">Бэк прогревается — идёт первое обновление с Kaggle…</p>;
 
-  const filteredOverall = filter === 'ours' ? (data.oursOverall || []) : (data.overall || []);
+  const filteredOverall = pickOverall(data, 'public', filter);
   const total = filteredOverall.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const currentPage = pageIdx % totalPages;
@@ -496,7 +521,7 @@ function CyclingOverallPage() {
       <div className="panel-head">
         <h2>Места {start + 1}–{endShown}</h2>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-          <FilterToggle value={filter} onChange={setFilter} />
+          <FilterToggle value={filter} onChange={setFilter} groups={data.groupsMeta} />
           <DownloadButton onClick={exportCSV} />
           <span>
             Страница {currentPage + 1} / {totalPages} · смена каждые {PAGE_MS / 1000}с · updated:{' '}
@@ -560,10 +585,7 @@ function BoardPage({ boards }) {
   if (!data?.updatedAt) return <p className="status">Бэк прогревается — идёт первое обновление с Kaggle…</p>;
 
   const isPrivate = mode === 'private';
-  const isOurs = filter === 'ours';
-  const overallSrc = isPrivate
-    ? (isOurs ? (data.oursPrivateOverall || []) : (data.privateOverall || []))
-    : (isOurs ? (data.oursOverall || []) : data.overall);
+  const overallSrc = pickOverall(data, mode, filter);
   const privateTaskSlugs = new Set(data.privateTaskSlugs || []);
   const boardHasPrivate = board.taskSlugs.some((s) => privateTaskSlugs.has(s));
 
@@ -617,7 +639,7 @@ function BoardPage({ boards }) {
         <h2>{board.title}</h2>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
           <SearchBox value={query} onChange={setQuery} />
-          <FilterToggle value={filter} onChange={setFilter} />
+          <FilterToggle value={filter} onChange={setFilter} groups={data.groupsMeta} />
           <ModeToggle mode={mode} onChange={setMode} />
           <DownloadButton onClick={exportCSV} />
           <span>Updated: {new Date(data.updatedAt).toLocaleString()}</span>
@@ -712,11 +734,8 @@ function TaskPage() {
   if (error) return <p className="status error">{error}</p>;
 
   const isPrivate = mode === 'private';
-  const isOurs = filter === 'ours';
   const task = isPrivate ? (data.privateTask || data.task) : data.task;
-  const entriesRaw = isOurs
-    ? (isPrivate ? (data.oursPrivateTask?.entries || []) : (data.oursTask?.entries || []))
-    : (isPrivate ? (data.privateTask?.entries || []) : data.task.entries);
+  const entriesRaw = pickTaskEntries(data, mode, filter);
   const entries = (entriesRaw || []).filter((r) => matchesNickname(r, query));
   const privateAvailable = !!data.privateTask;
 
@@ -739,7 +758,7 @@ function TaskPage() {
         <h2>{task.title}</h2>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
           <SearchBox value={query} onChange={setQuery} />
-          <FilterToggle value={filter} onChange={setFilter} />
+          <FilterToggle value={filter} onChange={setFilter} groups={data.groupsMeta} />
           <ModeToggle mode={mode} onChange={setMode} />
           <DownloadButton onClick={exportCSV} />
           <span>Updated: {new Date(data.updatedAt).toLocaleString()}</span>
@@ -2061,6 +2080,183 @@ function AdminCategoriesPage() {
   );
 }
 
+function AdminParticipantGroupsPage() {
+  const { slug: competitionSlug } = useParams();
+  const navigate = useNavigate();
+  const [groups, setGroups] = useState([]);
+  const [original, setOriginal] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [savedAt, setSavedAt] = useState(null);
+
+  function normalize(rawList) {
+    return (rawList || []).map((g) => ({
+      slug: g.slug || '',
+      title: g.title || '',
+      kaggleIds: Array.isArray(g.kaggleIds) ? g.kaggleIds : [],
+      kaggleIdsText: (Array.isArray(g.kaggleIds) ? g.kaggleIds : []).join('\n'),
+      order: g.order ?? 0,
+    }));
+  }
+
+  async function load() {
+    setLoading(true);
+    setError(null);
+    try {
+      const r = await getAdminParticipantGroups(competitionSlug);
+      const list = normalize(r.groups);
+      setGroups(list);
+      setOriginal(JSON.stringify(list.map((g) => ({ ...g, kaggleIdsText: undefined }))));
+    } catch (err) {
+      if (err instanceof AdminAuthError) navigate('/admin', { replace: true });
+      else setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  function update(idx, patch) {
+    setGroups((prev) => prev.map((g, i) => (i === idx ? { ...g, ...patch } : g)));
+  }
+
+  function updateIds(idx, text) {
+    const ids = text
+      .split(/[\s,;\n]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    update(idx, { kaggleIdsText: text, kaggleIds: ids });
+  }
+
+  function remove(idx) {
+    if (!confirm('Удалить группу?')) return;
+    setGroups((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  function add() {
+    const nextOrder = groups.reduce((m, g) => Math.max(m, g.order ?? 0), 0) + 1;
+    setGroups((prev) => [
+      ...prev,
+      { slug: '', title: '', kaggleIds: [], kaggleIdsText: '', order: nextOrder },
+    ]);
+  }
+
+  async function save() {
+    setSaving(true);
+    setError(null);
+    try {
+      const payload = groups.map((g) => ({
+        slug: g.slug,
+        title: g.title,
+        kaggleIds: g.kaggleIds,
+        order: g.order,
+      }));
+      const r = await saveAdminParticipantGroups(competitionSlug, payload);
+      const list = normalize(r.groups);
+      setGroups(list);
+      setOriginal(JSON.stringify(list.map((g) => ({ ...g, kaggleIdsText: undefined }))));
+      setSavedAt(new Date());
+    } catch (err) {
+      if (err instanceof AdminAuthError) navigate('/admin', { replace: true });
+      else setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const dirty = JSON.stringify(groups.map((g) => ({ ...g, kaggleIdsText: undefined }))) !== original;
+
+  if (loading) return <p className="status">Загрузка групп...</p>;
+
+  const sorted = groups
+    .map((g, i) => ({ g, i }))
+    .sort((a, b) => (a.g.order ?? 0) - (b.g.order ?? 0));
+
+  return (
+    <section className="panel">
+      <div className="panel-head">
+        <h2>Группы участников (participant-groups.json)</h2>
+        <span>
+          {dirty ? 'есть несохранённые изменения' : savedAt ? `сохранено ${savedAt.toLocaleTimeString()}` : 'без изменений'}
+        </span>
+      </div>
+
+      {error ? <div className="error-box">{error}</div> : null}
+
+      <div className="admin-boards">
+        {sorted.length === 0 ? (
+          <p className="meta">Пока ни одной группы. На публичных лидербордах появятся как опции рядом с «Все / Только наши».</p>
+        ) : null}
+
+        {sorted.map(({ g: group, i: idx }) => (
+          <div key={idx} className="admin-board-card">
+            <div className="admin-board-row">
+              <label className="admin-field">
+                <span className="admin-field-label">slug</span>
+                <input
+                  className="control-input"
+                  value={group.slug}
+                  onChange={(e) => update(idx, { slug: e.target.value })}
+                  placeholder="kyrgyzstan"
+                />
+              </label>
+              <label className="admin-field" style={{ flex: 1 }}>
+                <span className="admin-field-label">название</span>
+                <input
+                  className="control-input"
+                  value={group.title}
+                  onChange={(e) => update(idx, { title: e.target.value })}
+                  placeholder="Kyrgyzstan"
+                />
+              </label>
+              <label className="admin-field" style={{ flex: '0 0 90px' }}>
+                <span className="admin-field-label">order</span>
+                <input
+                  className="control-input"
+                  type="number"
+                  value={group.order}
+                  onChange={(e) => update(idx, { order: Number(e.target.value) || 0 })}
+                />
+              </label>
+              <button className="control-btn control-btn-ghost" onClick={() => remove(idx)}>×</button>
+            </div>
+
+            <div className="admin-board-tasks">
+              <div className="admin-field-label">
+                kaggle ники участников ({group.kaggleIds.length}) — через пробел, запятую или с новой строки
+              </div>
+              <textarea
+                className="control-input"
+                style={{ minHeight: 96, fontFamily: 'ui-monospace, monospace', fontSize: 13 }}
+                value={group.kaggleIdsText}
+                onChange={(e) => updateIds(idx, e.target.value)}
+                placeholder="ianbobrus&#10;bars301109&#10;sabyralymbekov"
+              />
+            </div>
+          </div>
+        ))}
+
+        <div className="admin-tasks-actions">
+          <button className="control-btn control-btn-ghost" onClick={add}>+ группа</button>
+          <button className="control-btn control-btn-ghost" onClick={load} disabled={saving}>Откатить</button>
+          <button className="control-btn" onClick={save} disabled={!dirty || saving}>
+            {saving ? 'Сохранение...' : 'Сохранить'}
+          </button>
+        </div>
+
+        <p className="meta">
+          После сохранения бэк пересчитывает per-group лидерборды (нормировка/якоря применяются на
+          подсете — место и очки внутри группы пересчитываются). Slug-и <code>all</code>, <code>ours</code> зарезервированы.
+        </p>
+      </div>
+    </section>
+  );
+}
+
 function AdminCyclePage() {
   const { slug: competitionSlug } = useParams();
   const navigate = useNavigate();
@@ -2185,6 +2381,7 @@ function AdminShell() {
           <NavLink to={`${base}/boards`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Boards</NavLink>
           <NavLink to={`${base}/categories`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Categories</NavLink>
           <NavLink to={`${base}/participants`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Participants</NavLink>
+          <NavLink to={`${base}/groups`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Groups</NavLink>
           <NavLink to={`${base}/card`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Card</NavLink>
           <NavLink to={`${base}/cycle`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Cycle</NavLink>
         </nav>
@@ -2237,6 +2434,7 @@ export default function App() {
           <Route path="boards" element={<AdminBoardsPage />} />
           <Route path="categories" element={<AdminCategoriesPage />} />
           <Route path="participants" element={<AdminParticipantsPage />} />
+          <Route path="groups" element={<AdminParticipantGroupsPage />} />
           <Route path="card" element={<ControlPage />} />
           <Route path="cycle" element={<AdminCyclePage />} />
         </Route>
