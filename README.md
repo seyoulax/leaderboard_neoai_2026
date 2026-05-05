@@ -130,7 +130,15 @@ docker compose -f docker-compose.host.yml up -d --build
 | `MAX_DATASET_BYTES` | `524288000` | Лимит на загружаемый датасет (≈500 MB) |
 | `MAX_ARTIFACT_BYTES` | `26214400` | Лимит на стартовый артефакт (≈25 MB) |
 | `MAX_GRADER_BYTES` | `102400` | Лимит на `score.py` (100 KB) |
-| `MAX_GROUND_TRUTH_BYTES` | `524288000` | Лимит на ground-truth |
+| `MAX_GROUND_TRUTH_BYTES` | `524288000` | Лимит на ground-truth (public + private) |
+| `PYTHON_BIN` | `python3` | Бинарь Python для grader'ов (SP-3) |
+| `WORKER_TICK_MS` | `2000` | Период tick'a scoring-воркера |
+| `SCORING_TIMEOUT_MS` | `60000` | Таймаут одного запуска grader'а |
+| `MAX_SUBMISSION_BYTES` | `52428800` | Лимит на сабмит (~50 MB) |
+| `MAX_SUBMISSIONS_PER_DAY` | `50` | Rate-limit (per user, per task, 24h) |
+| `SUBMISSION_ALLOWED_EXTS` | `csv,tsv,json` | Whitelist расширений сабмитов |
+
+> **SP-3 worker:** scoring-воркер стартует в том же Node-процессе что и Express. Для запуска нативных задач Python должен быть установлен (`brew install python` / `apt install python3` / уже есть в backend Docker-образе). Сабмиты лежат в `data/native/<comp>/<task>/submissions/<id>-<filename>`.
 
 ## Тушение / откат
 
