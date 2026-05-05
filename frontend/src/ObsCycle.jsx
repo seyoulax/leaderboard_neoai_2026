@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { getOverallLeaderboard } from './api';
+import { getOverallLeaderboard, getBoards, getCycleConfig } from './api';
 import './obs.css';
 
 const PAGE_SIZE = 15;
 const PAGE_MS = 20_000;
 const REFRESH_MS = 30_000;
+const CYCLE_POLL_MS = 5_000;
 
-function usePolling(loader) {
+function usePolling(loader, intervalMs, deps = []) {
   const [state, setState] = useState({ data: null, loading: true, error: null });
 
   useEffect(() => {
@@ -29,13 +30,13 @@ function usePolling(loader) {
     }
 
     run();
-    const timer = setInterval(run, REFRESH_MS);
+    const timer = setInterval(run, intervalMs);
 
     return () => {
       active = false;
       clearInterval(timer);
     };
-  }, []);
+  }, deps);
 
   return state;
 }
@@ -48,7 +49,22 @@ export default function ObsCycle() {
     return () => document.documentElement.classList.remove('obs');
   }, []);
 
-  const { data, loading, error } = usePolling(() => getOverallLeaderboard(competitionSlug));
+  const { data, loading, error } = usePolling(
+    () => getOverallLeaderboard(competitionSlug),
+    REFRESH_MS,
+    [competitionSlug]
+  );
+  const boardsState = usePolling(
+    () => getBoards(competitionSlug),
+    REFRESH_MS,
+    [competitionSlug]
+  );
+  const cycleState = usePolling(
+    () => getCycleConfig(competitionSlug),
+    CYCLE_POLL_MS,
+    [competitionSlug]
+  );
+
   const [pageIdx, setPageIdx] = useState(0);
 
   useEffect(() => {
@@ -56,7 +72,30 @@ export default function ObsCycle() {
     return () => clearInterval(timer);
   }, []);
 
-  const overall = data?.oursOverall || [];
+  const cycleBoardSlug = cycleState.data?.cycleBoardSlug || null;
+  const board = cycleBoardSlug
+    ? (boardsState.data?.boards || []).find((b) => b.slug === cycleBoardSlug) || null
+    : null;
+
+  const allTasks = data?.tasks || [];
+  const presentSlugs = board ? board.taskSlugs.filter((s) => allTasks.some((t) => t.slug === s)) : null;
+  const visibleTasks = presentSlugs ? allTasks.filter((t) => presentSlugs.includes(t.slug)) : allTasks;
+
+  const oursOverall = data?.oursOverall || [];
+  const overall = board
+    ? oursOverall
+        .map((r) => {
+          const total = presentSlugs.reduce((sum, slug) => sum + (r.tasks?.[slug]?.points ?? 0), 0);
+          return { ...r, displayTotal: total };
+        })
+        .filter((r) => presentSlugs.some((slug) => r.tasks?.[slug] !== undefined))
+        .sort(
+          (a, b) =>
+            b.displayTotal - a.displayTotal ||
+            (a.nickname || a.teamName || '').localeCompare(b.nickname || b.teamName || '')
+        )
+        .map((r, i) => ({ ...r, place: i + 1 }))
+    : oursOverall.map((r) => ({ ...r, displayTotal: r.totalPoints }));
 
   const total = overall.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -65,12 +104,14 @@ export default function ObsCycle() {
   const slice = overall.slice(start, start + PAGE_SIZE);
   const endShown = Math.min(start + PAGE_SIZE, total);
 
+  const eyebrow = board ? board.title : 'Northern Eurasia Olympiad in Artificial Intelligence 2026';
+
   return (
     <div className="obs-root">
       <div className="obscycle">
         <div className="obscycle-head">
           <div className="obscycle-brand">NEOAI</div>
-          <div className="obscycle-eyebrow">Northern Eurasia Olympiad in Artificial Intelligence 2026</div>
+          <div className="obscycle-eyebrow">{eyebrow}</div>
           <div className="obscycle-context">
             {total > 0 ? (
               <>
@@ -99,7 +140,7 @@ export default function ObsCycle() {
                   <th className="obscycle-th-rank">#</th>
                   <th className="obscycle-th-name">Участник</th>
                   <th className="obscycle-th-total">Total</th>
-                  {data.tasks.map((task) => (
+                  {visibleTasks.map((task) => (
                     <th key={task.slug} className="obscycle-th-task">
                       {task.title.replace(/^NEOAI\s*/i, '')}
                     </th>
@@ -111,8 +152,8 @@ export default function ObsCycle() {
                   <tr key={row.participantKey}>
                     <td className="obscycle-td-rank">{row.place}</td>
                     <td className="obscycle-td-name">{row.nickname || row.teamName || '-'}</td>
-                    <td className="obscycle-td-total">{row.totalPoints.toFixed(2)}</td>
-                    {data.tasks.map((task) => {
+                    <td className="obscycle-td-total">{row.displayTotal.toFixed(2)}</td>
+                    {visibleTasks.map((task) => {
                       const points = row.tasks?.[task.slug]?.points;
                       return (
                         <td key={task.slug} className="obscycle-td-task">

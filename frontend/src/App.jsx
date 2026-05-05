@@ -18,6 +18,8 @@ import {
   getAdminPrivate,
   uploadAdminPrivate,
   deleteAdminPrivate,
+  setAdminCycleBoard,
+  getCycleConfig,
   AdminAuthError,
 } from './api';
 import ObsView from './ObsView';
@@ -867,19 +869,87 @@ function ObsBoardBar() {
   );
 }
 
+function CardPreview({ participant, stats }) {
+  if (!participant) return null;
+  const p = participant;
+  const prev = stats?.previousTotalPoints;
+  const dir =
+    stats && prev != null && Number.isFinite(prev) && Math.abs(stats.totalPoints - prev) > 0.01
+      ? stats.totalPoints > prev ? 'up' : 'down'
+      : null;
+  return (
+    <div className="admin-card-preview">
+      {p.photo ? (
+        <div className="admin-card-preview-photo-wrap">
+          <img className="admin-card-preview-photo" src={p.photo} alt={p.name} />
+        </div>
+      ) : null}
+      <div className="admin-card-preview-body">
+        <div className="admin-card-preview-name">{p.name}</div>
+        <div className="admin-card-preview-role">{p.role || 'Участник'}</div>
+        {p.kaggleId ? <div className="admin-card-preview-handle">@{p.kaggleId}</div> : null}
+
+        {stats ? (
+          <div className="admin-card-preview-live">
+            <div className="admin-card-preview-cell">
+              <div className="admin-card-preview-cell-label">Место</div>
+              <div className="admin-card-preview-cell-value">#{stats.place}</div>
+            </div>
+            <div className="admin-card-preview-cell">
+              <div className="admin-card-preview-cell-label">Total points</div>
+              <div className={`admin-card-preview-cell-value ${dir === 'up' ? 'cell-up' : dir === 'down' ? 'cell-down' : ''}`.trim()}>
+                {stats.totalPoints.toFixed(2)}
+                {dir === 'up' ? <span className="delta-arrow up"> ▲</span> : null}
+                {dir === 'down' ? <span className="delta-arrow down"> ▼</span> : null}
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {p.achievements && p.achievements.length > 0 ? (
+          <div className="admin-card-preview-section">
+            <div className="admin-card-preview-section-label">Достижения</div>
+            <div className="admin-card-preview-achievements">
+              {p.achievements.map((a, i) => (
+                <div key={i} className="admin-card-preview-badge">{a}</div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        <div className="admin-card-preview-fields">
+          <div className="admin-card-preview-field">
+            <div className="admin-card-preview-field-label">Город</div>
+            <div className="admin-card-preview-field-value">{p.city || '—'}</div>
+          </div>
+          <div className="admin-card-preview-field">
+            <div className="admin-card-preview-field-label">Класс</div>
+            <div className="admin-card-preview-field-value">{p.grade || '—'}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ControlPage() {
   const { slug: competitionSlug } = useParams();
   const [list, setList] = useState([]);
   const [currentId, setCurrentId] = useState(null);
+  const [card, setCard] = useState(null);
   const [query, setQuery] = useState('');
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
 
   async function refresh() {
     try {
-      const data = await getParticipants(competitionSlug);
-      setList(data.participants || []);
-      setCurrentId(data.currentId);
+      const [pData, cData] = await Promise.all([
+        getParticipants(competitionSlug),
+        getCurrentCard(competitionSlug),
+      ]);
+      setList(pData.participants || []);
+      setCurrentId(pData.currentId);
+      setCard(cData);
       setError(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -888,7 +958,7 @@ function ControlPage() {
 
   useEffect(() => {
     refresh();
-    const t = setInterval(refresh, 5000);
+    const t = setInterval(refresh, 2000);
     return () => clearInterval(t);
   }, [competitionSlug]);
 
@@ -898,6 +968,7 @@ function ControlPage() {
     try {
       const data = await setCurrentCard(competitionSlug, id);
       setCurrentId(data.currentId);
+      refresh();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -930,6 +1001,10 @@ function ControlPage() {
             </button>
           ) : null}
         </div>
+
+        {card?.current ? (
+          <CardPreview participant={card.current} stats={card.kaggleStats} />
+        ) : null}
 
         <div className="control-search">
           <input
@@ -1581,6 +1656,115 @@ function AdminBoardsPage() {
   );
 }
 
+function AdminCyclePage() {
+  const { slug: competitionSlug } = useParams();
+  const navigate = useNavigate();
+  const [boards, setBoards] = useState([]);
+  const [current, setCurrent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  const [savedAt, setSavedAt] = useState(null);
+
+  async function load() {
+    setLoading(true);
+    setError(null);
+    try {
+      const [b, c] = await Promise.all([
+        getAdminBoards(competitionSlug),
+        getCycleConfig(competitionSlug),
+      ]);
+      const list = (b.boards || []).slice().sort((x, y) => (x.order ?? 0) - (y.order ?? 0));
+      setBoards(list);
+      setCurrent(c.cycleBoardSlug || null);
+    } catch (err) {
+      if (err instanceof AdminAuthError) navigate('/admin', { replace: true });
+      else setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load();
+  }, [competitionSlug]);
+
+  async function pick(slug) {
+    setBusy(true);
+    setError(null);
+    try {
+      const r = await setAdminCycleBoard(competitionSlug, slug);
+      setCurrent(r.cycleBoardSlug || null);
+      setSavedAt(new Date());
+    } catch (err) {
+      if (err instanceof AdminAuthError) navigate('/admin', { replace: true });
+      else setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (loading) return <p className="status">Загрузка...</p>;
+
+  const obsUrl = `/obs/competitions/${encodeURIComponent(competitionSlug)}/cycle`;
+
+  return (
+    <section className="panel">
+      <div className="panel-head">
+        <h2>OBS Cycle — какой ЛБ показывать</h2>
+        <span>
+          OBS: <code>{obsUrl}</code>
+          {savedAt ? ` · сохранено ${savedAt.toLocaleTimeString()}` : ''}
+        </span>
+      </div>
+
+      {error ? <div className="error-box">{error}</div> : null}
+
+      <div className="control-body">
+        <div className="control-list">
+          <button
+            disabled={busy}
+            onClick={() => pick(null)}
+            className={`control-item ${current === null ? 'active' : ''}`}
+          >
+            <span className="control-item-name">Общий лидерборд</span>
+            <span className="control-item-id">все задачи</span>
+            {current === null ? <span className="control-item-badge">в эфире</span> : null}
+          </button>
+
+          {boards.length === 0 ? (
+            <p className="meta">Нет других лидербордов — создай их во вкладке «Boards».</p>
+          ) : (
+            boards.map((b) => {
+              const active = current === b.slug;
+              return (
+                <button
+                  key={b.slug}
+                  disabled={busy}
+                  onClick={() => pick(b.slug)}
+                  className={`control-item ${active ? 'active' : ''}`}
+                >
+                  <span className="control-item-name">{b.title}</span>
+                  <span className="control-item-id">
+                    {b.taskSlugs.length} задач
+                    {b.visible === false ? ' · скрыт в навигации' : ''}
+                  </span>
+                  {active ? <span className="control-item-badge">в эфире</span> : null}
+                </button>
+              );
+            })
+          )}
+        </div>
+
+        <p className="meta">
+          OBS-страница <code>/obs/.../cycle</code> опрашивает выбор каждые 5с и сама
+          переключится на нужный лидерборд (с фильтром «только наши»).
+        </p>
+      </div>
+    </section>
+  );
+}
+
 function AdminShell() {
   const { slug: competitionSlug } = useParams();
   const base = competitionSlug ? `/admin/competitions/${encodeURIComponent(competitionSlug)}` : '';
@@ -1596,6 +1780,7 @@ function AdminShell() {
           <NavLink to={`${base}/boards`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Boards</NavLink>
           <NavLink to={`${base}/participants`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Participants</NavLink>
           <NavLink to={`${base}/card`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Card</NavLink>
+          <NavLink to={`${base}/cycle`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Cycle</NavLink>
         </nav>
       ) : null}
       <Outlet />
@@ -1645,6 +1830,7 @@ export default function App() {
           <Route path="boards" element={<AdminBoardsPage />} />
           <Route path="participants" element={<AdminParticipantsPage />} />
           <Route path="card" element={<ControlPage />} />
+          <Route path="cycle" element={<AdminCyclePage />} />
         </Route>
         <Route path="competitions/:competitionSlug/native-tasks" element={<AdminNativeTasksList />} />
         <Route path="competitions/:competitionSlug/native-tasks/:taskSlug" element={<AdminNativeTaskEdit />} />

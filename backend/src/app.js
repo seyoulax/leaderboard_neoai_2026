@@ -271,6 +271,7 @@ function emptyCompetitionCache() {
     oursPrivateByTask: {},
     participants: [],
     currentParticipantId: null,
+    cycleBoardSlug: null,
     errors: [],
   };
 }
@@ -483,6 +484,7 @@ async function refreshCompetition(slug) {
     oursPrivateByTask: oursPrivateResult.byTask,
     participants,
     currentParticipantId: state.currentParticipantId,
+    cycleBoardSlug: state.cycleBoardSlug,
     errors,
   });
 
@@ -727,7 +729,10 @@ export function createApp({ db } = {}) {
 
     if (id === null) {
       cc.currentParticipantId = null;
-      await writeCompetitionState(competitionDir(meta.slug), { currentParticipantId: null });
+      await writeCompetitionState(competitionDir(meta.slug), {
+        currentParticipantId: null,
+        cycleBoardSlug: cc.cycleBoardSlug ?? null,
+      });
       res.json({ ok: true, currentId: null, current: null });
       return;
     }
@@ -746,8 +751,21 @@ export function createApp({ db } = {}) {
     }
 
     cc.currentParticipantId = id;
-    await writeCompetitionState(competitionDir(meta.slug), { currentParticipantId: id });
+    await writeCompetitionState(competitionDir(meta.slug), {
+      currentParticipantId: id,
+      cycleBoardSlug: cc.cycleBoardSlug ?? null,
+    });
     res.json({ ok: true, currentId: id, current: found });
+  });
+
+  app.get('/api/competitions/:competitionSlug/cycle', (req, res) => {
+    const meta = requireCompetition(req, res);
+    if (!meta) return;
+    const cc = cache.byCompetition.get(meta.slug);
+    res.json({
+      cycleBoardSlug: cc?.cycleBoardSlug ?? null,
+      updatedAt: cc?.updatedAt || null,
+    });
   });
 
   app.get('/api/admin/competitions', adminMw, async (_req, res) => {
@@ -883,6 +901,39 @@ export function createApp({ db } = {}) {
     } catch (e) {
       res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
     }
+  });
+
+  app.put('/api/admin/competitions/:competitionSlug/cycle', adminMw, async (req, res) => {
+    const slug = ensureKnownSlug(req, res); if (!slug) return;
+    const raw = req.body?.cycleBoardSlug;
+    let next = null;
+    if (raw === null || raw === undefined || raw === '') {
+      next = null;
+    } else if (typeof raw === 'string') {
+      next = raw;
+    } else {
+      res.status(400).json({ error: 'cycleBoardSlug must be a string or null' });
+      return;
+    }
+    if (next !== null) {
+      try {
+        const boards = await loadBoardsFor(slug);
+        if (!boards.some((b) => b.slug === next)) {
+          res.status(404).json({ error: `board '${next}' not found in '${slug}'` });
+          return;
+        }
+      } catch (e) {
+        res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+        return;
+      }
+    }
+    const cc = getCompCache(slug);
+    cc.cycleBoardSlug = next;
+    await writeCompetitionState(competitionDir(slug), {
+      currentParticipantId: cc.currentParticipantId ?? null,
+      cycleBoardSlug: next,
+    });
+    res.json({ ok: true, cycleBoardSlug: next });
   });
 
   app.get('/api/admin/competitions/:competitionSlug/participants', adminMw, async (req, res) => {

@@ -65,6 +65,10 @@ export async function setCurrentCard(slug, id) {
   });
 }
 
+export async function getCycleConfig(slug) {
+  return request(`${compBase(slug)}/cycle`);
+}
+
 // ---------- Admin token (legacy fallback) ----------
 
 const ADMIN_TOKEN_KEY = 'neoai_admin_token';
@@ -137,6 +141,13 @@ export async function saveAdminTasks(slug, tasks) {
 export async function getAdminBoards(slug) { return adminFetch(`${adminCompBase(slug)}/boards`); }
 export async function saveAdminBoards(slug, boards) {
   return adminFetch(`${adminCompBase(slug)}/boards`, { method: 'PUT', body: JSON.stringify({ boards }) });
+}
+
+export async function setAdminCycleBoard(slug, boardSlug) {
+  return adminFetch(`${adminCompBase(slug)}/cycle`, {
+    method: 'PUT',
+    body: JSON.stringify({ cycleBoardSlug: boardSlug }),
+  });
 }
 
 export async function getAdminParticipants(slug) {

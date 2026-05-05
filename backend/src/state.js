@@ -10,9 +10,12 @@ export async function readCompetitionState(competitionDir) {
       currentParticipantId: typeof parsed?.currentParticipantId === 'string'
         ? parsed.currentParticipantId
         : null,
+      cycleBoardSlug: typeof parsed?.cycleBoardSlug === 'string'
+        ? parsed.cycleBoardSlug
+        : null,
     };
   } catch (e) {
-    if (e.code === 'ENOENT') return { currentParticipantId: null };
+    if (e.code === 'ENOENT') return { currentParticipantId: null, cycleBoardSlug: null };
     throw e;
   }
 }
@@ -22,6 +25,7 @@ export async function writeCompetitionState(competitionDir, state) {
   const file = path.join(competitionDir, 'state.json');
   const body = JSON.stringify({
     currentParticipantId: state.currentParticipantId ?? null,
+    cycleBoardSlug: state.cycleBoardSlug ?? null,
   }, null, 2) + '\n';
   await fs.writeFile(file, body, 'utf8');
 }

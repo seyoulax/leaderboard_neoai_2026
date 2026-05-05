@@ -397,6 +397,129 @@ code {
   font-size: 0.92em;
 }
 
+.admin-card-preview {
+  display: flex;
+  gap: 18px;
+  padding: 16px;
+  border-radius: 14px;
+  background: rgba(125, 95, 255, 0.05);
+  border: 1px solid var(--line);
+}
+
+.admin-card-preview-photo-wrap {
+  flex: 0 0 140px;
+}
+
+.admin-card-preview-photo {
+  width: 140px;
+  height: 140px;
+  border-radius: 12px;
+  object-fit: cover;
+  display: block;
+  border: 1px solid var(--line);
+}
+
+.admin-card-preview-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-card-preview-name {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.admin-card-preview-role {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.admin-card-preview-handle {
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  color: var(--accent);
+}
+
+.admin-card-preview-live {
+  display: flex;
+  gap: 14px;
+  margin-top: 4px;
+}
+
+.admin-card-preview-cell {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 14px;
+  min-width: 100px;
+}
+
+.admin-card-preview-cell-label {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.admin-card-preview-cell-value {
+  font-size: 18px;
+  font-weight: 600;
+  font-family: ui-monospace, monospace;
+  color: var(--ink);
+}
+
+.admin-card-preview-cell-value.cell-up { color: #45d18a; }
+.admin-card-preview-cell-value.cell-down { color: var(--danger); }
+
+.admin-card-preview-section {
+  margin-top: 6px;
+}
+
+.admin-card-preview-section-label {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.admin-card-preview-achievements {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.admin-card-preview-badge {
+  background: rgba(125, 95, 255, 0.18);
+  border: 1px solid var(--accent);
+  color: var(--ink);
+  font-size: 12px;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+.admin-card-preview-fields {
+  display: flex;
+  gap: 16px;
+  margin-top: 6px;
+}
+
+.admin-card-preview-field-label {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.admin-card-preview-field-value {
+  font-size: 14px;
+  color: var(--ink);
+}
+
 @media (max-width: 768px) {
   .page {
     padding: 16px;
