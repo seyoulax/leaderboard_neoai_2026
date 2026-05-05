@@ -47,7 +47,7 @@ import {
   LegacyObsBoardBarRedirect,
   LegacyObsTaskRedirect,
 } from './legacyRedirects';
-import { AuthProvider } from './auth/AuthContext.jsx';
+import { AuthProvider, useAuth } from './auth/AuthContext.jsx';
 import LoginPage from './auth/LoginPage.jsx';
 import NativeTaskPage from './native/NativeTaskPage.jsx';
 import AdminNativeTasksList from './admin/AdminNativeTasksList.jsx';
@@ -2570,18 +2570,57 @@ function AdminShell() {
   );
 }
 
-function HeaderUserMenu() {
+function SiteHeader() {
+  const { user } = useAuth();
   return (
-    <div className="header-user-menu">
-      <UserMenu />
-    </div>
+    <header className="site-header">
+      <div className="site-header-inner">
+        <Link to="/" className="site-header-brand">
+          <span className="site-header-mark">●</span>
+          <span>NEOAI · Leaderboard</span>
+        </Link>
+        <nav className="site-header-nav">
+          <NavLink
+            to="/"
+            end
+            className={({ isActive }) => `site-header-link ${isActive ? 'active' : ''}`}
+          >
+            Соревнования
+          </NavLink>
+          {user ? (
+            <>
+              <NavLink
+                to="/me"
+                end
+                className={({ isActive }) => `site-header-link ${isActive ? 'active' : ''}`}
+              >
+                Кабинет
+              </NavLink>
+              <NavLink
+                to="/me/competitions"
+                className={({ isActive }) => `site-header-link ${isActive ? 'active' : ''}`}
+              >
+                Мои соревнования
+              </NavLink>
+              <NavLink
+                to="/me/submissions"
+                className={({ isActive }) => `site-header-link ${isActive ? 'active' : ''}`}
+              >
+                Мои сабмиты
+              </NavLink>
+            </>
+          ) : null}
+        </nav>
+        <UserMenu />
+      </div>
+    </header>
   );
 }
 
 export default function App() {
   return (
     <AuthProvider>
-      <HeaderUserMenu />
+      <SiteHeader />
       <Routes>
       {/* Public root: list of competitions */}
       <Route path="/" element={<CompetitionsListPage />} />
