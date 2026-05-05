@@ -146,3 +146,161 @@ test('listAllSubmissionsForUser: hides submissions for soft-deleted competitions
   const list = listAllSubmissionsForUser(db, userId);
   assert.equal(list.length, 0);
 });
+
+import { createApp } from '../src/app.js';
+import { createSession } from '../src/db/sessionsRepo.js';
+import { hashPassword } from '../src/auth/bcrypt.js';
+import { SESSION_COOKIE } from '../src/auth/sessions.js';
+
+async function startApp(app) { return new Promise((r) => { const s = app.listen(0, () => r(s)); }); }
+
+test('PUT /submissions/:id/select: marks submission as selected', async () => {
+  process.env.ADMIN_TOKEN = 'shared';
+  const db = freshDb();
+  insertCompetition(db, { slug: 'c', title: 'C', type: 'native', visibility: 'public' });
+  const t = insertNativeTask(db, { competitionSlug: 'c', slug: 't', title: 'T' });
+  const u = createUser(db, { email: 'a@a.a', passwordHash: await hashPassword('p'), displayName: 'A' });
+  const subId = makeScoredSub(db, t.id, u.id, 70);
+  const sess = createSession(db, { userId: u.id, ttlMs: 60_000 });
+  const cookie = `${SESSION_COOKIE}=${sess.id}`;
+  const app = createApp({ db });
+  const server = await startApp(app);
+  const port = server.address().port;
+  const r = await fetch(`http://127.0.0.1:${port}/api/competitions/c/native-tasks/t/submissions/${subId}/select`, {
+    method: 'PUT', headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ selected: true }),
+  });
+  assert.equal(r.status, 200);
+  assert.equal(getSubmission(db, subId).selected, 1);
+  server.close();
+});
+
+test('PUT /select: third select when 2 already → 400', async () => {
+  process.env.ADMIN_TOKEN = 'shared';
+  const db = freshDb();
+  insertCompetition(db, { slug: 'c', title: 'C', type: 'native', visibility: 'public' });
+  const t = insertNativeTask(db, { competitionSlug: 'c', slug: 't', title: 'T' });
+  const u = createUser(db, { email: 'a@a.a', passwordHash: await hashPassword('p'), displayName: 'A' });
+  const a = makeScoredSub(db, t.id, u.id, 70);
+  const b = makeScoredSub(db, t.id, u.id, 80);
+  const c = makeScoredSub(db, t.id, u.id, 90);
+  setSubmissionSelected(db, a, true);
+  setSubmissionSelected(db, b, true);
+  const sess = createSession(db, { userId: u.id, ttlMs: 60_000 });
+  const cookie = `${SESSION_COOKIE}=${sess.id}`;
+  const app = createApp({ db });
+  const server = await startApp(app);
+  const port = server.address().port;
+  const r = await fetch(`http://127.0.0.1:${port}/api/competitions/c/native-tasks/t/submissions/${c}/select`, {
+    method: 'PUT', headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ selected: true }),
+  });
+  assert.equal(r.status, 400);
+  server.close();
+});
+
+test('PUT /select: re-selecting an already-selected submission is fine (no double-count)', async () => {
+  process.env.ADMIN_TOKEN = 'shared';
+  const db = freshDb();
+  insertCompetition(db, { slug: 'c', title: 'C', type: 'native', visibility: 'public' });
+  const t = insertNativeTask(db, { competitionSlug: 'c', slug: 't', title: 'T' });
+  const u = createUser(db, { email: 'a@a.a', passwordHash: await hashPassword('p'), displayName: 'A' });
+  const a = makeScoredSub(db, t.id, u.id, 70);
+  const b = makeScoredSub(db, t.id, u.id, 80);
+  setSubmissionSelected(db, a, true);
+  setSubmissionSelected(db, b, true);
+  const sess = createSession(db, { userId: u.id, ttlMs: 60_000 });
+  const cookie = `${SESSION_COOKIE}=${sess.id}`;
+  const app = createApp({ db });
+  const server = await startApp(app);
+  const port = server.address().port;
+  // PUT select=true on already-selected `a` should still succeed (count unchanged)
+  const r = await fetch(`http://127.0.0.1:${port}/api/competitions/c/native-tasks/t/submissions/${a}/select`, {
+    method: 'PUT', headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ selected: true }),
+  });
+  assert.equal(r.status, 200);
+  server.close();
+});
+
+test('PUT /select: unselect (selected=false) decrements', async () => {
+  process.env.ADMIN_TOKEN = 'shared';
+  const db = freshDb();
+  insertCompetition(db, { slug: 'c', title: 'C', type: 'native', visibility: 'public' });
+  const t = insertNativeTask(db, { competitionSlug: 'c', slug: 't', title: 'T' });
+  const u = createUser(db, { email: 'a@a.a', passwordHash: await hashPassword('p'), displayName: 'A' });
+  const a = makeScoredSub(db, t.id, u.id, 70);
+  setSubmissionSelected(db, a, true);
+  const sess = createSession(db, { userId: u.id, ttlMs: 60_000 });
+  const cookie = `${SESSION_COOKIE}=${sess.id}`;
+  const app = createApp({ db });
+  const server = await startApp(app);
+  const port = server.address().port;
+  const r = await fetch(`http://127.0.0.1:${port}/api/competitions/c/native-tasks/t/submissions/${a}/select`, {
+    method: 'PUT', headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ selected: false }),
+  });
+  assert.equal(r.status, 200);
+  assert.equal(getSubmission(db, a).selected, 0);
+  server.close();
+});
+
+test('PUT /select: someone else submission → 404', async () => {
+  process.env.ADMIN_TOKEN = 'shared';
+  const db = freshDb();
+  insertCompetition(db, { slug: 'c', title: 'C', type: 'native', visibility: 'public' });
+  const t = insertNativeTask(db, { competitionSlug: 'c', slug: 't', title: 'T' });
+  const u1 = createUser(db, { email: 'a@a.a', passwordHash: await hashPassword('p'), displayName: 'A' });
+  const u2 = createUser(db, { email: 'b@b.b', passwordHash: await hashPassword('p'), displayName: 'B' });
+  const subId = makeScoredSub(db, t.id, u1.id, 70);
+  const sess = createSession(db, { userId: u2.id, ttlMs: 60_000 });
+  const cookie = `${SESSION_COOKIE}=${sess.id}`;
+  const app = createApp({ db });
+  const server = await startApp(app);
+  const port = server.address().port;
+  const r = await fetch(`http://127.0.0.1:${port}/api/competitions/c/native-tasks/t/submissions/${subId}/select`, {
+    method: 'PUT', headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ selected: true }),
+  });
+  assert.equal(r.status, 404);
+  server.close();
+});
+
+test('PUT /select: pending (not scored) submission → 400', async () => {
+  process.env.ADMIN_TOKEN = 'shared';
+  const db = freshDb();
+  insertCompetition(db, { slug: 'c', title: 'C', type: 'native', visibility: 'public' });
+  const t = insertNativeTask(db, { competitionSlug: 'c', slug: 't', title: 'T' });
+  const u = createUser(db, { email: 'a@a.a', passwordHash: await hashPassword('p'), displayName: 'A' });
+  // pending sub (no markScored)
+  const sub = insertSubmission(db, { taskId: t.id, userId: u.id, originalFilename: 'sub', sizeBytes: 1, sha256: 'x', path: '/x' });
+  const sess = createSession(db, { userId: u.id, ttlMs: 60_000 });
+  const cookie = `${SESSION_COOKIE}=${sess.id}`;
+  const app = createApp({ db });
+  const server = await startApp(app);
+  const port = server.address().port;
+  const r = await fetch(`http://127.0.0.1:${port}/api/competitions/c/native-tasks/t/submissions/${sub.id}/select`, {
+    method: 'PUT', headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ selected: true }),
+  });
+  assert.equal(r.status, 400);
+  server.close();
+});
+
+test('publicSubmission shape includes selected field', async () => {
+  process.env.ADMIN_TOKEN = 'shared';
+  const db = freshDb();
+  insertCompetition(db, { slug: 'c', title: 'C', type: 'native', visibility: 'public' });
+  const t = insertNativeTask(db, { competitionSlug: 'c', slug: 't', title: 'T' });
+  const u = createUser(db, { email: 'a@a.a', passwordHash: await hashPassword('p'), displayName: 'A' });
+  const subId = makeScoredSub(db, t.id, u.id, 70);
+  setSubmissionSelected(db, subId, true);
+  const sess = createSession(db, { userId: u.id, ttlMs: 60_000 });
+  const cookie = `${SESSION_COOKIE}=${sess.id}`;
+  const app = createApp({ db });
+  const server = await startApp(app);
+  const port = server.address().port;
+  const r = await fetch(`http://127.0.0.1:${port}/api/competitions/c/native-tasks/t/submissions/${subId}`, { headers: { cookie } }).then((x) => x.json());
+  assert.equal(r.submission.selected, 1);
+  server.close();
+});
