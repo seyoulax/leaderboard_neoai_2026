@@ -2612,8 +2612,7 @@ function SiteHeader() {
     <header className="site-header">
       <div className="site-header-inner">
         <Link to="/" className="site-header-brand">
-          <span className="site-header-mark">●</span>
-          <span><span className="site-header-brand-accent">CU</span>mpetitions</span>
+          <span><span className="site-header-brand-accent">St</span>ackOverFlow</span>
         </Link>
         <nav className="site-header-nav">
           <NavLink
