@@ -1803,6 +1803,7 @@ export default function App() {
       <Routes>
       {/* Public root: list of competitions */}
       <Route path="/" element={<CompetitionsListPage />} />
+      <Route path="/competitions" element={<CompetitionsListPage />} />
 
       {/* Auth */}
       <Route path="/login" element={<LoginPage />} />
