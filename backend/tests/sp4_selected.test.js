@@ -65,3 +65,63 @@ test('migration 0005: existing submission rows get selected=0', () => {
   const got = db.prepare("SELECT selected FROM submissions WHERE id = 1").get();
   assert.equal(got.selected, 0);
 });
+
+import {
+  insertSubmission,
+  getSubmission,
+  pickAndMarkScoring,
+  markScored,
+  setSubmissionSelected,
+  countSelectedForUserTask,
+  listAllSubmissionsForUser,
+} from '../src/db/submissionsRepo.js';
+import { createUser } from '../src/db/usersRepo.js';
+import { insertCompetition } from '../src/db/competitionsRepo.js';
+import { insertNativeTask } from '../src/db/nativeTasksRepo.js';
+
+function seedTaskAndUser(db) {
+  insertCompetition(db, { slug: 'c', title: 'C', type: 'native', visibility: 'public' });
+  const t = insertNativeTask(db, { competitionSlug: 'c', slug: 't', title: 'T' });
+  const u = createUser(db, { email: 'a@a.a', passwordHash: 'h', displayName: 'A' });
+  return { taskId: t.id, userId: u.id };
+}
+
+function makeScoredSub(db, taskId, userId, points) {
+  const s = insertSubmission(db, { taskId, userId, originalFilename: 'sub', sizeBytes: 1, sha256: 'x', path: '/x' });
+  pickAndMarkScoring(db);
+  markScored(db, s.id, { rawScorePublic: points / 100, pointsPublic: points, log: '', durationMs: 1 });
+  return s.id;
+}
+
+test('setSubmissionSelected: помечает', () => {
+  const db = freshDb();
+  const { taskId, userId } = seedTaskAndUser(db);
+  const id = makeScoredSub(db, taskId, userId, 70);
+  setSubmissionSelected(db, id, true);
+  assert.equal(getSubmission(db, id).selected, 1);
+  setSubmissionSelected(db, id, false);
+  assert.equal(getSubmission(db, id).selected, 0);
+});
+
+test('countSelectedForUserTask: 0/1/2', () => {
+  const db = freshDb();
+  const { taskId, userId } = seedTaskAndUser(db);
+  const a = makeScoredSub(db, taskId, userId, 70);
+  const b = makeScoredSub(db, taskId, userId, 80);
+  assert.equal(countSelectedForUserTask(db, userId, taskId), 0);
+  setSubmissionSelected(db, a, true);
+  assert.equal(countSelectedForUserTask(db, userId, taskId), 1);
+  setSubmissionSelected(db, b, true);
+  assert.equal(countSelectedForUserTask(db, userId, taskId), 2);
+});
+
+test('listAllSubmissionsForUser: across tasks DESC by created_at', () => {
+  const db = freshDb();
+  const { taskId, userId } = seedTaskAndUser(db);
+  const t2 = insertNativeTask(db, { competitionSlug: 'c', slug: 't2', title: 'T2' });
+  makeScoredSub(db, taskId, userId, 70);
+  makeScoredSub(db, t2.id, userId, 80);
+  const list = listAllSubmissionsForUser(db, userId, { limit: 50 });
+  assert.equal(list.length, 2);
+  assert.ok(list[0].createdAt >= list[1].createdAt);
+});
