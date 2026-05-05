@@ -397,6 +397,15 @@ code {
   font-size: 0.92em;
 }
 
+.place-delta {
+  font-size: 0.85em;
+  font-weight: 600;
+  font-family: ui-monospace, monospace;
+  margin-left: 4px;
+}
+.place-delta.up { color: #45d18a; }
+.place-delta.down { color: var(--danger); }
+
 .filter-select {
   min-width: 160px;
   padding-right: 32px;

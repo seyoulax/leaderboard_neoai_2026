@@ -111,6 +111,11 @@ export default function ObsBar({ contextLabel, rows, updatedAt, loading, error }
                     <div className="obsbar-cell-top">
                       <div className="obsbar-rank">
                         <span className="obsbar-rank-num">{displayRank}</span>
+                        {row.placeDelta ? (
+                          <span className={`place-delta ${row.placeDelta > 0 ? 'up' : 'down'}`}>
+                            {' '}{row.placeDelta > 0 ? '▲' : '▼'}{Math.abs(row.placeDelta)}
+                          </span>
+                        ) : null}
                       </div>
                       <div className="obsbar-name">{row.name}</div>
                       <div className="obsbar-score">

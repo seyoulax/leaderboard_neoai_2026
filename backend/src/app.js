@@ -496,26 +496,36 @@ function applyDisplayNames(result, displayMap) {
 function annotateWithDeltas(result, prevCache) {
   const prevTaskPoints = new Map();
   const prevTotalPoints = new Map();
+  const prevTaskPlaces = new Map();
+  const prevOverallPlaces = new Map();
 
   for (const slug of Object.keys(prevCache.byTask || {})) {
     const entries = prevCache.byTask[slug]?.entries || [];
     for (const e of entries) {
-      if (e.participantKey) prevTaskPoints.set(`${slug}|${e.participantKey}`, e.points);
+      if (!e.participantKey) continue;
+      prevTaskPoints.set(`${slug}|${e.participantKey}`, e.points);
+      if (Number.isFinite(e.place)) prevTaskPlaces.set(`${slug}|${e.participantKey}`, e.place);
     }
   }
   for (const e of prevCache.overall || []) {
-    if (e.participantKey) prevTotalPoints.set(e.participantKey, e.totalPoints);
+    if (!e.participantKey) continue;
+    prevTotalPoints.set(e.participantKey, e.totalPoints);
+    if (Number.isFinite(e.place)) prevOverallPlaces.set(e.participantKey, e.place);
   }
 
   for (const slug of Object.keys(result.byTask)) {
     for (const e of result.byTask[slug].entries) {
       const prev = prevTaskPoints.get(`${slug}|${e.participantKey}`);
       e.previousPoints = prev !== undefined ? prev : null;
+      const prevPl = prevTaskPlaces.get(`${slug}|${e.participantKey}`);
+      e.previousPlace = prevPl !== undefined ? prevPl : null;
     }
   }
   for (const ovr of result.overall) {
     const prev = prevTotalPoints.get(ovr.participantKey);
     ovr.previousTotalPoints = prev !== undefined ? prev : null;
+    const prevPl = prevOverallPlaces.get(ovr.participantKey);
+    ovr.previousPlace = prevPl !== undefined ? prevPl : null;
     for (const slug of Object.keys(ovr.tasks || {})) {
       const prevP = prevTaskPoints.get(`${slug}|${ovr.participantKey}`);
       ovr.tasks[slug].previousPoints = prevP !== undefined ? prevP : null;
@@ -729,6 +739,7 @@ async function findKaggleStats(slug, kaggleId) {
     if (!row) return null;
     return {
       place: row.place,
+      previousPlace: row.previousPlace ?? null,
       totalPoints: row.totalPoints,
       previousTotalPoints: row.previousTotalPoints ?? null,
       nickname: row.nickname,
@@ -743,7 +754,7 @@ async function findKaggleStats(slug, kaggleId) {
   const board = boards.find((b) => b.slug === cardBoardSlug);
   if (!board) return null;
   const taskSlugs = board.taskSlugs || [];
-  const ranked = overall
+  const enriched = overall
     .map((r) => {
       const sum = taskSlugs.reduce((s, ts) => s + (r.tasks?.[ts]?.points ?? 0), 0);
       const hasAnyPrev = taskSlugs.some((ts) => r.tasks?.[ts]?.previousPoints != null);
@@ -752,13 +763,22 @@ async function findKaggleStats(slug, kaggleId) {
         : null;
       return { ...r, _sum: sum, _prev: prevSum };
     })
-    .filter((r) => taskSlugs.some((ts) => r.tasks?.[ts] !== undefined))
+    .filter((r) => taskSlugs.some((ts) => r.tasks?.[ts] !== undefined));
+  const prevPlaceMap = new Map();
+  enriched
+    .slice()
+    .sort((a, b) => (b._prev ?? -Infinity) - (a._prev ?? -Infinity))
+    .forEach((r, i) => {
+      if (r._prev != null) prevPlaceMap.set(r.participantKey, i + 1);
+    });
+  const ranked = enriched
     .sort((a, b) => b._sum - a._sum || (a.nickname || '').localeCompare(b.nickname || ''))
     .map((r, i) => ({ ...r, _place: i + 1 }));
   const row = ranked.find((r) => (r.nickname || r.participantKey || '').toLowerCase() === key);
   if (!row) return null;
   return {
     place: row._place,
+    previousPlace: prevPlaceMap.get(row.participantKey) ?? null,
     totalPoints: row._sum,
     previousTotalPoints: row._prev,
     nickname: row.nickname,

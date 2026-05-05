@@ -82,20 +82,34 @@ export default function ObsCycle() {
   const visibleTasks = presentSlugs ? allTasks.filter((t) => presentSlugs.includes(t.slug)) : allTasks;
 
   const oursOverall = data?.oursOverall || [];
-  const overall = board
-    ? oursOverall
-        .map((r) => {
-          const total = presentSlugs.reduce((sum, slug) => sum + (r.tasks?.[slug]?.points ?? 0), 0);
-          return { ...r, displayTotal: total };
-        })
-        .filter((r) => presentSlugs.some((slug) => r.tasks?.[slug] !== undefined))
-        .sort(
-          (a, b) =>
-            b.displayTotal - a.displayTotal ||
-            (a.nickname || a.teamName || '').localeCompare(b.nickname || b.teamName || '')
-        )
-        .map((r, i) => ({ ...r, place: i + 1 }))
-    : oursOverall.map((r) => ({ ...r, displayTotal: r.totalPoints }));
+  let overall;
+  if (board) {
+    const enriched = oursOverall
+      .map((r) => {
+        const total = presentSlugs.reduce((sum, slug) => sum + (r.tasks?.[slug]?.points ?? 0), 0);
+        const hasAnyPrev = presentSlugs.some((slug) => r.tasks?.[slug]?.previousPoints != null);
+        const prevTotal = hasAnyPrev
+          ? presentSlugs.reduce((sum, slug) => sum + (r.tasks?.[slug]?.previousPoints ?? r.tasks?.[slug]?.points ?? 0), 0)
+          : null;
+        return { ...r, displayTotal: total, previousDisplayTotal: prevTotal };
+      })
+      .filter((r) => presentSlugs.some((slug) => r.tasks?.[slug] !== undefined));
+    const prevPlaceMap = new Map();
+    enriched
+      .filter((r) => r.previousDisplayTotal != null)
+      .slice()
+      .sort((a, b) => b.previousDisplayTotal - a.previousDisplayTotal)
+      .forEach((r, i) => prevPlaceMap.set(r.participantKey, i + 1));
+    overall = enriched
+      .sort(
+        (a, b) =>
+          b.displayTotal - a.displayTotal ||
+          (a.nickname || a.teamName || '').localeCompare(b.nickname || b.teamName || '')
+      )
+      .map((r, i) => ({ ...r, place: i + 1, previousPlace: prevPlaceMap.get(r.participantKey) ?? null }));
+  } else {
+    overall = oursOverall.map((r) => ({ ...r, displayTotal: r.totalPoints }));
+  }
 
   const total = overall.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -148,10 +162,16 @@ export default function ObsCycle() {
                 </tr>
               </thead>
               <tbody>
-                {slice.map((row) => (
-                  <tr key={row.participantKey}>
-                    <td className="obscycle-td-rank">{row.place}</td>
-                    <td className="obscycle-td-name">{row.nickname || row.teamName || '-'}</td>
+                {slice.map((row) => {
+                  const dPl = (Number.isFinite(row.previousPlace) && Number.isFinite(row.place))
+                    ? row.previousPlace - row.place : 0;
+                  return (
+                    <tr key={row.participantKey}>
+                      <td className="obscycle-td-rank">
+                        {row.place}
+                        {dPl ? <span className={`place-delta ${dPl > 0 ? 'up' : 'down'}`}> {dPl > 0 ? '▲' : '▼'}{Math.abs(dPl)}</span> : null}
+                      </td>
+                      <td className="obscycle-td-name">{row.nickname || row.teamName || '-'}</td>
                     <td className="obscycle-td-total">{row.displayTotal.toFixed(2)}</td>
                     {visibleTasks.map((task) => {
                       const points = row.tasks?.[task.slug]?.points;
@@ -162,7 +182,8 @@ export default function ObsCycle() {
                       );
                     })}
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

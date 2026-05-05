@@ -97,6 +97,11 @@ export default function ObsView({ contextLabel, rows, updatedAt, loading, error 
                   <div key={row.key} className={rowClass(rank, isNew, row.dir)}>
                     <div className="obs-rank">
                       <span className="obs-rank-num">{rank}</span>
+                      {row.placeDelta ? (
+                        <span className={`place-delta ${row.placeDelta > 0 ? 'up' : 'down'}`}>
+                          {' '}{row.placeDelta > 0 ? '▲' : '▼'}{Math.abs(row.placeDelta)}
+                        </span>
+                      ) : null}
                     </div>
                     <div className="obs-name">{row.name}</div>
                     <div className="obs-score">

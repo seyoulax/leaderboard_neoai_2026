@@ -65,7 +65,14 @@ export default function ObsCard() {
               <div className="obscard-live">
                 <div className="obscard-live-cell">
                   <div className="obscard-live-label">{isBoard ? `Место (${stats.sourceLabel})` : 'Место'}</div>
-                  <div className="obscard-live-value">#{stats.place}</div>
+                  <div className="obscard-live-value">
+                    #{stats.place}
+                    {Number.isFinite(stats.previousPlace) && stats.previousPlace !== stats.place ? (
+                      <span className={`place-delta ${stats.previousPlace > stats.place ? 'up' : 'down'}`}>
+                        {' '}{stats.previousPlace > stats.place ? '▲' : '▼'}{Math.abs(stats.previousPlace - stats.place)}
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
                 <div className="obscard-live-cell">
                   <div className="obscard-live-label">{isBoard ? 'Board points' : 'Total points'}</div>

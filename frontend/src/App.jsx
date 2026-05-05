@@ -87,6 +87,30 @@ function rowDirClass(dir) {
   return dir === 'up' ? 'row-up' : dir === 'down' ? 'row-down' : '';
 }
 
+function getPlaceDelta(curr, prev) {
+  if (!Number.isFinite(curr) || !Number.isFinite(prev)) return 0;
+  return prev - curr; // positive = moved up (smaller rank number = better)
+}
+
+function PlaceDeltaTag({ delta }) {
+  if (!delta) return null;
+  const up = delta > 0;
+  return (
+    <span className={`place-delta ${up ? 'up' : 'down'}`}>
+      {' '}{up ? '▲' : '▼'}{Math.abs(delta)}
+    </span>
+  );
+}
+
+function PlaceCell({ place, previousPlace, className = '' }) {
+  return (
+    <td className={className}>
+      {place}
+      <PlaceDeltaTag delta={getPlaceDelta(place, previousPlace)} />
+    </td>
+  );
+}
+
 function csvEscape(v) {
   if (v === null || v === undefined) return '';
   const s = String(v);
@@ -455,7 +479,7 @@ function OverallPage() {
           <tbody>
             {overall.map((row) => (
               <tr key={row.participantKey} className={rowDirClass(getDir(row.totalPoints, row.previousTotalPoints))}>
-                <td>{row.place}</td>
+                <PlaceCell place={row.place} previousPlace={row.previousPlace} />
                 <td className="team">{row.nickname || '-'}</td>
                 <td>{row.teamName || '-'}</td>
                 <DeltaCell value={row.totalPoints} prev={row.previousTotalPoints} />
@@ -555,7 +579,7 @@ function CyclingOverallPage() {
           <tbody>
             {slice.map((row) => (
               <tr key={row.participantKey} className={rowDirClass(getDir(row.totalPoints, row.previousTotalPoints))}>
-                <td>{row.place}</td>
+                <PlaceCell place={row.place} previousPlace={row.previousPlace} />
                 <td className="team">{row.nickname || '-'}</td>
                 <td>{row.teamName || '-'}</td>
                 <DeltaCell value={row.totalPoints} prev={row.previousTotalPoints} />
@@ -599,7 +623,7 @@ function BoardPage({ boards }) {
   const presentSlugs = board.taskSlugs.filter((s) => data.tasks.some((t) => t.slug === s));
   const groupTasks = data.tasks.filter((t) => presentSlugs.includes(t.slug));
 
-  const ranked = overallSrc
+  const enriched = overallSrc
     .map((row) => {
       const total = presentSlugs.reduce((sum, slug) => sum + (row.tasks?.[slug]?.points ?? 0), 0);
       const hasAnyPrev = presentSlugs.some((slug) => row.tasks?.[slug]?.previousPoints != null);
@@ -615,13 +639,27 @@ function BoardPage({ boards }) {
         previousGroupPoints: prevTotal != null ? Number(prevTotal.toFixed(6)) : null,
       };
     })
-    .filter((row) => presentSlugs.some((slug) => row.tasks?.[slug] !== undefined))
+    .filter((row) => presentSlugs.some((slug) => row.tasks?.[slug] !== undefined));
+
+  const prevPlaceMap = new Map();
+  enriched
+    .filter((r) => r.previousGroupPoints != null)
+    .slice()
+    .sort((a, b) => b.previousGroupPoints - a.previousGroupPoints
+      || (a.nickname || a.teamName || '').localeCompare(b.nickname || b.teamName || ''))
+    .forEach((r, i) => prevPlaceMap.set(r.participantKey, i + 1));
+
+  const ranked = enriched
     .sort(
       (a, b) =>
         b.groupPoints - a.groupPoints ||
         (a.nickname || a.teamName || '').localeCompare(b.nickname || b.teamName || '')
     )
-    .map((row, i) => ({ ...row, place: i + 1 }));
+    .map((row, i) => ({
+      ...row,
+      place: i + 1,
+      previousPlace: prevPlaceMap.get(row.participantKey) ?? null,
+    }));
 
   const visible = ranked.filter((r) => matchesNickname(r, query));
 
@@ -674,7 +712,7 @@ function BoardPage({ boards }) {
           <tbody>
             {visible.map((row) => (
               <tr key={row.participantKey} className={rowDirClass(getDir(row.groupPoints, row.previousGroupPoints))}>
-                <td>{row.place}</td>
+                <PlaceCell place={row.place} previousPlace={row.previousPlace} />
                 <td className="team">{row.nickname || '-'}</td>
                 <td>{row.teamName || '-'}</td>
                 <DeltaCell value={row.groupPoints} prev={row.previousGroupPoints} />
@@ -794,7 +832,7 @@ function TaskPage() {
           <tbody>
             {entries.map((row) => (
               <tr key={row.participantKey} className={rowDirClass(getDir(row.points, row.previousPoints))}>
-                <td>{row.place}</td>
+                <PlaceCell place={row.place} previousPlace={row.previousPlace} />
                 <td className="team">{row.nickname || '-'}</td>
                 <td>{row.teamName || '-'}</td>
                 <td className="mono">{row.rank ?? '-'}</td>
@@ -813,12 +851,27 @@ function TaskPage() {
 function ObsOverall() {
   const { competitionSlug } = useParams();
   const { data, loading, error } = usePolling(() => getOverallLeaderboard(competitionSlug), [competitionSlug]);
-  const rows = (data?.oursOverall || []).map((r) => ({
-    key: r.participantKey,
-    name: r.nickname || r.teamName || '-',
-    score: r.totalPoints.toFixed(2),
-    dir: getDir(r.totalPoints, r.previousTotalPoints),
-  }));
+  const ours = data?.oursOverall || [];
+  const sorted = ours
+    .slice()
+    .sort((a, b) => (b.totalPoints ?? 0) - (a.totalPoints ?? 0));
+  const oursPrevPlaceMap = new Map();
+  ours
+    .filter((r) => Number.isFinite(r.previousTotalPoints))
+    .slice()
+    .sort((a, b) => b.previousTotalPoints - a.previousTotalPoints)
+    .forEach((r, i) => oursPrevPlaceMap.set(r.participantKey, i + 1));
+  const rows = sorted.map((r, i) => {
+    const place = i + 1;
+    const prevPl = oursPrevPlaceMap.get(r.participantKey);
+    return {
+      key: r.participantKey,
+      name: r.nickname || r.teamName || '-',
+      score: r.totalPoints.toFixed(2),
+      dir: getDir(r.totalPoints, r.previousTotalPoints),
+      placeDelta: getPlaceDelta(place, prevPl),
+    };
+  });
   return (
     <ObsView
       contextLabel="Общий зачёт"
@@ -847,7 +900,7 @@ function ObsBoard() {
     .filter((t) => board.taskSlugs.includes(t.slug))
     .map((t) => t.slug);
 
-  const rows = (data?.oursOverall || [])
+  const enriched = (data?.oursOverall || [])
     .map((r) => {
       const total = presentSlugs.reduce((sum, slug) => sum + (r.tasks?.[slug]?.points ?? 0), 0);
       const hasAnyPrev = presentSlugs.some((slug) => r.tasks?.[slug]?.previousPoints != null);
@@ -859,17 +912,25 @@ function ObsBoard() {
         : null;
       return { ...r, groupPoints: total, previousGroupPoints: prevTotal };
     })
-    .filter((r) => presentSlugs.some((slug) => r.tasks?.[slug] !== undefined))
+    .filter((r) => presentSlugs.some((slug) => r.tasks?.[slug] !== undefined));
+  const obsBoardPrevMap = new Map();
+  enriched
+    .filter((r) => r.previousGroupPoints != null)
+    .slice()
+    .sort((a, b) => b.previousGroupPoints - a.previousGroupPoints)
+    .forEach((r, i) => obsBoardPrevMap.set(r.participantKey, i + 1));
+  const rows = enriched
     .sort(
       (a, b) =>
         b.groupPoints - a.groupPoints ||
         (a.nickname || a.teamName || '').localeCompare(b.nickname || b.teamName || '')
     )
-    .map((r) => ({
+    .map((r, i) => ({
       key: r.participantKey,
       name: r.nickname || r.teamName || '-',
       score: r.groupPoints.toFixed(2),
       dir: getDir(r.groupPoints, r.previousGroupPoints),
+      placeDelta: getPlaceDelta(i + 1, obsBoardPrevMap.get(r.participantKey)),
     }));
 
   return (
@@ -894,11 +955,19 @@ function ObsTask() {
   const { data, loading, error } = usePolling(() => getTaskLeaderboard(competitionSlug, slug), [competitionSlug, slug]);
 
   const task = data?.task;
-  const rows = (data?.oursTask?.entries || []).map((r) => ({
+  const oursEntries = data?.oursTask?.entries || [];
+  const oursTaskPrevMap = new Map();
+  oursEntries
+    .filter((r) => Number.isFinite(r.previousPoints))
+    .slice()
+    .sort((a, b) => b.previousPoints - a.previousPoints)
+    .forEach((r, i) => oursTaskPrevMap.set(r.participantKey, i + 1));
+  const rows = oursEntries.map((r, i) => ({
     key: r.participantKey,
     name: r.nickname || r.teamName || '-',
     score: formatRawScore(r.score),
     dir: getDir(r.points, r.previousPoints),
+    placeDelta: getPlaceDelta(i + 1, oursTaskPrevMap.get(r.participantKey)),
   }));
 
   return (
@@ -934,7 +1003,7 @@ function ObsBoardBar() {
     return { slug: t.slug, short };
   });
 
-  const rows = (data?.oursOverall || [])
+  const enrichedBar = (data?.oursOverall || [])
     .map((r) => {
       const total = presentSlugs.reduce((sum, slug) => sum + (r.tasks?.[slug]?.points ?? 0), 0);
       const hasAnyPrev = presentSlugs.some((slug) => r.tasks?.[slug]?.previousPoints != null);
@@ -946,17 +1015,25 @@ function ObsBoardBar() {
         : null;
       return { ...r, groupPoints: total, previousGroupPoints: prevTotal };
     })
-    .filter((r) => presentSlugs.some((slug) => r.tasks?.[slug] !== undefined))
+    .filter((r) => presentSlugs.some((slug) => r.tasks?.[slug] !== undefined));
+  const obsBarPrevMap = new Map();
+  enrichedBar
+    .filter((r) => r.previousGroupPoints != null)
+    .slice()
+    .sort((a, b) => b.previousGroupPoints - a.previousGroupPoints)
+    .forEach((r, i) => obsBarPrevMap.set(r.participantKey, i + 1));
+  const rows = enrichedBar
     .sort(
       (a, b) =>
         b.groupPoints - a.groupPoints ||
         (a.nickname || a.teamName || '').localeCompare(b.nickname || b.teamName || '')
     )
-    .map((r) => ({
+    .map((r, i) => ({
       key: r.participantKey,
       name: r.nickname || r.teamName || '-',
       score: r.groupPoints.toFixed(2),
       dir: getDir(r.groupPoints, r.previousGroupPoints),
+      placeDelta: getPlaceDelta(i + 1, obsBarPrevMap.get(r.participantKey)),
       taskPoints: taskLabels.map(({ slug, short }) => ({
         slug,
         short,
@@ -1002,7 +1079,14 @@ function CardPreview({ participant, stats }) {
               <div className="admin-card-preview-cell-label">
                 Место{stats.sourceLabel ? ` (${stats.sourceLabel})` : ''}
               </div>
-              <div className="admin-card-preview-cell-value">#{stats.place}</div>
+              <div className="admin-card-preview-cell-value">
+                #{stats.place}
+                {Number.isFinite(stats.previousPlace) && stats.previousPlace !== stats.place ? (
+                  <span className={`place-delta ${stats.previousPlace > stats.place ? 'up' : 'down'}`}>
+                    {' '}{stats.previousPlace > stats.place ? '▲' : '▼'}{Math.abs(stats.previousPlace - stats.place)}
+                  </span>
+                ) : null}
+              </div>
             </div>
             <div className="admin-card-preview-cell">
               <div className="admin-card-preview-cell-label">
