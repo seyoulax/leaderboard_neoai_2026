@@ -240,6 +240,7 @@ function Layout({ children, tasks, boards, categories, competitionSlug, theme })
     slug: '_all',
     title: 'Отдельно по задачам',
     taskSlugs: tasks.map((t) => t.slug),
+    boardSlugs: [],
   };
   const allCategories = [...visibleCategories, virtualCat];
 
@@ -265,15 +266,18 @@ function Layout({ children, tasks, boards, categories, competitionSlug, theme })
     setSearchParams(next, { replace: true });
   }
 
-  function taskHref(taskSlug) {
+  function withCatQuery(href) {
     const sp = new URLSearchParams();
     if (selectedCatSlug) sp.set('category', selectedCatSlug);
     const qs = sp.toString();
-    return `${base}/task/${taskSlug}${qs ? `?${qs}` : ''}`;
+    return qs ? `${href}?${qs}` : href;
   }
 
   const subTasks = selectedCat
     ? tasks.filter((t) => selectedCat.taskSlugs.includes(t.slug))
+    : [];
+  const subBoards = selectedCat
+    ? (boards || []).filter((b) => (selectedCat.boardSlugs || []).includes(b.slug))
     : [];
 
   return (
@@ -306,12 +310,21 @@ function Layout({ children, tasks, boards, categories, competitionSlug, theme })
         ))}
       </nav>
 
-      {selectedCat && subTasks.length > 0 ? (
+      {selectedCat && (subTasks.length > 0 || subBoards.length > 0) ? (
         <nav className="tabs tabs-sub">
+          {subBoards.map((board) => (
+            <NavLink
+              key={`b-${board.slug}`}
+              to={withCatQuery(`${base}/board/${board.slug}`)}
+              className={({ isActive }) => `tab tab-sub tab-sub-board ${isActive ? 'active' : ''}`}
+            >
+              {board.title}
+            </NavLink>
+          ))}
           {subTasks.map((task) => (
             <NavLink
-              key={task.slug}
-              to={taskHref(task.slug)}
+              key={`t-${task.slug}`}
+              to={withCatQuery(`${base}/task/${task.slug}`)}
               className={({ isActive }) => `tab tab-sub ${isActive ? 'active' : ''}`}
             >
               {task.title}
@@ -1807,18 +1820,22 @@ function AdminCategoriesPage() {
   const navigate = useNavigate();
   const [categories, setCategories] = useState([]);
   const [allTasks, setAllTasks] = useState([]);
+  const [allBoards, setAllBoards] = useState([]);
   const [original, setOriginal] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState(null);
 
-  function normalize(rawList, knownSet) {
+  function normalize(rawList, knownTasks, knownBoards) {
     return (rawList || []).map((c) => ({
       slug: c.slug || '',
       title: c.title || '',
       taskSlugs: Array.isArray(c.taskSlugs)
-        ? c.taskSlugs.filter((s) => !knownSet || knownSet.has(s))
+        ? c.taskSlugs.filter((s) => !knownTasks || knownTasks.has(s))
+        : [],
+      boardSlugs: Array.isArray(c.boardSlugs)
+        ? c.boardSlugs.filter((s) => !knownBoards || knownBoards.has(s))
         : [],
       visible: c.visible !== false,
       order: c.order ?? 0,
@@ -1829,12 +1846,19 @@ function AdminCategoriesPage() {
     setLoading(true);
     setError(null);
     try {
-      const [c, t] = await Promise.all([getAdminCategories(competitionSlug), getAdminTasks(competitionSlug)]);
+      const [c, t, b] = await Promise.all([
+        getAdminCategories(competitionSlug),
+        getAdminTasks(competitionSlug),
+        getAdminBoards(competitionSlug),
+      ]);
       const tasksList = t.tasks || [];
-      const known = new Set(tasksList.map((x) => x.slug));
-      const list = normalize(c.categories, known);
+      const boardsList = b.boards || [];
+      const knownTasks = new Set(tasksList.map((x) => x.slug));
+      const knownBoards = new Set(boardsList.map((x) => x.slug));
+      const list = normalize(c.categories, knownTasks, knownBoards);
       setCategories(list);
       setAllTasks(tasksList);
+      setAllBoards(boardsList);
       setOriginal(JSON.stringify(list));
     } catch (err) {
       if (err instanceof AdminAuthError) navigate('/admin', { replace: true });
@@ -1865,6 +1889,19 @@ function AdminCategoriesPage() {
     );
   }
 
+  function toggleBoard(idx, slug) {
+    setCategories((prev) =>
+      prev.map((c, i) => {
+        if (i !== idx) return c;
+        const has = c.boardSlugs.includes(slug);
+        return {
+          ...c,
+          boardSlugs: has ? c.boardSlugs.filter((s) => s !== slug) : [...c.boardSlugs, slug],
+        };
+      })
+    );
+  }
+
   function remove(idx) {
     if (!confirm('Удалить категорию?')) return;
     setCategories((prev) => prev.filter((_, i) => i !== idx));
@@ -1874,7 +1911,7 @@ function AdminCategoriesPage() {
     const nextOrder = categories.reduce((m, c) => Math.max(m, c.order ?? 0), 0) + 1;
     setCategories((prev) => [
       ...prev,
-      { slug: '', title: '', taskSlugs: [], visible: true, order: nextOrder },
+      { slug: '', title: '', taskSlugs: [], boardSlugs: [], visible: true, order: nextOrder },
     ]);
   }
 
@@ -1883,8 +1920,9 @@ function AdminCategoriesPage() {
     setError(null);
     try {
       const data = await saveAdminCategories(competitionSlug, categories);
-      const known = new Set(allTasks.map((x) => x.slug));
-      const list = normalize(data.categories, known);
+      const knownTasks = new Set(allTasks.map((x) => x.slug));
+      const knownBoards = new Set(allBoards.map((x) => x.slug));
+      const list = normalize(data.categories, knownTasks, knownBoards);
       setCategories(list);
       setOriginal(JSON.stringify(list));
       setSavedAt(new Date());
@@ -1959,6 +1997,27 @@ function AdminCategoriesPage() {
                 />
               </label>
               <button className="control-btn control-btn-ghost" onClick={() => remove(idx)}>×</button>
+            </div>
+
+            <div className="admin-board-tasks">
+              <div className="admin-field-label">лидерборды (boards) в категории</div>
+              <div className="admin-board-tasks-list">
+                {allBoards.length === 0 ? (
+                  <span className="meta">Нет лидербордов — создай их во вкладке «Boards»</span>
+                ) : (
+                  allBoards.map((b) => (
+                    <label key={b.slug} className="admin-board-task-pick">
+                      <input
+                        type="checkbox"
+                        checked={cat.boardSlugs.includes(b.slug)}
+                        onChange={() => toggleBoard(idx, b.slug)}
+                      />
+                      <span>{b.title}</span>
+                      <span className="muted"> ({b.slug})</span>
+                    </label>
+                  ))
+                )}
+              </div>
             </div>
 
             <div className="admin-board-tasks">

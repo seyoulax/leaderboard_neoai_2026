@@ -235,7 +235,7 @@ async function saveBoardsFor(slug, boards) {
   await fs.rename(tmp, file);
 }
 
-function validateCategories(input, knownTaskSlugs) {
+function validateCategories(input, knownTaskSlugs, knownBoardSlugs) {
   if (!Array.isArray(input)) throw new Error('categories must be an array');
   const seen = new Set();
   return input.map((cat, idx) => {
@@ -268,10 +268,23 @@ function validateCategories(input, knownTaskSlugs) {
       cleanTaskSlugs.push(t);
     }
 
+    const boardSlugs = Array.isArray(cat.boardSlugs) ? cat.boardSlugs : [];
+    const cleanBoardSlugs = [];
+    for (const bs of boardSlugs) {
+      if (typeof bs !== 'string' || !bs.trim()) {
+        throw new Error(`category ${slug}: boardSlugs must be non-empty strings`);
+      }
+      const b = bs.trim();
+      if (knownBoardSlugs && !knownBoardSlugs.has(b)) {
+        throw new Error(`category ${slug}: unknown board slug '${b}'`);
+      }
+      cleanBoardSlugs.push(b);
+    }
+
     const order = Number.isFinite(Number(cat.order)) ? Number(cat.order) : 0;
     const visible = cat.visible !== false;
 
-    return { slug, title, taskSlugs: cleanTaskSlugs, visible, order };
+    return { slug, title, taskSlugs: cleanTaskSlugs, boardSlugs: cleanBoardSlugs, visible, order };
   });
 }
 
@@ -282,16 +295,21 @@ async function loadCategoriesFor(slug) {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
     const tasks = await loadTasksFor(slug);
-    const known = new Set(tasks.map((t) => t.slug));
+    const boards = await loadBoardsFor(slug);
+    const knownTasks = new Set(tasks.map((t) => t.slug));
+    const knownBoards = new Set(boards.map((b) => b.slug));
     const sanitized = [];
     for (const cat of parsed) {
       if (!cat || typeof cat !== 'object') continue;
-      const filtered = Array.isArray(cat.taskSlugs)
-        ? cat.taskSlugs.filter((s) => typeof s === 'string' && known.has(s.trim()))
+      const filteredTasks = Array.isArray(cat.taskSlugs)
+        ? cat.taskSlugs.filter((s) => typeof s === 'string' && knownTasks.has(s.trim()))
         : [];
-      sanitized.push({ ...cat, taskSlugs: filtered });
+      const filteredBoards = Array.isArray(cat.boardSlugs)
+        ? cat.boardSlugs.filter((s) => typeof s === 'string' && knownBoards.has(s.trim()))
+        : [];
+      sanitized.push({ ...cat, taskSlugs: filteredTasks, boardSlugs: filteredBoards });
     }
-    return validateCategories(sanitized, known);
+    return validateCategories(sanitized, knownTasks, knownBoards);
   } catch (e) {
     if (e.code === 'ENOENT') return [];
     throw e;
@@ -1040,9 +1058,10 @@ export function createApp({ db } = {}) {
   app.put('/api/admin/competitions/:competitionSlug/categories', adminMw, async (req, res) => {
     const slug = ensureKnownSlug(req, res); if (!slug) return;
     try {
-      const tasks = await loadTasksFor(slug);
-      const known = new Set(tasks.map((t) => t.slug));
-      const categories = validateCategories(req.body?.categories, known);
+      const [tasks, boards] = await Promise.all([loadTasksFor(slug), loadBoardsFor(slug)]);
+      const knownTasks = new Set(tasks.map((t) => t.slug));
+      const knownBoards = new Set(boards.map((b) => b.slug));
+      const categories = validateCategories(req.body?.categories, knownTasks, knownBoards);
       await saveCategoriesFor(slug, categories);
       res.json({ ok: true, categories });
     } catch (e) {
