@@ -38,7 +38,7 @@ function freshDb() {
 test('runMigrations: applies 0001_init on empty DB', () => {
   const db = freshDb();
   const row = db.prepare("SELECT version FROM schema_migrations ORDER BY version").all();
-  assert.deepEqual(row, [{ version: 1 }, { version: 2 }, { version: 3 }, { version: 4 }]);
+  assert.deepEqual(row, [{ version: 1 }, { version: 2 }, { version: 3 }, { version: 4 }, { version: 5 }]);
   const tables = db
     .prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
     .all()
@@ -54,7 +54,7 @@ test('runMigrations: idempotent (second call no-op)', () => {
   runMigrations(db);
   runMigrations(db);
   const versions = db.prepare('SELECT version FROM schema_migrations').all();
-  assert.equal(versions.length, 4);
+  assert.equal(versions.length, 5);
 });
 
 // ─── usersRepo ───────────────────────────────────────────────────
@@ -68,7 +68,7 @@ test('usersRepo.createUser + findUserByEmail (case-insensitive)', () => {
     kaggleId: null,
   });
   assert.equal(u.role, 'participant');
-  assert.equal(u.email, 'Foo@Bar.com');
+  assert.equal(u.email, 'foo@bar.com');
   const found = findUserByEmail(db, 'foo@bar.com');
   assert.equal(found.id, u.id);
 });

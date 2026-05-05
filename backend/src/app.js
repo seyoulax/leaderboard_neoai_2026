@@ -6,10 +6,12 @@ import { fileURLToPath } from 'node:url';
 import { validateCompetitions } from './competitions.js';
 import { loadUser, requireAdmin } from './auth/middleware.js';
 import { createAuthRouter } from './routes/auth.js';
+import { createMeRouter } from './routes/me.js';
 import { createNativeTasksAdminRouter } from './routes/nativeTasksAdmin.js';
 import { createNativeTasksPublicRouter } from './routes/nativeTasksPublic.js';
 import { createSubmissionsPublicRouter } from './routes/submissionsPublic.js';
 import { createSubmissionsAdminRouter } from './routes/submissionsAdmin.js';
+import { createMembershipRouter } from './routes/membership.js';
 import { listNativeTasks } from './db/nativeTasksRepo.js';
 import {
   listActiveCompetitions,
@@ -34,6 +36,9 @@ import {
   deletePublicFile,
   parsePublicCsv,
 } from './private.js';
+import { buildNativeLeaderboard } from './scoring/nativeLeaderboard.js';
+import { makeSnapshotCache } from './scoring/snapshotCache.js';
+import { setOnScoredCallback } from './scoring/worker.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -866,6 +871,15 @@ export function createApp({ db } = {}) {
   app.use(express.json({ limit: '50mb' }));
   app.use(loadUser({ db }));
   app.use('/api/auth', createAuthRouter({ db }));
+  app.use('/api/me', createMeRouter({ db }));
+
+  const snapshotCache = makeSnapshotCache();
+  setOnScoredCallback((slug) => {
+    try {
+      const fresh = buildNativeLeaderboard(db, slug, 'public');
+      snapshotCache.annotate(slug, fresh);
+    } catch (e) { console.error('[onScored] cache update failed', e); }
+  });
 
   app.get('/api/health', (_req, res) => {
     const competitions = cache.competitionsIndex.map((c) => {
@@ -900,8 +914,11 @@ export function createApp({ db } = {}) {
     const meta = requireCompetition(req, res);
     if (!meta) return;
     if (meta.type === 'native') {
-      const { buildNativeLeaderboard } = await import('./scoring/nativeLeaderboard.js');
-      const pub = buildNativeLeaderboard(db, meta.slug, 'public');
+      let pub = snapshotCache.get(meta.slug);
+      if (!pub) {
+        const fresh = buildNativeLeaderboard(db, meta.slug, 'public');
+        pub = snapshotCache.annotate(meta.slug, fresh);
+      }
       const priv = buildNativeLeaderboard(db, meta.slug, 'private');
       const privateTaskSlugs = Object.keys(priv.byTask).filter((slug) => priv.byTask[slug].entries.length > 0);
       res.json({
@@ -1503,6 +1520,7 @@ export function createApp({ db } = {}) {
   app.use('/api/competitions/:competitionSlug/native-tasks', createNativeTasksPublicRouter({ db }));
   app.use('/api/competitions/:competitionSlug/native-tasks/:taskSlug/submissions', createSubmissionsPublicRouter({ db }));
   app.use('/api/admin/competitions/:competitionSlug/native-tasks/:taskSlug/submissions', adminMw, createSubmissionsAdminRouter({ db }));
+  app.use('/api/competitions/:competitionSlug', createMembershipRouter({ db }));
 
   return app;
 }

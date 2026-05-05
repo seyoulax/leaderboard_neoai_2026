@@ -13,6 +13,9 @@ const DEFAULT_TIMEOUT_MS = 60_000;
 const MAX_ATTEMPTS = 3;
 const MAX_LOG_BYTES = 8192;
 
+let onScoredCallback = null;
+export function setOnScoredCallback(cb) { onScoredCallback = cb; }
+
 export async function tick(db, opts = {}) {
   const timeoutMs = opts.timeoutMs ?? Number(process.env.SCORING_TIMEOUT_MS || DEFAULT_TIMEOUT_MS);
   recoverStale(db);
@@ -73,6 +76,9 @@ export async function tick(db, opts = {}) {
       log,
       durationMs: pub.durationMs + privateDurationMs,
     });
+    if (onScoredCallback) {
+      try { onScoredCallback(task.competitionSlug); } catch (e) { console.error('[worker] onScored failed', e); }
+    }
   } catch (e) {
     handleFailure(db, sub, e);
   }

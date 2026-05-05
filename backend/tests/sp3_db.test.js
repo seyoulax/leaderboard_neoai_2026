@@ -12,7 +12,7 @@ function freshDb() {
 test('migration 0004: applied after 0001+0002+0003', () => {
   const db = freshDb();
   const versions = db.prepare('SELECT version FROM schema_migrations ORDER BY version').all();
-  assert.deepEqual(versions.map((r) => r.version), [1, 2, 3, 4]);
+  assert.deepEqual(versions.map((r) => r.version), [1, 2, 3, 4, 5]);
 });
 
 test('migration 0004: native_tasks gets ground_truth_private_path column', () => {

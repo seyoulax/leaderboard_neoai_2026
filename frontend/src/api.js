@@ -306,6 +306,11 @@ export const submissions = {
   },
   listMine: (compSlug, taskSlug) => request(`/competitions/${compSlug}/native-tasks/${taskSlug}/submissions/me`),
   get: (compSlug, taskSlug, id) => request(`/competitions/${compSlug}/native-tasks/${taskSlug}/submissions/${id}`),
+  toggleSelected: (compSlug, taskSlug, id, selected) =>
+    request(`/competitions/${compSlug}/native-tasks/${taskSlug}/submissions/${id}/select`, {
+      method: 'PUT',
+      body: JSON.stringify({ selected }),
+    }),
 };
 
 // ---------- Submissions (admin) ----------
@@ -315,4 +320,23 @@ export const adminSubmissions = {
   delete: (compSlug, taskSlug, id) => request(`/admin/competitions/${compSlug}/native-tasks/${taskSlug}/submissions/${id}`, { method: 'DELETE' }),
   rescore: (compSlug, taskSlug, id) => request(`/admin/competitions/${compSlug}/native-tasks/${taskSlug}/submissions/${id}/rescore`, { method: 'POST' }),
   rescoreAll: (compSlug, taskSlug) => request(`/admin/competitions/${compSlug}/native-tasks/${taskSlug}/submissions/rescore-all`, { method: 'POST' }),
+};
+
+// ---------- Me (cabinet) ----------
+
+export const meApi = {
+  get: () => request('/me'),
+  update: (patch) => request('/me', { method: 'PATCH', body: JSON.stringify(patch) }),
+  changePassword: (body) => request('/me/password', { method: 'POST', body: JSON.stringify(body) }),
+  competitions: () => request('/me/competitions'),
+  submissions: (params = {}) => {
+    const qs = new URLSearchParams(params).toString();
+    return request(`/me/submissions${qs ? `?${qs}` : ''}`);
+  },
+};
+
+export const membership = {
+  get: (slug) => request(`/competitions/${slug}/membership`),
+  join: (slug) => request(`/competitions/${slug}/join`, { method: 'POST' }),
+  leave: (slug) => request(`/competitions/${slug}/members/me`, { method: 'DELETE' }),
 };

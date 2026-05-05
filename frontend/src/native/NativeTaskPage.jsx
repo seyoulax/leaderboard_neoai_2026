@@ -6,6 +6,7 @@ import MarkdownView from '../markdown/MarkdownView.jsx';
 import NativeTaskFiles from './NativeTaskFiles.jsx';
 import SubmitForm from './SubmitForm.jsx';
 import MySubmissions from './MySubmissions.jsx';
+import JoinButton from '../competition/JoinButton.jsx';
 
 export default function NativeTaskPage() {
   const { competitionSlug, taskSlug } = useParams();
@@ -35,6 +36,7 @@ export default function NativeTaskPage() {
           </Link>
         </p>
         <h1>{task.title}</h1>
+        <JoinButton competitionSlug={competitionSlug} />
       </header>
       <main>
         <section className="panel">

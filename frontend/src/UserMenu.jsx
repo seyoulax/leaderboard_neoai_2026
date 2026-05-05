@@ -15,6 +15,7 @@ export default function UserMenu() {
   return (
     <div className="user-menu">
       <span title={user.email}>{user.displayName}</span>
+      <Link to="/me">Личный кабинет</Link>
       {user.role === 'admin' && <Link to="/admin/competitions">Админка</Link>}
       <button onClick={() => logout()}>Выйти</button>
     </div>

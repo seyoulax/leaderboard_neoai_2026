@@ -5,6 +5,7 @@ const COLS = `id,
   size_bytes AS sizeBytes,
   sha256,
   path,
+  selected,
   status,
   raw_score_public AS rawScorePublic,
   raw_score_private AS rawScorePrivate,
@@ -154,4 +155,37 @@ export function resetAllForRescore(db, taskId) {
 
 export function deleteSubmission(db, id) {
   db.prepare('DELETE FROM submissions WHERE id = ?').run(id);
+}
+
+export function setSubmissionSelected(db, id, selected) {
+  db.prepare('UPDATE submissions SET selected = ? WHERE id = ?').run(selected ? 1 : 0, id);
+}
+
+export function countSelectedForUserTask(db, userId, taskId) {
+  return db.prepare(
+    `SELECT COUNT(*) AS n FROM submissions
+     WHERE user_id = ? AND task_id = ? AND selected = 1 AND status = 'scored'`
+  ).get(userId, taskId).n;
+}
+
+export function listAllSubmissionsForUser(db, userId, { limit = 50, offset = 0 } = {}) {
+  const safeLimit = Math.max(1, Math.min(200, Number(limit) || 50));
+  const safeOffset = Math.max(0, Number(offset) || 0);
+  return db.prepare(
+    `SELECT s.id, s.task_id AS taskId, s.user_id AS userId,
+            s.original_filename AS originalFilename, s.size_bytes AS sizeBytes,
+            s.status, s.raw_score_public AS rawScorePublic,
+            s.points_public AS pointsPublic, s.points_private AS pointsPrivate,
+            s.selected, s.error_message AS errorMessage,
+            s.created_at AS createdAt, s.scored_at AS scoredAt,
+            t.slug AS taskSlug, t.title AS taskTitle, t.competition_slug AS competitionSlug
+     FROM submissions s
+     JOIN native_tasks t ON t.id = s.task_id
+     JOIN competitions c ON c.slug = t.competition_slug
+     WHERE s.user_id = ?
+       AND t.deleted_at IS NULL
+       AND c.deleted_at IS NULL
+     ORDER BY s.created_at DESC, s.id DESC
+     LIMIT ? OFFSET ?`
+  ).all(userId, safeLimit, safeOffset);
 }

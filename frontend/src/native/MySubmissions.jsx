@@ -53,6 +53,7 @@ export default function MySubmissions({ competitionSlug, taskSlug, refreshKey })
           <th>Public</th>
           <th>Private</th>
           <th>Raw</th>
+          <th>Selected</th>
         </tr>
       </thead>
       <tbody>
@@ -69,9 +70,30 @@ export default function MySubmissions({ competitionSlug, taskSlug, refreshKey })
             <td className="mono">{fmtPoints(s.pointsPublic)}</td>
             <td className="mono">{fmtPoints(s.pointsPrivate)}</td>
             <td className="muted mono">{s.rawScorePublic ?? '—'}</td>
+            <td>
+              {s.status === 'scored' && (
+                <input
+                  type="checkbox"
+                  checked={!!s.selected}
+                  disabled={!s.selected && countSelected(list) >= 2}
+                  onChange={async (e) => {
+                    try {
+                      await submissions.toggleSelected(competitionSlug, taskSlug, s.id, e.target.checked);
+                      refetch();
+                    } catch (err) {
+                      alert(err.message || 'failed');
+                    }
+                  }}
+                />
+              )}
+            </td>
           </tr>
         ))}
       </tbody>
     </table>
   );
+}
+
+function countSelected(list) {
+  return list.filter((s) => s.selected && s.status === 'scored').length;
 }

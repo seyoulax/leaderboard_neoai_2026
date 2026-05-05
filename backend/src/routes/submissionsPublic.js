@@ -10,6 +10,8 @@ import {
   listSubmissionsForUserTask,
   countRecentSubmissions,
   deleteSubmission,
+  setSubmissionSelected,
+  countSelectedForUserTask,
 } from '../db/submissionsRepo.js';
 import { requireAuth } from '../auth/middleware.js';
 
@@ -35,6 +37,7 @@ export function publicSubmission(s) {
     pointsPublic: s.pointsPublic, pointsPrivate: s.pointsPrivate,
     errorMessage: s.errorMessage, logExcerpt: s.logExcerpt,
     durationMs: s.durationMs, attempts: s.attempts,
+    selected: s.selected,
     createdAt: s.createdAt, scoredAt: s.scoredAt,
   };
 }
@@ -102,6 +105,25 @@ export function createSubmissionsPublicRouter({ db }) {
     if (!task) return res.status(404).json({ error: 'task not found' });
     const list = listSubmissionsForUserTask(db, { userId: req.user.id, taskId: task.id });
     res.json({ submissions: list.map(publicSubmission) });
+  });
+
+  router.put('/:id/select', requireAuth, (req, res) => {
+    const sub = getSubmission(db, Number(req.params.id));
+    if (!sub) return res.status(404).json({ error: 'not found' });
+    if (sub.userId !== req.user.id) return res.status(404).json({ error: 'not found' });
+    if (sub.status !== 'scored') return res.status(400).json({ error: 'submission not scored yet' });
+    if (typeof req.body?.selected !== 'boolean') {
+      return res.status(400).json({ error: 'body.selected must be a boolean' });
+    }
+    const selected = req.body.selected;
+    if (selected && sub.selected === 0) {
+      const count = countSelectedForUserTask(db, req.user.id, sub.taskId);
+      if (count >= 2) {
+        return res.status(400).json({ error: 'max 2 selected per task; unselect another first' });
+      }
+    }
+    setSubmissionSelected(db, sub.id, selected);
+    res.json({ submission: { id: sub.id, selected: selected ? 1 : 0 } });
   });
 
   router.get('/:id', requireAuth, (req, res) => {
