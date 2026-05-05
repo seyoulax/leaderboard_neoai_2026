@@ -125,3 +125,24 @@ test('listAllSubmissionsForUser: across tasks DESC by created_at', () => {
   assert.equal(list.length, 2);
   assert.ok(list[0].createdAt >= list[1].createdAt);
 });
+
+test('listAllSubmissionsForUser: hides submissions for soft-deleted tasks', () => {
+  const db = freshDb();
+  const { taskId, userId } = seedTaskAndUser(db);
+  const t2 = insertNativeTask(db, { competitionSlug: 'c', slug: 't2', title: 'T2' });
+  makeScoredSub(db, taskId, userId, 70);
+  makeScoredSub(db, t2.id, userId, 80);
+  db.prepare("UPDATE native_tasks SET deleted_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?").run(t2.id);
+  const list = listAllSubmissionsForUser(db, userId);
+  assert.equal(list.length, 1);
+  assert.equal(list[0].taskSlug, 't');
+});
+
+test('listAllSubmissionsForUser: hides submissions for soft-deleted competitions', () => {
+  const db = freshDb();
+  const { taskId, userId } = seedTaskAndUser(db);
+  makeScoredSub(db, taskId, userId, 70);
+  db.prepare("UPDATE competitions SET deleted_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE slug = 'c'").run();
+  const list = listAllSubmissionsForUser(db, userId);
+  assert.equal(list.length, 0);
+});

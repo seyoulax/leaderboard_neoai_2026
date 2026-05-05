@@ -181,7 +181,10 @@ export function listAllSubmissionsForUser(db, userId, { limit = 50, offset = 0 }
             t.slug AS taskSlug, t.title AS taskTitle, t.competition_slug AS competitionSlug
      FROM submissions s
      JOIN native_tasks t ON t.id = s.task_id
+     JOIN competitions c ON c.slug = t.competition_slug
      WHERE s.user_id = ?
+       AND t.deleted_at IS NULL
+       AND c.deleted_at IS NULL
      ORDER BY s.created_at DESC, s.id DESC
      LIMIT ? OFFSET ?`
   ).all(userId, safeLimit, safeOffset);
