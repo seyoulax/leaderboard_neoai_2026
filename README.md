@@ -32,6 +32,19 @@ Membership: помимо неявного auto-join при первом сабм
 
 **Native deltas.** Зелёные/красные стрелки на лидерборде native-соревнования работают через in-memory snapshot per competition. Snapshot обновляется ТОЛЬКО воркером после каждого scored сабмита (через `onScoredCallback`); endpoint `/leaderboard` читает annotated snapshot из cache (cold-start строит его on-demand с `previousPoints=null`).
 
+## Бонусные баллы
+
+Админ может выдавать каждому участнику бонусные баллы (per competition):
+- **Kaggle**: поле `bonusPoints: number` на каждой записи в `participants.json` — редактируется на странице `/admin/competitions/<slug>/participants` (числовое поле «Бонус»).
+- **Native**: колонка `bonus_points` в таблице `competition_members` — редактируется на странице `/admin/competitions/<slug>/bonus`.
+
+Каждый лидерборд имеет собственный toggle «показывать бонусы»:
+- **Общий ЛБ**: `state.overallShowBonusPoints` — toggle на той же `/admin/competitions/<slug>/bonus` странице.
+- **Borrow boards (kaggle)**: `showBonusPoints` per board в `boards.json` — чекбокс «бонус» на `/admin/competitions/<slug>/boards`.
+- Категории/группы — бонус не показывают (out of scope).
+
+Когда toggle ON: показывается отдельная колонка «Бонус», и значение прибавляется к `totalPoints` (или `groupPoints` для bord), место пересчитывается. Когда OFF — поведение как было раньше. Deltas (`▲/▼`) корректны при любом значении toggle (бонус константа per-user → не сдвигает delta).
+
 ## Структура
 
 ```

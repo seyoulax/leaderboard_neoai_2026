@@ -16,9 +16,15 @@ export async function readCompetitionState(competitionDir) {
       cardBoardSlug: typeof parsed?.cardBoardSlug === 'string'
         ? parsed.cardBoardSlug
         : null,
+      overallShowBonusPoints: parsed?.overallShowBonusPoints === true,
     };
   } catch (e) {
-    if (e.code === 'ENOENT') return { currentParticipantId: null, cycleBoardSlug: null, cardBoardSlug: null };
+    if (e.code === 'ENOENT') return {
+      currentParticipantId: null,
+      cycleBoardSlug: null,
+      cardBoardSlug: null,
+      overallShowBonusPoints: false,
+    };
     throw e;
   }
 }
@@ -30,6 +36,7 @@ export async function writeCompetitionState(competitionDir, state) {
     currentParticipantId: state.currentParticipantId ?? null,
     cycleBoardSlug: state.cycleBoardSlug ?? null,
     cardBoardSlug: state.cardBoardSlug ?? null,
+    overallShowBonusPoints: state.overallShowBonusPoints === true,
   }, null, 2) + '\n';
   await fs.writeFile(file, body, 'utf8');
 }

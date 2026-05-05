@@ -1,4 +1,5 @@
 import { listNativeTasks } from '../db/nativeTasksRepo.js';
+import { getBonusPointsByUserId } from '../db/membersRepo.js';
 
 export function buildNativeLeaderboard(db, competitionSlug, variant) {
   const tasks = listNativeTasks(db, competitionSlug);
@@ -6,6 +7,7 @@ export function buildNativeLeaderboard(db, competitionSlug, variant) {
   if (taskIds.length === 0) {
     return emptyResponse(tasks);
   }
+  const bonusByUserId = getBonusPointsByUserId(db, competitionSlug);
   const placeholders = taskIds.map(() => '?').join(',');
 
   let rows;
@@ -86,7 +88,11 @@ export function buildNativeLeaderboard(db, competitionSlug, variant) {
 
   const overall = [...byUser.values()]
     .sort((a, b) => b.totalPoints - a.totalPoints)
-    .map((e, idx) => ({ ...e, place: idx + 1 }));
+    .map((e, idx) => {
+      const userId = userIdFromKey(e.participantKey);
+      const bonus = userId != null ? (bonusByUserId.get(userId) || 0) : 0;
+      return { ...e, place: idx + 1, bonusPoints: bonus };
+    });
 
   const byTask = {};
   for (const t of tasks) {
@@ -110,6 +116,12 @@ export function buildNativeLeaderboard(db, competitionSlug, variant) {
   }
 
   return { tasks, overall, byTask };
+}
+
+function userIdFromKey(key) {
+  if (typeof key !== 'string') return null;
+  const m = key.match(/^user:(\d+)$/);
+  return m ? Number(m[1]) : null;
 }
 
 function emptyResponse(tasks) {
