@@ -38,6 +38,7 @@ import ObsCard from './ObsCard';
 import CompetitionsListPage from './CompetitionsListPage';
 import AdminCompetitionsPage from './AdminCompetitionsPage';
 import AdminParticipantsPage from './AdminParticipantsPage';
+import AdminBonusPage from './AdminBonusPage';
 import {
   LEGACY_REDIRECTS,
   LegacyBoardRedirect,
@@ -431,12 +432,20 @@ function OverallPage() {
   const overall = (overallSrc || []).filter((r) => matchesNickname(r, query));
   const privateAvailable = (data.privateTaskSlugs || []).length > 0;
 
+  const showBonus = data.overallShowBonusPoints === true;
+
   function exportCSV() {
-    const headers = ['#', 'Nickname', 'Team Name', 'Total points', ...data.tasks.map((t) => t.title)];
+    const headers = [
+      '#', 'Nickname', 'Team Name',
+      ...(showBonus ? ['Бонус'] : []),
+      'Total points',
+      ...data.tasks.map((t) => t.title),
+    ];
     const rows = overall.map((row) => [
       row.place,
       row.nickname || '',
       row.teamName || '',
+      ...(showBonus ? [(row.bonusPoints || 0).toFixed(2)] : []),
       row.totalPoints.toFixed(2),
       ...data.tasks.map((t) => {
         const p = row.tasks?.[t.slug]?.points;
@@ -471,6 +480,7 @@ function OverallPage() {
               <th>#</th>
               <th>Nickname</th>
               <th>Team Name</th>
+              {showBonus && <th>Бонус</th>}
               <th>Total points</th>
               {data.tasks.map((task) => (
                 <th key={task.slug}>{task.title}</th>
@@ -483,6 +493,7 @@ function OverallPage() {
                 <PlaceCell place={row.place} previousPlace={row.previousPlace} />
                 <td className="team">{row.nickname || '-'}</td>
                 <td>{row.teamName || '-'}</td>
+                {showBonus && <td className="mono">{(row.bonusPoints || 0).toFixed(2)}</td>}
                 <DeltaCell value={row.totalPoints} prev={row.previousTotalPoints} />
                 {data.tasks.map((task) => {
                   const cell = row.tasks?.[task.slug];
@@ -533,12 +544,20 @@ function CyclingOverallPage() {
   const slice = filteredOverall.slice(start, start + PAGE_SIZE);
   const endShown = Math.min(start + PAGE_SIZE, total);
 
+  const showBonus = data.overallShowBonusPoints === true;
+
   function exportCSV() {
-    const headers = ['#', 'Nickname', 'Team Name', 'Total points', ...data.tasks.map((t) => t.title)];
+    const headers = [
+      '#', 'Nickname', 'Team Name',
+      ...(showBonus ? ['Бонус'] : []),
+      'Total points',
+      ...data.tasks.map((t) => t.title),
+    ];
     const rows = filteredOverall.map((row) => [
       row.place,
       row.nickname || '',
       row.teamName || '',
+      ...(showBonus ? [(row.bonusPoints || 0).toFixed(2)] : []),
       row.totalPoints.toFixed(2),
       ...data.tasks.map((t) => {
         const p = row.tasks?.[t.slug]?.points;
@@ -571,6 +590,7 @@ function CyclingOverallPage() {
               <th>#</th>
               <th>Nickname</th>
               <th>Team Name</th>
+              {showBonus && <th>Бонус</th>}
               <th>Total points</th>
               {data.tasks.map((task) => (
                 <th key={task.slug}>{task.title}</th>
@@ -583,6 +603,7 @@ function CyclingOverallPage() {
                 <PlaceCell place={row.place} previousPlace={row.previousPlace} />
                 <td className="team">{row.nickname || '-'}</td>
                 <td>{row.teamName || '-'}</td>
+                {showBonus && <td className="mono">{(row.bonusPoints || 0).toFixed(2)}</td>}
                 <DeltaCell value={row.totalPoints} prev={row.previousTotalPoints} />
                 {data.tasks.map((task) => {
                   const cell = row.tasks?.[task.slug];
@@ -624,16 +645,23 @@ function BoardPage({ boards }) {
   const presentSlugs = board.taskSlugs.filter((s) => data.tasks.some((t) => t.slug === s));
   const groupTasks = data.tasks.filter((t) => presentSlugs.includes(t.slug));
 
+  const showBonus = board.showBonusPoints === true;
+
   const enriched = overallSrc
     .map((row) => {
-      const total = presentSlugs.reduce((sum, slug) => sum + (row.tasks?.[slug]?.points ?? 0), 0);
+      let total = presentSlugs.reduce((sum, slug) => sum + (row.tasks?.[slug]?.points ?? 0), 0);
       const hasAnyPrev = presentSlugs.some((slug) => row.tasks?.[slug]?.previousPoints != null);
-      const prevTotal = hasAnyPrev
+      let prevTotal = hasAnyPrev
         ? presentSlugs.reduce(
             (sum, slug) => sum + (row.tasks?.[slug]?.previousPoints ?? row.tasks?.[slug]?.points ?? 0),
             0
           )
         : null;
+      if (showBonus) {
+        const bonus = Number(row.bonusPoints) || 0;
+        total += bonus;
+        if (prevTotal != null) prevTotal += bonus;
+      }
       return {
         ...row,
         groupPoints: Number(total.toFixed(6)),
@@ -665,11 +693,17 @@ function BoardPage({ boards }) {
   const visible = ranked.filter((r) => matchesNickname(r, query));
 
   function exportCSV() {
-    const headers = ['#', 'Nickname', 'Team Name', 'Board points', ...groupTasks.map((t) => t.title)];
+    const headers = [
+      '#', 'Nickname', 'Team Name',
+      ...(showBonus ? ['Бонус'] : []),
+      'Board points',
+      ...groupTasks.map((t) => t.title),
+    ];
     const rows = visible.map((row) => [
       row.place,
       row.nickname || '',
       row.teamName || '',
+      ...(showBonus ? [(row.bonusPoints || 0).toFixed(2)] : []),
       row.groupPoints.toFixed(2),
       ...groupTasks.map((t) => {
         const p = row.tasks?.[t.slug]?.points;
@@ -704,6 +738,7 @@ function BoardPage({ boards }) {
               <th>#</th>
               <th>Nickname</th>
               <th>Team Name</th>
+              {showBonus && <th>Бонус</th>}
               <th>Board points</th>
               {groupTasks.map((task) => (
                 <th key={task.slug}>{task.title}</th>
@@ -716,6 +751,7 @@ function BoardPage({ boards }) {
                 <PlaceCell place={row.place} previousPlace={row.previousPlace} />
                 <td className="team">{row.nickname || '-'}</td>
                 <td>{row.teamName || '-'}</td>
+                {showBonus && <td className="mono">{(row.bonusPoints || 0).toFixed(2)}</td>}
                 <DeltaCell value={row.groupPoints} prev={row.previousGroupPoints} />
                 {groupTasks.map((task) => {
                   const cell = row.tasks?.[task.slug];
@@ -1788,6 +1824,7 @@ function AdminBoardsPage() {
         : [],
       visible: b.visible !== false,
       order: b.order ?? 0,
+      showBonusPoints: b.showBonusPoints === true,
     }));
   }
 
@@ -1840,7 +1877,7 @@ function AdminBoardsPage() {
     const nextOrder = boards.reduce((m, b) => Math.max(m, b.order ?? 0), 0) + 1;
     setBoards((prev) => [
       ...prev,
-      { slug: '', title: '', taskSlugs: [], visible: true, order: nextOrder },
+      { slug: '', title: '', taskSlugs: [], visible: true, order: nextOrder, showBonusPoints: false },
     ]);
   }
 
@@ -1922,6 +1959,14 @@ function AdminBoardsPage() {
                   type="checkbox"
                   checked={board.visible}
                   onChange={(e) => update(idx, { visible: e.target.checked })}
+                />
+              </label>
+              <label className="admin-field admin-field-check">
+                <span className="admin-field-label">бонус</span>
+                <input
+                  type="checkbox"
+                  checked={board.showBonusPoints}
+                  onChange={(e) => update(idx, { showBonusPoints: e.target.checked })}
                 />
               </label>
               <button className="control-btn control-btn-ghost" onClick={() => remove(idx)}>×</button>
@@ -2514,6 +2559,7 @@ function AdminShell() {
           <NavLink to={`${base}/boards`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Boards</NavLink>
           <NavLink to={`${base}/categories`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Categories</NavLink>
           <NavLink to={`${base}/participants`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Participants</NavLink>
+          <NavLink to={`${base}/bonus`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Бонусы</NavLink>
           <NavLink to={`${base}/groups`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Groups</NavLink>
           <NavLink to={`${base}/card`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Card</NavLink>
           <NavLink to={`${base}/cycle`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Cycle</NavLink>
@@ -2570,6 +2616,7 @@ export default function App() {
           <Route path="boards" element={<AdminBoardsPage />} />
           <Route path="categories" element={<AdminCategoriesPage />} />
           <Route path="participants" element={<AdminParticipantsPage />} />
+          <Route path="bonus" element={<AdminBonusPage />} />
           <Route path="groups" element={<AdminParticipantGroupsPage />} />
           <Route path="card" element={<ControlPage />} />
           <Route path="cycle" element={<AdminCyclePage />} />
