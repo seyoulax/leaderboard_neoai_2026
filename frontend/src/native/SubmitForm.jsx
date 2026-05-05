@@ -1,7 +1,9 @@
 import { useState, useRef } from 'react';
 import { submissions } from '../api.js';
+import { useT } from '../i18n/I18nContext.jsx';
 
 export default function SubmitForm({ competitionSlug, taskSlug, onSubmitted }) {
+  const t = useT();
   const [file, setFile] = useState(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -28,7 +30,7 @@ export default function SubmitForm({ competitionSlug, taskSlug, onSubmitted }) {
   return (
     <form onSubmit={submit} className="submit-form">
       <label className="native-field">
-        <span className="native-field-label">Файл с предсказаниями (.csv / .tsv / .json)</span>
+        <span className="native-field-label">{t('native.submit.file_label')}</span>
         <input
           ref={inputRef}
           type="file"
@@ -38,7 +40,7 @@ export default function SubmitForm({ competitionSlug, taskSlug, onSubmitted }) {
       </label>
       <div className="native-edit-actions">
         <button className="control-btn" disabled={busy || !file}>
-          {busy ? 'Отправка…' : 'Submit'}
+          {busy ? t('native.submit.busy') : t('native.submit.button')}
         </button>
       </div>
       {err && <p className="status error">{err}</p>}

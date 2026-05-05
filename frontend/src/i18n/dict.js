@@ -93,8 +93,31 @@ export const dict = {
   'auth.register.title':    { ru: 'Регистрация',     en: 'Sign up' },
   'auth.email':             { ru: 'Email',           en: 'Email' },
   'auth.password':          { ru: 'Пароль',          en: 'Password' },
+  'auth.password_min':      { ru: 'Пароль (≥ 8)',    en: 'Password (≥ 8)' },
   'auth.display_name':      { ru: 'Имя',             en: 'Display name' },
   'auth.kaggle_id_optional':{ ru: 'Kaggle ID (опц.)', en: 'Kaggle ID (optional)' },
   'auth.submit.login':      { ru: 'Войти',           en: 'Sign in' },
-  'auth.submit.register':   { ru: 'Зарегистрироваться', en: 'Create account' },
+  'auth.submit.register':   { ru: 'Создать аккаунт', en: 'Create account' },
+  'auth.no_account':        { ru: 'Нет аккаунта?',   en: 'No account?' },
+  'auth.have_account':      { ru: 'Уже есть аккаунт?', en: 'Already have an account?' },
+
+  // Competitions list page
+  'comps.title':            { ru: 'Соревнования',          en: 'Competitions' },
+  'comps.search_placeholder': { ru: 'Поиск по названию',  en: 'Search by name' },
+  'comps.loading':          { ru: 'Загрузка соревнований...', en: 'Loading competitions...' },
+  'comps.empty':            { ru: 'Соревнований пока нет — создайте в админке (/admin).', en: 'No competitions yet — create one in admin (/admin).' },
+  'comps.not_found':        { ru: 'Ничего не найдено по «{q}»', en: 'Nothing found for "{q}"' },
+
+  // Native task page
+  'native.back_to_comp':    { ru: '← к соревнованию', en: '← back to competition' },
+  'native.section.data':    { ru: 'Данные',          en: 'Data' },
+  'native.section.starter': { ru: 'Стартовый набор', en: 'Starter kit' },
+  'native.section.submit':  { ru: 'Сдать решение',   en: 'Submit solution' },
+  'native.section.my_subs': { ru: 'Мои сабмиты',     en: 'My submissions' },
+  'native.signin_to_submit_prefix': { ru: '', en: '' },
+  'native.signin_to_submit_link':   { ru: 'Войди',          en: 'Sign in' },
+  'native.signin_to_submit_suffix': { ru: ', чтобы сдать решение.', en: ' to submit a solution.' },
+  'native.submit.file_label': { ru: 'Файл с предсказаниями (.csv / .tsv / .json)', en: 'Predictions file (.csv / .tsv / .json)' },
+  'native.submit.button':   { ru: 'Submit',          en: 'Submit' },
+  'native.submit.busy':     { ru: 'Отправка…',       en: 'Sending…' },
 };

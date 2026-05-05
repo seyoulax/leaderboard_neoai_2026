@@ -1,8 +1,10 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { competitions as competitionsApi } from './api';
+import { useT } from './i18n/I18nContext.jsx';
 
 export default function CompetitionsListPage() {
+  const t = useT();
   const [q, setQ] = useState('');
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -36,21 +38,21 @@ export default function CompetitionsListPage() {
   return (
     <section className="panel">
       <div className="panel-head">
-        <h2>Соревнования</h2>
+        <h2>{t('comps.title')}</h2>
         <input
           type="search"
           value={q}
           onChange={onChange}
-          placeholder="Поиск по названию"
+          placeholder={t('comps.search_placeholder')}
           className="competitions-search"
         />
       </div>
       {error ? <p className="status error">{error}</p> : null}
       {loading ? (
-        <p className="status">Загрузка соревнований...</p>
+        <p className="status">{t('comps.loading')}</p>
       ) : items.length === 0 ? (
         <p className="status">
-          {q ? `Ничего не найдено по «${q}»` : 'Соревнований пока нет — создайте в админке (/admin).'}
+          {q ? t('comps.not_found', { q }) : t('comps.empty')}
         </p>
       ) : (
         <div className="competitions-list">

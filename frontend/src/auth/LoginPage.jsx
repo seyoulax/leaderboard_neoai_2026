@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext.jsx';
+import { useT } from '../i18n/I18nContext.jsx';
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const t = useT();
   const nav = useNavigate();
   const loc = useLocation();
   const [email, setEmail] = useState('');
@@ -24,14 +26,14 @@ export default function LoginPage() {
 
   return (
     <div className="auth-card">
-      <h1>Войти</h1>
+      <h1>{t('auth.login.title')}</h1>
       <form onSubmit={submit}>
-        <label>Email <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
-        <label>Пароль <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></label>
+        <label>{t('auth.email')} <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
+        <label>{t('auth.password')} <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required /></label>
         {err && <div className="error">{err}</div>}
-        <button disabled={busy}>{busy ? '…' : 'Войти'}</button>
+        <button disabled={busy}>{busy ? '…' : t('auth.submit.login')}</button>
       </form>
-      <p>Нет аккаунта? <Link to="/register">Регистрация</Link></p>
+      <p>{t('auth.no_account')} <Link to="/register">{t('auth.register.title')}</Link></p>
     </div>
   );
 }
