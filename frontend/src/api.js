@@ -232,6 +232,12 @@ export async function deleteAdminPublicCsv(slug, taskSlug) {
   });
 }
 
+export async function setAdminHideLeaderboards(slug, hidden) {
+  return adminFetch(`/admin/competitions/${slug}/hide-leaderboards`, {
+    method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ hidden }),
+  });
+}
+
 // ---------- Theme (global) ----------
 
 export async function getTheme() {

@@ -16,6 +16,7 @@ import {
   getAdminBoards,
   saveAdminBoards,
   setAdminOverallShowBonus,
+  setAdminHideLeaderboards,
   getCategories,
   getAdminCategories,
   saveAdminCategories,
@@ -292,7 +293,7 @@ function hexToRgba(hex, alpha) {
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
 }
 
-function Layout({ children, tasks, boards, categories, competitionSlug, competition, theme }) {
+function Layout({ children, tasks, boards, categories, competitionSlug, competition, theme, hideLeaderboards }) {
   const t = useT();
   const isNative = competition?.type === 'native';
   const visibleBoards = sortedVisibleBoards(boards);
@@ -367,38 +368,40 @@ function Layout({ children, tasks, boards, categories, competitionSlug, competit
         ) : null}
       </header>
 
-      <nav className="tabs">
-        <NavLink to={`${base}/leaderboard`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
-          {t('shell.tab.overall')}
-        </NavLink>
-        {isNative
-          ? tasks.map((task) => (
-              <NavLink
-                key={task.slug}
-                to={`${base}/native-tasks/${task.slug}`}
-                className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}
-              >
-                {task.title}
-              </NavLink>
-            ))
-          : null}
-        {!isNative ? topRowBoards.map((board) => (
-          <NavLink key={board.slug} to={`${base}/board/${board.slug}`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
-            {board.title}
+      {hideLeaderboards ? null : (
+        <nav className="tabs">
+          <NavLink to={`${base}/leaderboard`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
+            {t('shell.tab.overall')}
           </NavLink>
-        )) : null}
-        {!isNative ? allCategories.map((cat) => (
-          <button
-            key={cat.slug}
-            type="button"
-            onClick={() => selectCategory(cat.slug)}
-            className={`tab tab-cat ${selectedCatSlug === cat.slug ? 'active' : ''}`}
-          >
-            {cat.title}
-            <span className="tab-cat-chevron" aria-hidden="true">▾</span>
-          </button>
-        )) : null}
-      </nav>
+          {isNative
+            ? tasks.map((task) => (
+                <NavLink
+                  key={task.slug}
+                  to={`${base}/native-tasks/${task.slug}`}
+                  className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}
+                >
+                  {task.title}
+                </NavLink>
+              ))
+            : null}
+          {!isNative ? topRowBoards.map((board) => (
+            <NavLink key={board.slug} to={`${base}/board/${board.slug}`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
+              {board.title}
+            </NavLink>
+          )) : null}
+          {!isNative ? allCategories.map((cat) => (
+            <button
+              key={cat.slug}
+              type="button"
+              onClick={() => selectCategory(cat.slug)}
+              className={`tab tab-cat ${selectedCatSlug === cat.slug ? 'active' : ''}`}
+            >
+              {cat.title}
+              <span className="tab-cat-chevron" aria-hidden="true">▾</span>
+            </button>
+          )) : null}
+        </nav>
+      )}
 
       {selectedCat && (subTasks.length > 0 || subBoards.length > 0) ? (
         <nav className="tabs tabs-sub">
@@ -456,6 +459,7 @@ function OverallPage() {
   if (loading) return <p className="status">Загрузка общего ЛБ...</p>;
   if (error) return <p className="status error">{error}</p>;
   if (!data?.updatedAt) return <p className="status">Бэк прогревается — идёт первое обновление с Kaggle, попробуй через минуту…</p>;
+  if (data.hideLeaderboards) return <section className="panel"><div className="panel-head"><h2>Лидерборд временно скрыт</h2></div><p className="meta" style={{borderBottom:0}}>Администратор соревнования временно скрыл лидерборды.</p></section>;
 
   const isPrivate = mode === 'private';
   const overallSrc = pickOverall(data, mode, filter);
@@ -566,6 +570,7 @@ function CyclingOverallPage() {
   if (loading) return <p className="status">Загрузка общего ЛБ...</p>;
   if (error) return <p className="status error">{error}</p>;
   if (!data?.updatedAt) return <p className="status">Бэк прогревается — идёт первое обновление с Kaggle…</p>;
+  if (data.hideLeaderboards) return <section className="panel"><div className="panel-head"><h2>Лидерборд временно скрыт</h2></div><p className="meta" style={{borderBottom:0}}>Администратор соревнования временно скрыл лидерборды.</p></section>;
 
   const filteredOverall = pickOverall(data, 'public', filter);
   const total = filteredOverall.length;
@@ -668,6 +673,7 @@ function BoardPage({ boards }) {
   if (loading) return <p className="status">Загрузка лидерборда...</p>;
   if (error) return <p className="status error">{error}</p>;
   if (!data?.updatedAt) return <p className="status">Бэк прогревается — идёт первое обновление с Kaggle…</p>;
+  if (data.hideLeaderboards) return <section className="panel"><div className="panel-head"><h2>Лидерборд временно скрыт</h2></div><p className="meta" style={{borderBottom:0}}>Администратор соревнования временно скрыл лидерборды.</p></section>;
 
   const isPrivate = mode === 'private';
   const overallSrc = pickOverall(data, mode, filter);
@@ -846,6 +852,7 @@ function TaskPage() {
 
   if (loading) return <p className="status">Загрузка ЛБ задачи...</p>;
   if (error) return <p className="status error">{error}</p>;
+  if (data?.hideLeaderboards) return <section className="panel"><div className="panel-head"><h2>Лидерборд временно скрыт</h2></div><p className="meta" style={{borderBottom:0}}>Администратор соревнования временно скрыл лидерборды.</p></section>;
 
   const isPrivate = mode === 'private';
   const task = isPrivate ? (data.privateTask || data.task) : data.task;
@@ -1382,6 +1389,7 @@ function CompetitionShell() {
       competitionSlug={competitionSlug}
       competition={competition}
       theme={competition?.theme || null}
+      hideLeaderboards={tasksState.data?.hideLeaderboards === true}
     >
       <Outlet />
     </Layout>
@@ -1849,6 +1857,8 @@ function AdminBoardsPage() {
   const [savedAt, setSavedAt] = useState(null);
   const [overallShowBonus, setOverallShowBonus] = useState(false);
   const [overallToggleSaving, setOverallToggleSaving] = useState(false);
+  const [hideLeaderboards, setHideLeaderboards] = useState(false);
+  const [hideToggleSaving, setHideToggleSaving] = useState(false);
 
   function normalize(rawList, knownSet) {
     return (rawList || []).map((b) => ({
@@ -1879,6 +1889,7 @@ function AdminBoardsPage() {
       setAllTasks(tasksList);
       setOriginal(JSON.stringify(list));
       setOverallShowBonus(lb?.overallShowBonusPoints === true);
+      setHideLeaderboards(lb?.hideLeaderboards === true);
     } catch (err) {
       if (err instanceof AdminAuthError) navigate('/admin', { replace: true });
       else setError(err instanceof Error ? err.message : String(err));
@@ -1903,6 +1914,21 @@ function AdminBoardsPage() {
       else setError(err instanceof Error ? err.message : String(err));
     } finally {
       setOverallToggleSaving(false);
+    }
+  }
+
+  async function toggleHideLeaderboards(next) {
+    setHideToggleSaving(true);
+    setError(null);
+    try {
+      await setAdminHideLeaderboards(competitionSlug, next);
+      setHideLeaderboards(next);
+      setSavedAt(new Date());
+    } catch (err) {
+      if (err instanceof AdminAuthError) navigate('/admin', { replace: true });
+      else setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setHideToggleSaving(false);
     }
   }
 
@@ -1985,6 +2011,22 @@ function AdminBoardsPage() {
         </label>
         <p className="muted" style={{ fontSize: 12, margin: '6px 0 0' }}>
           Per-board бонусы — чекбокс «бонус» в каждой карточке ниже.
+        </p>
+      </div>
+
+      <div className="admin-bonus-toggle">
+        <label>
+          <input
+            type="checkbox"
+            checked={hideLeaderboards}
+            onChange={(e) => toggleHideLeaderboards(e.target.checked)}
+            disabled={hideToggleSaving}
+          />
+          <span>Скрыть все лидерборды (включая по задачам) от пользователей</span>
+        </label>
+        <p className="muted" style={{ fontSize: 12, margin: '6px 0 0' }}>
+          Когда включено — на публичных страницах вместо таблиц показывается заглушка
+          «Лидерборд временно недоступен», табы лидербордов и задач скрываются.
         </p>
       </div>
 

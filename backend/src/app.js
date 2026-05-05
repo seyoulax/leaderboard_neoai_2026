@@ -484,6 +484,7 @@ function emptyCompetitionCache() {
     cycleBoardSlug: null,
     cardBoardSlug: null,
     overallShowBonusPoints: false,
+    hideLeaderboards: false,
     errors: [],
   };
 }
@@ -811,6 +812,7 @@ async function refreshCompetition(slug) {
     cycleBoardSlug: state.cycleBoardSlug,
     cardBoardSlug: state.cardBoardSlug,
     overallShowBonusPoints: state.overallShowBonusPoints === true,
+    hideLeaderboards: state.hideLeaderboards === true,
     errors,
   };
   cache.byCompetition.set(slug, next);
@@ -1015,6 +1017,7 @@ export function createApp({ db } = {}) {
         oursPrivateOverall: privOverall,
         oursPrivateByTask: priv.byTask,
         overallShowBonusPoints: showBonus,
+        hideLeaderboards: state.hideLeaderboards === true,
         errors: [],
       });
       return;
@@ -1059,6 +1062,7 @@ export function createApp({ db } = {}) {
       groupsMeta: cc.groupsMeta || [],
       groupsResults,
       overallShowBonusPoints: showBonus,
+      hideLeaderboards: cc.hideLeaderboards === true,
       errors: cc.errors,
     });
   });
@@ -1206,6 +1210,8 @@ export function createApp({ db } = {}) {
         cycleBoardSlug: cc.cycleBoardSlug ?? null,
         cardBoardSlug: cc.cardBoardSlug ?? null,
         overallShowBonusPoints: cc.overallShowBonusPoints === true,
+      hideLeaderboards: cc.hideLeaderboards === true,
+        hideLeaderboards: cc.hideLeaderboards === true,
       });
       res.json({ ok: true, currentId: null, current: null });
       return;
@@ -1230,6 +1236,7 @@ export function createApp({ db } = {}) {
       cycleBoardSlug: cc.cycleBoardSlug ?? null,
       cardBoardSlug: cc.cardBoardSlug ?? null,
       overallShowBonusPoints: cc.overallShowBonusPoints === true,
+      hideLeaderboards: cc.hideLeaderboards === true,
     });
     res.json({ ok: true, currentId: id, current: found });
   });
@@ -1458,6 +1465,7 @@ export function createApp({ db } = {}) {
       cycleBoardSlug: next,
       cardBoardSlug: cc.cardBoardSlug ?? null,
       overallShowBonusPoints: cc.overallShowBonusPoints === true,
+      hideLeaderboards: cc.hideLeaderboards === true,
     });
     res.json({ ok: true, cycleBoardSlug: next });
   });
@@ -1493,6 +1501,7 @@ export function createApp({ db } = {}) {
       cycleBoardSlug: cc.cycleBoardSlug ?? null,
       cardBoardSlug: next,
       overallShowBonusPoints: cc.overallShowBonusPoints === true,
+      hideLeaderboards: cc.hideLeaderboards === true,
     });
     res.json({ ok: true, cardBoardSlug: next });
   });
@@ -1643,6 +1652,27 @@ export function createApp({ db } = {}) {
       const cc = getCompCache(slug);
       cc.overallShowBonusPoints = raw;
       res.json({ ok: true, overallShowBonusPoints: raw });
+    } catch (e) {
+      res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
+  app.put('/api/admin/competitions/:competitionSlug/hide-leaderboards', adminMw, async (req, res) => {
+    const slug = ensureKnownSlug(req, res); if (!slug) return;
+    const raw = req.body?.hidden;
+    if (typeof raw !== 'boolean') {
+      res.status(400).json({ error: 'hidden must be a boolean' });
+      return;
+    }
+    try {
+      const current = await readCompetitionState(competitionDir(slug));
+      await writeCompetitionState(competitionDir(slug), {
+        ...current,
+        hideLeaderboards: raw,
+      });
+      const cc = getCompCache(slug);
+      cc.hideLeaderboards = raw;
+      res.json({ ok: true, hideLeaderboards: raw });
     } catch (e) {
       res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
     }
