@@ -22,6 +22,16 @@ React + Express лидерборд для Kaggle-соревнований NEOAI 
 
 Сравнение со снапшотом предыдущего рефреша подсвечивает строки в зелёный/красный (`▲`/`▼`).
 
+## Личный кабинет (SP-4)
+
+Под `/me` участник видит свой профиль (email, displayName, kaggleId), форму смены пароля, список своих соревнований с местом и общим counter'ом очков (`/me/competitions`), и плоскую ленту всех своих сабмитов (`/me/submissions`). API — namespace `/api/me/*`.
+
+Membership: помимо неявного auto-join при первом сабмите, есть явные `POST /api/competitions/<slug>/join`, `DELETE /api/competitions/<slug>/members/me` и `GET /api/competitions/<slug>/membership`. На фронте — `JoinButton` на странице нативной задачи; для анона — линк на `/login`.
+
+**Selected submissions.** На каждой нативной задаче участник может пометить до 2 сабмитов как final (чекбокс «Selected» в `MySubmissions`). Private-LB строится по этим selected (берёт лучший private points среди отмеченных); если ни одного не отмечено — fallback на overall best. Public-LB всегда показывает best, selected на него не влияет. Selected сохраняются при `rescore-all` (admin меняет grader, но осознанный выбор участника остаётся).
+
+**Native deltas.** Зелёные/красные стрелки на лидерборде native-соревнования работают через in-memory snapshot per competition. Snapshot обновляется ТОЛЬКО воркером после каждого scored сабмита (через `onScoredCallback`); endpoint `/leaderboard` читает annotated snapshot из cache (cold-start строит его on-demand с `previousPoints=null`).
+
 ## Структура
 
 ```
