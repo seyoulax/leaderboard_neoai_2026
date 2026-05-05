@@ -387,3 +387,38 @@ test('publicSubmission shape includes selected field', async () => {
   assert.equal(r.submission.selected, 1);
   server.close();
 });
+
+import { resetAllForRescore } from '../src/db/submissionsRepo.js';
+
+test('selected survives resetAllForRescore (admin rescore-all)', () => {
+  const db = freshDb();
+  const { taskId, userId } = seedTaskAndUser(db);
+  const id = makeScoredSub(db, taskId, userId, 70);
+  setSubmissionSelected(db, id, true);
+  assert.equal(getSubmission(db, id).selected, 1);
+  resetAllForRescore(db, taskId);
+  // status was reset, but selected must survive
+  const after = getSubmission(db, id);
+  assert.equal(after.status, 'pending');
+  assert.equal(after.selected, 1);
+});
+
+test('PUT /select: body.selected non-boolean → 400', async () => {
+  process.env.ADMIN_TOKEN = 'shared';
+  const db = freshDb();
+  insertCompetition(db, { slug: 'c', title: 'C', type: 'native', visibility: 'public' });
+  const t = insertNativeTask(db, { competitionSlug: 'c', slug: 't', title: 'T' });
+  const u = createUser(db, { email: 'a@a.a', passwordHash: await hashPassword('p'), displayName: 'A' });
+  const subId = makeScoredSub(db, t.id, u.id, 70);
+  const sess = createSession(db, { userId: u.id, ttlMs: 60_000 });
+  const cookie = `${SESSION_COOKIE}=${sess.id}`;
+  const app = createApp({ db });
+  const server = await startApp(app);
+  const port = server.address().port;
+  const r = await fetch(`http://127.0.0.1:${port}/api/competitions/c/native-tasks/t/submissions/${subId}/select`, {
+    method: 'PUT', headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ selected: 'true' }),
+  });
+  assert.equal(r.status, 400);
+  server.close();
+});

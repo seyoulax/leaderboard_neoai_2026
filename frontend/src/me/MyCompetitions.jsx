@@ -19,7 +19,7 @@ export default function MyCompetitions() {
   }
 
   if (error) return <div className="error">{error}</div>;
-  if (items.length === 0) return <p className="dim">Вы не в одном соревновании</p>;
+  if (items.length === 0) return <p className="dim">Вы ни в одном соревновании</p>;
 
   return (
     <section>

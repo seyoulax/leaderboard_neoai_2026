@@ -112,7 +112,10 @@ export function createSubmissionsPublicRouter({ db }) {
     if (!sub) return res.status(404).json({ error: 'not found' });
     if (sub.userId !== req.user.id) return res.status(404).json({ error: 'not found' });
     if (sub.status !== 'scored') return res.status(400).json({ error: 'submission not scored yet' });
-    const selected = req.body?.selected !== false;
+    if (typeof req.body?.selected !== 'boolean') {
+      return res.status(400).json({ error: 'body.selected must be a boolean' });
+    }
+    const selected = req.body.selected;
     if (selected && sub.selected === 0) {
       const count = countSelectedForUserTask(db, req.user.id, sub.taskId);
       if (count >= 2) {
