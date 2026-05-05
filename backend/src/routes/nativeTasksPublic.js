@@ -1,9 +1,20 @@
 import { Router } from 'express';
+import path from 'node:path';
 import { getCompetition } from '../db/competitionsRepo.js';
 import { getNativeTask, listNativeTasks } from '../db/nativeTasksRepo.js';
 import { listFilesByTask, getFileById } from '../db/nativeTaskFilesRepo.js';
 import { requireAuth } from '../auth/middleware.js';
 import { streamZip } from '../upload/zipStream.js';
+import { readCompetitionState } from '../state.js';
+
+const DATA_DIR = path.resolve(
+  path.dirname(new URL(import.meta.url).pathname),
+  '..', '..',
+  process.env.DATA_DIR || './data'
+);
+function competitionDir(slug) {
+  return path.join(DATA_DIR, 'competitions', slug);
+}
 
 function stripPrivate(file) {
   return {
@@ -59,13 +70,22 @@ export function createNativeTasksPublicRouter({ db }) {
     });
   });
 
-  router.get('/:taskSlug', (req, res) => {
+  router.get('/:taskSlug', async (req, res) => {
     const c = requireNativeCompPublic(db, req.params.competitionSlug);
     if (!c) return res.status(404).json({ error: 'not found' });
     const task = getNativeTask(db, req.params.competitionSlug, req.params.taskSlug);
     if (!task) return res.status(404).json({ error: 'task not found' });
     const files = listFilesByTask(db, task.id);
-    res.json({ task: publicTask(task, files), updatedAt: task.createdAt });
+    let hideLeaderboards = false;
+    try {
+      const state = await readCompetitionState(competitionDir(req.params.competitionSlug));
+      hideLeaderboards = state.hideLeaderboards === true;
+    } catch (_) { /* ignore */ }
+    res.json({
+      task: publicTask(task, files),
+      updatedAt: task.createdAt,
+      hideLeaderboards,
+    });
   });
 
   router.get('/:taskSlug/files.zip', requireAuth, (req, res) => {

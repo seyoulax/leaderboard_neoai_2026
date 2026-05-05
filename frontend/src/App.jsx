@@ -2022,11 +2022,12 @@ function AdminBoardsPage() {
             onChange={(e) => toggleHideLeaderboards(e.target.checked)}
             disabled={hideToggleSaving}
           />
-          <span>Скрыть все лидерборды (включая по задачам) от пользователей</span>
+          <span>Скрыть все лидерборды и страницы задач от пользователей</span>
         </label>
         <p className="muted" style={{ fontSize: 12, margin: '6px 0 0' }}>
           Когда включено — на публичных страницах вместо таблиц показывается заглушка
-          «Лидерборд временно недоступен», табы лидербордов и задач скрываются.
+          «Лидерборд временно скрыт». Табы лидербордов скрываются, страницы задач
+          (native description + submit) тоже становятся недоступны.
         </p>
       </div>
 

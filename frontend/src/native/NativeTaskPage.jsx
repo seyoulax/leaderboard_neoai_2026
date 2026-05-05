@@ -12,6 +12,7 @@ import { useT } from '../i18n/I18nContext.jsx';
 export default function NativeTaskPage() {
   const { competitionSlug, taskSlug } = useParams();
   const [task, setTask] = useState(null);
+  const [hideLeaderboards, setHideLeaderboards] = useState(false);
   const [error, setError] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const { user } = useAuth();
@@ -22,12 +23,27 @@ export default function NativeTaskPage() {
     setTask(null);
     nativeTasks
       .getPublic(competitionSlug, taskSlug)
-      .then((r) => setTask(r.task))
+      .then((r) => {
+        setTask(r.task);
+        setHideLeaderboards(r.hideLeaderboards === true);
+      })
       .catch((e) => setError(e.message || String(e)));
   }, [competitionSlug, taskSlug]);
 
   if (error) return <p className="status error">{error}</p>;
   if (!task) return <p className="status">{t('common.loading')}</p>;
+  if (hideLeaderboards) {
+    return (
+      <div className="page native-task">
+        <section className="panel">
+          <div className="panel-head"><h2>Задача временно скрыта</h2></div>
+          <p className="meta" style={{ borderBottom: 0 }}>
+            Администратор соревнования временно скрыл задачи и лидерборды.
+          </p>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div className="page native-task">
