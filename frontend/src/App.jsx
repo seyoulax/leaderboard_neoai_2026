@@ -438,20 +438,20 @@ function OverallPage() {
   function exportCSV() {
     const headers = [
       '#', 'Nickname', 'Team Name',
-      ...(showBonus ? ['Бонус'] : []),
       'Total points',
       ...data.tasks.map((t) => t.title),
+      ...(showBonus ? ['Бонус'] : []),
     ];
     const rows = overall.map((row) => [
       row.place,
       row.nickname || '',
       row.teamName || '',
-      ...(showBonus ? [(row.bonusPoints || 0).toFixed(2)] : []),
       row.totalPoints.toFixed(2),
       ...data.tasks.map((t) => {
         const p = row.tasks?.[t.slug]?.points;
         return p !== undefined ? p.toFixed(2) : (isPrivate ? '0.00' : '');
       }),
+      ...(showBonus ? [(row.bonusPoints || 0).toFixed(2)] : []),
     ]);
     downloadCSV(`overall${isPrivate ? '-private' : ''}.csv`, headers, rows);
   }
@@ -481,11 +481,11 @@ function OverallPage() {
               <th>#</th>
               <th>Nickname</th>
               <th>Team Name</th>
-              {showBonus && <th>Бонус</th>}
               <th>Total points</th>
               {data.tasks.map((task) => (
                 <th key={task.slug}>{task.title}</th>
               ))}
+              {showBonus && <th>Бонус</th>}
             </tr>
           </thead>
           <tbody>
@@ -494,7 +494,6 @@ function OverallPage() {
                 <PlaceCell place={row.place} previousPlace={row.previousPlace} />
                 <td className="team">{row.nickname || '-'}</td>
                 <td>{row.teamName || '-'}</td>
-                {showBonus && <td className="mono">{(row.bonusPoints || 0).toFixed(2)}</td>}
                 <DeltaCell value={row.totalPoints} prev={row.previousTotalPoints} />
                 {data.tasks.map((task) => {
                   const cell = row.tasks?.[task.slug];
@@ -509,6 +508,7 @@ function OverallPage() {
                     />
                   );
                 })}
+                {showBonus && <td className="mono">{(row.bonusPoints || 0).toFixed(2)}</td>}
               </tr>
             ))}
           </tbody>
@@ -550,20 +550,20 @@ function CyclingOverallPage() {
   function exportCSV() {
     const headers = [
       '#', 'Nickname', 'Team Name',
-      ...(showBonus ? ['Бонус'] : []),
       'Total points',
       ...data.tasks.map((t) => t.title),
+      ...(showBonus ? ['Бонус'] : []),
     ];
     const rows = filteredOverall.map((row) => [
       row.place,
       row.nickname || '',
       row.teamName || '',
-      ...(showBonus ? [(row.bonusPoints || 0).toFixed(2)] : []),
       row.totalPoints.toFixed(2),
       ...data.tasks.map((t) => {
         const p = row.tasks?.[t.slug]?.points;
         return p !== undefined ? p.toFixed(2) : '';
       }),
+      ...(showBonus ? [(row.bonusPoints || 0).toFixed(2)] : []),
     ]);
     downloadCSV('overall.csv', headers, rows);
   }
@@ -591,11 +591,11 @@ function CyclingOverallPage() {
               <th>#</th>
               <th>Nickname</th>
               <th>Team Name</th>
-              {showBonus && <th>Бонус</th>}
               <th>Total points</th>
               {data.tasks.map((task) => (
                 <th key={task.slug}>{task.title}</th>
               ))}
+              {showBonus && <th>Бонус</th>}
             </tr>
           </thead>
           <tbody>
@@ -604,7 +604,6 @@ function CyclingOverallPage() {
                 <PlaceCell place={row.place} previousPlace={row.previousPlace} />
                 <td className="team">{row.nickname || '-'}</td>
                 <td>{row.teamName || '-'}</td>
-                {showBonus && <td className="mono">{(row.bonusPoints || 0).toFixed(2)}</td>}
                 <DeltaCell value={row.totalPoints} prev={row.previousTotalPoints} />
                 {data.tasks.map((task) => {
                   const cell = row.tasks?.[task.slug];
@@ -616,6 +615,7 @@ function CyclingOverallPage() {
                     />
                   );
                 })}
+                {showBonus && <td className="mono">{(row.bonusPoints || 0).toFixed(2)}</td>}
               </tr>
             ))}
           </tbody>
@@ -696,20 +696,20 @@ function BoardPage({ boards }) {
   function exportCSV() {
     const headers = [
       '#', 'Nickname', 'Team Name',
-      ...(showBonus ? ['Бонус'] : []),
       'Board points',
       ...groupTasks.map((t) => t.title),
+      ...(showBonus ? ['Бонус'] : []),
     ];
     const rows = visible.map((row) => [
       row.place,
       row.nickname || '',
       row.teamName || '',
-      ...(showBonus ? [(row.bonusPoints || 0).toFixed(2)] : []),
       row.groupPoints.toFixed(2),
       ...groupTasks.map((t) => {
         const p = row.tasks?.[t.slug]?.points;
         return p !== undefined ? p.toFixed(2) : (isPrivate ? '0.00' : '');
       }),
+      ...(showBonus ? [(row.bonusPoints || 0).toFixed(2)] : []),
     ]);
     downloadCSV(`board-${board.slug}${isPrivate ? '-private' : ''}.csv`, headers, rows);
   }
@@ -739,11 +739,11 @@ function BoardPage({ boards }) {
               <th>#</th>
               <th>Nickname</th>
               <th>Team Name</th>
-              {showBonus && <th>Бонус</th>}
               <th>Board points</th>
               {groupTasks.map((task) => (
                 <th key={task.slug}>{task.title}</th>
               ))}
+              {showBonus && <th>Бонус</th>}
             </tr>
           </thead>
           <tbody>
@@ -752,7 +752,6 @@ function BoardPage({ boards }) {
                 <PlaceCell place={row.place} previousPlace={row.previousPlace} />
                 <td className="team">{row.nickname || '-'}</td>
                 <td>{row.teamName || '-'}</td>
-                {showBonus && <td className="mono">{(row.bonusPoints || 0).toFixed(2)}</td>}
                 <DeltaCell value={row.groupPoints} prev={row.previousGroupPoints} />
                 {groupTasks.map((task) => {
                   const cell = row.tasks?.[task.slug];
@@ -767,6 +766,7 @@ function BoardPage({ boards }) {
                     />
                   );
                 })}
+                {showBonus && <td className="mono">{(row.bonusPoints || 0).toFixed(2)}</td>}
               </tr>
             ))}
           </tbody>
