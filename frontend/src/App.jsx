@@ -2611,7 +2611,7 @@ function SiteHeader() {
   return (
     <header className="site-header">
       <div className="site-header-inner">
-        <Link to="/" className="site-header-brand">
+        <Link to="/" className="site-header-brand" title="StackOverFlow — сделано Данисом · github.com/seyoulax">
           <svg className="site-header-logo" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <defs>
               <linearGradient id="brand-grad" x1="0" y1="0" x2="1" y2="1">
@@ -2734,6 +2734,21 @@ export default function App() {
         </p>
       } />
       </Routes>
+      <SiteFooter />
     </AuthProvider>
+  );
+}
+
+function SiteFooter() {
+  return (
+    <footer className="site-footer">
+      <div className="site-footer-inner">
+        <span>
+          Сделано <strong>Данисом</strong> ·{' '}
+          <a href="https://github.com/seyoulax" target="_blank" rel="noreferrer">github.com/seyoulax</a>
+          {' '}· {new Date().getFullYear()}
+        </span>
+      </div>
+    </footer>
   );
 }
