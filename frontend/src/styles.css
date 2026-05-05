@@ -1957,3 +1957,25 @@ input[type='number'].control-input {
   accent-color: var(--accent);
   cursor: pointer;
 }
+
+/* ─── Overall bonus toggle on AdminBoardsPage ──────────────────── */
+.admin-bonus-toggle {
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(125, 95, 255, 0.04);
+}
+.admin-bonus-toggle label {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+.admin-bonus-toggle input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}

@@ -15,6 +15,7 @@ import {
   saveAdminTasks,
   getAdminBoards,
   saveAdminBoards,
+  setAdminOverallShowBonus,
   getCategories,
   getAdminCategories,
   saveAdminCategories,
@@ -38,7 +39,6 @@ import ObsCard from './ObsCard';
 import CompetitionsListPage from './CompetitionsListPage';
 import AdminCompetitionsPage from './AdminCompetitionsPage';
 import AdminParticipantsPage from './AdminParticipantsPage';
-import AdminBonusPage from './AdminBonusPage';
 import {
   LEGACY_REDIRECTS,
   LegacyBoardRedirect,
@@ -1814,6 +1814,8 @@ function AdminBoardsPage() {
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState(null);
+  const [overallShowBonus, setOverallShowBonus] = useState(false);
+  const [overallToggleSaving, setOverallToggleSaving] = useState(false);
 
   function normalize(rawList, knownSet) {
     return (rawList || []).map((b) => ({
@@ -1832,13 +1834,18 @@ function AdminBoardsPage() {
     setLoading(true);
     setError(null);
     try {
-      const [b, t] = await Promise.all([getAdminBoards(competitionSlug), getAdminTasks(competitionSlug)]);
+      const [b, t, lb] = await Promise.all([
+        getAdminBoards(competitionSlug),
+        getAdminTasks(competitionSlug),
+        getOverallLeaderboard(competitionSlug).catch(() => ({})),
+      ]);
       const tasksList = t.tasks || [];
       const known = new Set(tasksList.map((x) => x.slug));
       const list = normalize(b.boards, known);
       setBoards(list);
       setAllTasks(tasksList);
       setOriginal(JSON.stringify(list));
+      setOverallShowBonus(lb?.overallShowBonusPoints === true);
     } catch (err) {
       if (err instanceof AdminAuthError) navigate('/admin', { replace: true });
       else setError(err instanceof Error ? err.message : String(err));
@@ -1850,6 +1857,21 @@ function AdminBoardsPage() {
   useEffect(() => {
     load();
   }, []);
+
+  async function toggleOverallBonus(next) {
+    setOverallToggleSaving(true);
+    setError(null);
+    try {
+      await setAdminOverallShowBonus(competitionSlug, next);
+      setOverallShowBonus(next);
+      setSavedAt(new Date());
+    } catch (err) {
+      if (err instanceof AdminAuthError) navigate('/admin', { replace: true });
+      else setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setOverallToggleSaving(false);
+    }
+  }
 
   function update(idx, patch) {
     setBoards((prev) => prev.map((b, i) => (i === idx ? { ...b, ...patch } : b)));
@@ -1917,6 +1939,21 @@ function AdminBoardsPage() {
       </div>
 
       {error ? <div className="error-box">{error}</div> : null}
+
+      <div className="admin-bonus-toggle">
+        <label>
+          <input
+            type="checkbox"
+            checked={overallShowBonus}
+            onChange={(e) => toggleOverallBonus(e.target.checked)}
+            disabled={overallToggleSaving}
+          />
+          <span>Показывать бонусы и складывать с totalPoints на общем лидерборде</span>
+        </label>
+        <p className="muted" style={{ fontSize: 12, margin: '6px 0 0' }}>
+          Per-board бонусы — чекбокс «бонус» в каждой карточке ниже.
+        </p>
+      </div>
 
       <div className="admin-boards">
         {sorted.length === 0 ? (
@@ -2559,7 +2596,6 @@ function AdminShell() {
           <NavLink to={`${base}/boards`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Boards</NavLink>
           <NavLink to={`${base}/categories`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Categories</NavLink>
           <NavLink to={`${base}/participants`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Participants</NavLink>
-          <NavLink to={`${base}/bonus`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Бонусы</NavLink>
           <NavLink to={`${base}/groups`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Groups</NavLink>
           <NavLink to={`${base}/card`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Card</NavLink>
           <NavLink to={`${base}/cycle`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Cycle</NavLink>
@@ -2655,7 +2691,6 @@ export default function App() {
           <Route path="boards" element={<AdminBoardsPage />} />
           <Route path="categories" element={<AdminCategoriesPage />} />
           <Route path="participants" element={<AdminParticipantsPage />} />
-          <Route path="bonus" element={<AdminBonusPage />} />
           <Route path="groups" element={<AdminParticipantGroupsPage />} />
           <Route path="card" element={<ControlPage />} />
           <Route path="cycle" element={<AdminCyclePage />} />
