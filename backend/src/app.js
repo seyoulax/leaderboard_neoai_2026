@@ -574,30 +574,27 @@ export function createApp({ db } = {}) {
     res.json({ competition: meta });
   });
 
-  app.get('/api/competitions/:competitionSlug/leaderboard', (req, res) => {
+  app.get('/api/competitions/:competitionSlug/leaderboard', async (req, res) => {
     const meta = requireCompetition(req, res);
     if (!meta) return;
     if (meta.type === 'native') {
-      const taskMetas = listNativeTasks(db, meta.slug).map((t) => ({
-        slug: t.slug,
-        title: t.title,
-        higherIsBetter: t.higherIsBetter,
-        baselineScorePublic: t.baselineScorePublic,
-        authorScorePublic: t.authorScorePublic,
-        baselineScorePrivate: t.baselineScorePrivate,
-        authorScorePrivate: t.authorScorePrivate,
-      }));
+      const { buildNativeLeaderboard } = await import('./scoring/nativeLeaderboard.js');
+      const pub = buildNativeLeaderboard(db, meta.slug, 'public');
+      const priv = buildNativeLeaderboard(db, meta.slug, 'private');
+      const privateTaskSlugs = Object.keys(priv.byTask).filter((slug) => priv.byTask[slug].entries.length > 0);
       res.json({
-        updatedAt: null,
-        tasks: taskMetas,
-        overall: [],
-        privateOverall: [],
-        privateByTask: {},
-        privateTaskSlugs: [],
-        oursOverall: [],
-        oursByTask: {},
-        oursPrivateOverall: [],
-        oursPrivateByTask: {},
+        updatedAt: new Date().toISOString(),
+        tasks: pub.tasks,
+        overall: pub.overall,
+        byTask: pub.byTask,
+        privateOverall: priv.overall,
+        privateByTask: priv.byTask,
+        privateTaskSlugs,
+        // SP-3: ours = overall (deferred to SP-4 polish)
+        oursOverall: pub.overall,
+        oursByTask: pub.byTask,
+        oursPrivateOverall: priv.overall,
+        oursPrivateByTask: priv.byTask,
         errors: [],
       });
       return;
