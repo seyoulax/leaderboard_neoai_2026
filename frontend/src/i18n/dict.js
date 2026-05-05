@@ -108,6 +108,22 @@ export const dict = {
   'comps.empty':            { ru: 'Соревнований пока нет — создайте в админке (/admin).', en: 'No competitions yet — create one in admin (/admin).' },
   'comps.not_found':        { ru: 'Ничего не найдено по «{q}»', en: 'Nothing found for "{q}"' },
 
+  // CompetitionShell + leaderboard public pages
+  'shell.back_to_all':      { ru: '← все соревнования', en: '← all competitions' },
+  'shell.subtitle':         { ru: 'Live Leaderboard · нормализация: top1 = 100, last = 0. Общий балл = сумма по всем задачам.',
+                              en: 'Live Leaderboard · normalization: top1 = 100, last = 0. Total = sum across all tasks.' },
+  'shell.tab.overall':      { ru: 'Общий ЛБ',     en: 'Overall' },
+  'lb.search.placeholder':  { ru: 'Поиск по nickname…', en: 'Search by nickname…' },
+  'lb.filter.title':        { ru: 'Фильтр участников', en: 'Filter participants' },
+  'lb.download.title':      { ru: 'Скачать CSV',  en: 'Download CSV' },
+  'lb.updated':             { ru: 'Обновлено',    en: 'Updated' },
+
+  // Table column headers (Kaggle leaderboards)
+  'col.nickname':           { ru: 'Nickname',      en: 'Nickname' },
+  'col.team':               { ru: 'Team Name',     en: 'Team' },
+  'col.total':              { ru: 'Total points',  en: 'Total points' },
+  'col.board_total':        { ru: 'Board points',  en: 'Board points' },
+
   // Native task page
   'native.back_to_comp':    { ru: '← к соревнованию', en: '← back to competition' },
   'native.section.data':    { ru: 'Данные',          en: 'Data' },

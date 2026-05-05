@@ -138,8 +138,9 @@ function downloadCSV(filename, headers, rows) {
 }
 
 function DownloadButton({ onClick }) {
+  const t = useT();
   return (
-    <button className="control-btn control-btn-ghost" onClick={onClick} title="Скачать CSV">
+    <button className="control-btn control-btn-ghost" onClick={onClick} title={t('lb.download.title')}>
       ↓ CSV
     </button>
   );
@@ -164,14 +165,15 @@ function ModeToggle({ mode, onChange }) {
   );
 }
 
-function SearchBox({ value, onChange, placeholder = 'Поиск по nickname…' }) {
+function SearchBox({ value, onChange, placeholder }) {
+  const t = useT();
   return (
     <input
       type="search"
       className="search-box"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
+      placeholder={placeholder ?? t('lb.search.placeholder')}
     />
   );
 }
@@ -183,16 +185,17 @@ function matchesNickname(row, query) {
 }
 
 function FilterToggle({ value, onChange, groups }) {
+  const t = useT();
   const sortedGroups = (groups || []).slice().sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   return (
     <select
       className="search-box filter-select"
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      title="Фильтр участников"
+      title={t('lb.filter.title')}
     >
-      <option value="all">Все</option>
-      <option value="ours">Только наши</option>
+      <option value="all">{t('lb.filter.all')}</option>
+      <option value="ours">{t('lb.filter.ours')}</option>
       {sortedGroups.map((g) => (
         <option key={g.slug} value={`group:${g.slug}`}>{g.title}</option>
       ))}
@@ -287,6 +290,7 @@ function hexToRgba(hex, alpha) {
 }
 
 function Layout({ children, tasks, boards, categories, competitionSlug, theme }) {
+  const t = useT();
   const visibleBoards = sortedVisibleBoards(boards);
   const visibleCategories = (categories || [])
     .filter((c) => c.visible !== false)
@@ -345,14 +349,14 @@ function Layout({ children, tasks, boards, categories, competitionSlug, theme })
   return (
     <div className={`page ${className}`} style={style}>
       <header className="hero">
-        <p className="eyebrow"><Link to="/" className="eyebrow-link">← все соревнования</Link></p>
+        <p className="eyebrow"><Link to="/" className="eyebrow-link">{t('shell.back_to_all')}</Link></p>
         <h1>NEOAI</h1>
-        <p className="subtitle">Live Leaderboard · нормализация: top1 = 100, last = 0. Общий балл = сумма по всем задачам.</p>
+        <p className="subtitle">{t('shell.subtitle')}</p>
       </header>
 
       <nav className="tabs">
         <NavLink to={`${base}/leaderboard`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
-          Общий ЛБ
+          {t('shell.tab.overall')}
         </NavLink>
         {topRowBoards.map((board) => (
           <NavLink key={board.slug} to={`${base}/board/${board.slug}`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
@@ -418,6 +422,7 @@ function ErrorBanner({ errors }) {
 }
 
 function OverallPage() {
+  const t = useT();
   const { competitionSlug } = useParams();
   const { data, loading, error } = usePolling(() => getOverallLeaderboard(competitionSlug), [competitionSlug]);
   const [mode, setMode] = useState('public');
@@ -459,13 +464,13 @@ function OverallPage() {
   return (
     <section className="panel">
       <div className="panel-head">
-        <h2>Общий рейтинг</h2>
+        <h2>{t('lb.title.overall')}</h2>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
           <SearchBox value={query} onChange={setQuery} />
           <FilterToggle value={filter} onChange={setFilter} groups={data.groupsMeta} />
           <ModeToggle mode={mode} onChange={setMode} />
           <DownloadButton onClick={exportCSV} />
-          <span>Updated: {new Date(data.updatedAt).toLocaleString()}</span>
+          <span>{t('lb.updated')}: {new Date(data.updatedAt).toLocaleString()}</span>
         </div>
       </div>
 
@@ -479,9 +484,9 @@ function OverallPage() {
           <thead>
             <tr>
               <th>#</th>
-              <th>Nickname</th>
-              <th>Team Name</th>
-              <th>Total points</th>
+              <th>{t('col.nickname')}</th>
+              <th>{t('col.team')}</th>
+              <th>{t('col.total')}</th>
               {data.tasks.map((task) => (
                 <th key={task.slug}>{task.title}</th>
               ))}
@@ -520,6 +525,7 @@ function OverallPage() {
 }
 
 function CyclingOverallPage() {
+  const t = useT();
   const PAGE_SIZE = 15;
   const PAGE_MS = 20_000;
 
@@ -589,9 +595,9 @@ function CyclingOverallPage() {
           <thead>
             <tr>
               <th>#</th>
-              <th>Nickname</th>
-              <th>Team Name</th>
-              <th>Total points</th>
+              <th>{t('col.nickname')}</th>
+              <th>{t('col.team')}</th>
+              <th>{t('col.total')}</th>
               {data.tasks.map((task) => (
                 <th key={task.slug}>{task.title}</th>
               ))}
@@ -626,6 +632,7 @@ function CyclingOverallPage() {
 }
 
 function BoardPage({ boards }) {
+  const t = useT();
   const { competitionSlug, slug } = useParams();
   const board = (boards || []).find((b) => b.slug === slug);
   const { data, loading, error } = usePolling(() => getOverallLeaderboard(competitionSlug), [competitionSlug]);
@@ -723,7 +730,7 @@ function BoardPage({ boards }) {
           <FilterToggle value={filter} onChange={setFilter} groups={data.groupsMeta} />
           <ModeToggle mode={mode} onChange={setMode} />
           <DownloadButton onClick={exportCSV} />
-          <span>Updated: {new Date(data.updatedAt).toLocaleString()}</span>
+          <span>{t('lb.updated')}: {new Date(data.updatedAt).toLocaleString()}</span>
         </div>
       </div>
 
@@ -737,9 +744,9 @@ function BoardPage({ boards }) {
           <thead>
             <tr>
               <th>#</th>
-              <th>Nickname</th>
-              <th>Team Name</th>
-              <th>Board points</th>
+              <th>{t('col.nickname')}</th>
+              <th>{t('col.team')}</th>
+              <th>{t('col.board_total')}</th>
               {groupTasks.map((task) => (
                 <th key={task.slug}>{task.title}</th>
               ))}
@@ -844,7 +851,7 @@ function TaskPage() {
           <FilterToggle value={filter} onChange={setFilter} groups={data.groupsMeta} />
           <ModeToggle mode={mode} onChange={setMode} />
           <DownloadButton onClick={exportCSV} />
-          <span>Updated: {new Date(data.updatedAt).toLocaleString()}</span>
+          <span>{t('lb.updated')}: {new Date(data.updatedAt).toLocaleString()}</span>
         </div>
       </div>
 
@@ -860,8 +867,8 @@ function TaskPage() {
           <thead>
             <tr>
               <th>#</th>
-              <th>Nickname</th>
-              <th>Team Name</th>
+              <th>{t('col.nickname')}</th>
+              <th>{t('col.team')}</th>
               <th>Kaggle Rank</th>
               <th>Raw Score</th>
               <th>NEOAI Points</th>
