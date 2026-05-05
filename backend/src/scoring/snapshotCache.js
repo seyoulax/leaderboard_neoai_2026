@@ -4,7 +4,7 @@ export function makeSnapshotCache() {
   function annotate(slug, fresh) {
     const previous = snapshots.get(slug) || null;
     const annotated = annotateWithPrevious(fresh, previous);
-    snapshots.set(slug, structuredClone(fresh));
+    snapshots.set(slug, structuredClone(annotated));
     return annotated;
   }
 

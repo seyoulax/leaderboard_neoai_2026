@@ -1,6 +1,36 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import Database from 'better-sqlite3';
 import { makeSnapshotCache } from '../src/scoring/snapshotCache.js';
+import { runMigrations } from '../src/db/index.js';
+import { createApp, bootstrapForTests } from '../src/app.js';
+import { createUser } from '../src/db/usersRepo.js';
+import { insertCompetition } from '../src/db/competitionsRepo.js';
+import { insertNativeTask } from '../src/db/nativeTasksRepo.js';
+import { insertSubmission, pickAndMarkScoring, markScored } from '../src/db/submissionsRepo.js';
+
+function freshDb() {
+  const db = new Database(':memory:');
+  runMigrations(db);
+  return db;
+}
+
+function startApp(app) {
+  return new Promise((r) => { const s = app.listen(0, () => r(s)); });
+}
+
+function scoreSub(db, taskId, userId, points) {
+  const s = insertSubmission(db, {
+    taskId, userId,
+    originalFilename: 'sub',
+    sizeBytes: 1,
+    sha256: `${taskId}-${userId}-${points}-${Math.random()}`,
+    path: '/x',
+  });
+  pickAndMarkScoring(db);
+  markScored(db, s.id, { rawScorePublic: points / 100, pointsPublic: points, log: '', durationMs: 1 });
+  return s.id;
+}
 
 test('snapshotCache: first annotate returns deltas as null', () => {
   const cache = makeSnapshotCache();
@@ -75,4 +105,36 @@ test('snapshotCache: does not mutate input', () => {
   cache.annotate('c', fresh);
   assert.equal('previousTotalPoints' in fresh.overall[0], false);
   assert.equal('previousPoints' in fresh.overall[0].tasks.t, false);
+});
+
+test('leaderboard endpoint: native cold start uses snapshotCache (deltas null on first request)', async () => {
+  process.env.ADMIN_TOKEN = 'shared';
+  const db = freshDb();
+  insertCompetition(db, { slug: 'c', title: 'C', type: 'native', visibility: 'public' });
+  const t = insertNativeTask(db, { competitionSlug: 'c', slug: 't', title: 'T' });
+  const u = createUser(db, { email: 'a@a.a', passwordHash: 'h', displayName: 'Alice' });
+  scoreSub(db, t.id, u.id, 50);
+  const app = createApp({ db });
+  await bootstrapForTests();
+  const server = await startApp(app);
+  const port = server.address().port;
+  const r = await fetch(`http://127.0.0.1:${port}/api/competitions/c/leaderboard`).then((x) => x.json());
+  assert.equal(r.overall.length, 1);
+  assert.equal(r.overall[0].previousTotalPoints, null);
+  assert.equal(r.byTask.t.entries[0].previousPoints, null);
+  assert.ok(Array.isArray(r.tasks));
+  // Shape contract — keys must be present
+  for (const k of ['overall', 'byTask', 'privateOverall', 'privateByTask', 'privateTaskSlugs',
+                   'oursOverall', 'oursByTask', 'oursPrivateOverall', 'oursPrivateByTask',
+                   'errors', 'tasks', 'updatedAt']) {
+    assert.ok(k in r, `missing key '${k}'`);
+  }
+  server.close();
+});
+
+test('worker exports setOnScoredCallback (wiring contract)', async () => {
+  const { setOnScoredCallback } = await import('../src/scoring/worker.js');
+  assert.equal(typeof setOnScoredCallback, 'function');
+  // No-op call should not throw
+  setOnScoredCallback(null);
 });
