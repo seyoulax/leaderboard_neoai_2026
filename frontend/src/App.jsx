@@ -21,6 +21,9 @@ import {
   getAdminPrivate,
   uploadAdminPrivate,
   deleteAdminPrivate,
+  getAdminPublicCsv,
+  uploadAdminPublicCsv,
+  deleteAdminPublicCsv,
   setAdminCycleBoard,
   getCycleConfig,
   AdminAuthError,
@@ -1233,6 +1236,81 @@ function AdminLogin({ onSuccess }) {
   );
 }
 
+function PublicCsvRow({ slug, competitionSlug }) {
+  const [info, setInfo] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function load() {
+    if (!slug) return;
+    setError(null);
+    try {
+      const data = await getAdminPublicCsv(competitionSlug, slug);
+      setInfo(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  useEffect(() => {
+    load();
+  }, [slug]);
+
+  async function pick(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const text = await file.text();
+      const r = await uploadAdminPublicCsv(competitionSlug, slug, text);
+      setInfo({ exists: true, count: r.count, updatedAt: new Date().toISOString() });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function remove() {
+    if (!confirm(`Удалить public CSV для ${slug}? Лидерборд снова начнёт тянуться с Kaggle.`)) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await deleteAdminPublicCsv(competitionSlug, slug);
+      setInfo({ exists: false });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!slug) return null;
+
+  return (
+    <div className="admin-private-row">
+      <span className="admin-private-label">public CSV:</span>
+      {info?.exists ? (
+        <>
+          <span className="muted">
+            {info.count} строк · обновлено {new Date(info.updatedAt).toLocaleString()} · перебивает Kaggle
+          </span>
+          <button className="control-btn control-btn-ghost" onClick={remove} disabled={busy}>×</button>
+        </>
+      ) : (
+        <span className="muted">не загружено · источник — Kaggle</span>
+      )}
+      <label className="control-btn control-btn-ghost" style={{ cursor: 'pointer' }}>
+        {busy ? '...' : info?.exists ? '↑ заменить CSV' : '↑ загрузить CSV'}
+        <input type="file" accept=".csv,text/csv" onChange={pick} disabled={busy} style={{ display: 'none' }} />
+      </label>
+      {error ? <span style={{ color: 'var(--danger)', fontSize: 12 }}>{error}</span> : null}
+    </div>
+  );
+}
+
 function PrivateRow({ slug, competitionSlug }) {
   const [info, setInfo] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -1451,7 +1529,7 @@ function AdminTasksPage() {
               style={{ flex: 1 }}
               value={task.competition}
               onChange={(e) => update(idx, { competition: e.target.value })}
-              placeholder="kaggle-competition-slug"
+              placeholder="kaggle-competition-slug (опц., если есть public CSV)"
             />
             <label style={{ flex: '0 0 110px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
               <input
@@ -1502,6 +1580,7 @@ function AdminTasksPage() {
               <button className="control-btn control-btn-ghost" onClick={() => remove(idx)}>×</button>
             </span>
           </div>
+          <PublicCsvRow slug={task.slug} competitionSlug={competitionSlug} />
           <PrivateRow slug={task.slug} competitionSlug={competitionSlug} />
           </div>
         ))}

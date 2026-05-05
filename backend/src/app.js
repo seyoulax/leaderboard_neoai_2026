@@ -29,6 +29,10 @@ import {
   readPrivateFile,
   writePrivateFile,
   deletePrivateFile,
+  readPublicFile,
+  writePublicFile,
+  deletePublicFile,
+  parsePublicCsv,
 } from './private.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -38,6 +42,7 @@ const KAGGLE_CMD = process.env.KAGGLE_CMD || 'kaggle';
 export const DATA_DIR = path.resolve(__dirname, '..', process.env.DATA_DIR || './data');
 const COMPETITIONS_DIR = path.join(DATA_DIR, 'competitions');
 const PRIVATE_DIR_BASE = path.join(DATA_DIR, 'private');
+const PUBLIC_CSV_DIR_BASE = path.join(DATA_DIR, 'public-csv');
 const REQUEST_GAP_MS = Number(process.env.REQUEST_GAP_MS || 3000);
 
 let _dbForRefresh = null;
@@ -52,6 +57,10 @@ function competitionDir(slug) {
 
 function privateDirFor(slug) {
   return path.join(PRIVATE_DIR_BASE, slug);
+}
+
+function publicCsvDirFor(slug) {
+  return path.join(PUBLIC_CSV_DIR_BASE, slug);
 }
 
 function validateTasks(input) {
@@ -69,7 +78,8 @@ function validateTasks(input) {
     const competition = typeof task.competition === 'string' ? task.competition.trim() : '';
     if (!slug) throw new Error(`task #${idx + 1}: slug is required`);
     if (!title) throw new Error(`task #${idx + 1}: title is required`);
-    if (!competition) throw new Error(`task #${idx + 1}: competition is required`);
+    // competition (Kaggle slug) is optional — task may instead be served from an
+    // admin-uploaded public CSV (data/public-csv/<comp>/<task>.csv).
     const normSlug = slug.toLowerCase();
     if (seen.has(normSlug)) throw new Error(`duplicate slug: ${normSlug}`);
     seen.add(normSlug);
@@ -462,8 +472,53 @@ async function refreshCompetition(slug) {
   const previousByTask = compCache.byTask || {};
   const taskRows = [];
   const errors = [];
+  const pubDir = publicCsvDirFor(slug);
+  const participants = await loadParticipantsFor(slug);
+
+  function pushPrev(task) {
+    const prev = previousByTask[task.slug];
+    if (prev && Array.isArray(prev.entries)) {
+      taskRows.push({
+        ...task,
+        updatedAt: prev.updatedAt || compCache.updatedAt,
+        rows: prev.entries.map((e) => ({
+          participantKey: e.participantKey,
+          nickname: e.nickname,
+          teamName: e.teamName,
+          rank: e.rank,
+          score: e.score,
+        })),
+      });
+    }
+  }
 
   for (const task of tasks) {
+    // Source priority: admin-uploaded public CSV → Kaggle CLI fetch.
+    const publicCsv = await readPublicFile(pubDir, task.slug).catch(() => null);
+    if (publicCsv) {
+      try {
+        const records = parsePublicCsv(publicCsv.raw, { higherIsBetter: task.higherIsBetter });
+        if (!records.length) {
+          throw new Error('public CSV is empty');
+        }
+        const rows = buildPrivateRows({ records, higherIsBetter: task.higherIsBetter, participants });
+        taskRows.push({ ...task, updatedAt: publicCsv.updatedAt, rows });
+        continue;
+      } catch (e) {
+        const short = `${task.slug}: public CSV ${e instanceof Error ? e.message : String(e)}`;
+        console.error(`[refresh] ${slug}/${task.slug}: ${short}`);
+        errors.push({ message: short, at: new Date().toISOString() });
+        pushPrev(task);
+        continue;
+      }
+    }
+
+    if (!task.competition) {
+      // No source configured for this task — silently use prev or stay empty.
+      pushPrev(task);
+      continue;
+    }
+
     try {
       const rows = await fetchCompetitionLeaderboard({
         competition: task.competition,
@@ -479,25 +534,11 @@ async function refreshCompetition(slug) {
       const short = `${task.slug}: ${message.split('\n')[0]}`;
       console.error(`[refresh] ${slug}/${task.slug} failed: ${message}`);
       errors.push({ message: short, at: new Date().toISOString() });
-      const prev = previousByTask[task.slug];
-      if (prev && Array.isArray(prev.entries)) {
-        taskRows.push({
-          ...task,
-          updatedAt: prev.updatedAt || compCache.updatedAt,
-          rows: prev.entries.map((e) => ({
-            participantKey: e.participantKey,
-            nickname: e.nickname,
-            teamName: e.teamName,
-            rank: e.rank,
-            score: e.score,
-          })),
-        });
-      }
+      pushPrev(task);
     }
     await sleep(REQUEST_GAP_MS);
   }
 
-  const participants = await loadParticipantsFor(slug);
   const state = await readCompetitionState(competitionDir(slug));
   const oursSet = buildOursKaggleSet(participants);
   const oursDisplayMap = buildOursDisplayMap(participants);
@@ -1115,6 +1156,57 @@ export function createApp({ db } = {}) {
       res.json({ ok: true });
       refreshCompetition(slug).catch((e) =>
         console.error(`[refresh after private delete ${slug}/${req.params.taskSlug}] FAILED`, e)
+      );
+    } catch (e) {
+      res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
+  app.get('/api/admin/competitions/:competitionSlug/tasks/:taskSlug/public-csv', adminMw, async (req, res) => {
+    const slug = ensureKnownSlug(req, res); if (!slug) return;
+    try {
+      const file = await readPublicFile(publicCsvDirFor(slug), req.params.taskSlug);
+      if (!file) { res.json({ exists: false }); return; }
+      let count = 0;
+      try { count = parsePublicCsv(file.raw).length; } catch {}
+      res.json({ exists: true, csv: file.raw, updatedAt: file.updatedAt, count });
+    } catch (e) {
+      res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
+  app.put('/api/admin/competitions/:competitionSlug/tasks/:taskSlug/public-csv', adminMw, async (req, res) => {
+    const slug = ensureKnownSlug(req, res); if (!slug) return;
+    try {
+      const tasks = await loadTasksFor(slug);
+      const task = tasks.find((t) => t.slug === req.params.taskSlug);
+      if (!task) {
+        res.status(404).json({ error: `task '${req.params.taskSlug}' not found in '${slug}'` });
+        return;
+      }
+      const csv = typeof req.body?.csv === 'string' ? req.body.csv : '';
+      const records = parsePublicCsv(csv, { higherIsBetter: task.higherIsBetter });
+      if (!records.length) {
+        res.status(400).json({ error: 'no valid rows parsed (need columns nickname/raw_score, or Kaggle all-submissions UserName/IsSelected/PublicScore/PrivateScore)' });
+        return;
+      }
+      await writePublicFile(publicCsvDirFor(slug), req.params.taskSlug, csv);
+      res.json({ ok: true, count: records.length });
+      refreshCompetition(slug).catch((e) =>
+        console.error(`[refresh after public-csv upload ${slug}/${req.params.taskSlug}] FAILED`, e)
+      );
+    } catch (e) {
+      res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
+  app.delete('/api/admin/competitions/:competitionSlug/tasks/:taskSlug/public-csv', adminMw, async (req, res) => {
+    const slug = ensureKnownSlug(req, res); if (!slug) return;
+    try {
+      await deletePublicFile(publicCsvDirFor(slug), req.params.taskSlug);
+      res.json({ ok: true });
+      refreshCompetition(slug).catch((e) =>
+        console.error(`[refresh after public-csv delete ${slug}/${req.params.taskSlug}] FAILED`, e)
       );
     } catch (e) {
       res.status(500).json({ error: e instanceof Error ? e.message : String(e) });

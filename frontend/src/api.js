@@ -183,6 +183,20 @@ export async function deleteAdminPrivate(slug, taskSlug) {
   });
 }
 
+export async function getAdminPublicCsv(slug, taskSlug) {
+  return adminFetch(`${adminCompBase(slug)}/tasks/${encodeURIComponent(taskSlug)}/public-csv`);
+}
+export async function uploadAdminPublicCsv(slug, taskSlug, csv) {
+  return adminFetch(`${adminCompBase(slug)}/tasks/${encodeURIComponent(taskSlug)}/public-csv`, {
+    method: 'PUT', body: JSON.stringify({ csv }),
+  });
+}
+export async function deleteAdminPublicCsv(slug, taskSlug) {
+  return adminFetch(`${adminCompBase(slug)}/tasks/${encodeURIComponent(taskSlug)}/public-csv`, {
+    method: 'DELETE',
+  });
+}
+
 // ---------- Auth ----------
 
 export const auth = {

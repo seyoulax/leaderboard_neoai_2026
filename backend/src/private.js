@@ -119,6 +119,13 @@ export function buildPrivateRows({ records, higherIsBetter, participants }) {
   });
 }
 
+// Aliases — same on-disk format and parsing as private CSVs; used for admin-uploaded
+// public leaderboards (replaces Kaggle fetch when present).
+export const readPublicFile = readPrivateFile;
+export const writePublicFile = writePrivateFile;
+export const deletePublicFile = deletePrivateFile;
+export const parsePublicCsv = parsePrivateCsv;
+
 export async function readPrivateFile(privateDir, slug) {
   const file = path.join(privateDir, `${slug}.csv`);
   try {
