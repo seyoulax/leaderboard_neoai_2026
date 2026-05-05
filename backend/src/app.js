@@ -225,6 +225,78 @@ async function saveBoardsFor(slug, boards) {
   await fs.rename(tmp, file);
 }
 
+function validateCategories(input, knownTaskSlugs) {
+  if (!Array.isArray(input)) throw new Error('categories must be an array');
+  const seen = new Set();
+  return input.map((cat, idx) => {
+    if (!cat || typeof cat !== 'object') {
+      throw new Error(`category #${idx + 1}: must be an object`);
+    }
+    const slug = typeof cat.slug === 'string' ? cat.slug.trim() : '';
+    const title = typeof cat.title === 'string' ? cat.title.trim() : '';
+    if (!slug) throw new Error(`category #${idx + 1}: slug is required`);
+    if (!/^[a-z0-9][a-z0-9-]*$/i.test(slug)) {
+      throw new Error(`category #${idx + 1}: slug must be alphanumeric/hyphens`);
+    }
+    if (slug === '_all') {
+      throw new Error(`category slug '_all' is reserved`);
+    }
+    if (!title) throw new Error(`category #${idx + 1}: title is required`);
+    if (seen.has(slug)) throw new Error(`duplicate category slug: ${slug}`);
+    seen.add(slug);
+
+    const taskSlugs = Array.isArray(cat.taskSlugs) ? cat.taskSlugs : [];
+    const cleanTaskSlugs = [];
+    for (const ts of taskSlugs) {
+      if (typeof ts !== 'string' || !ts.trim()) {
+        throw new Error(`category ${slug}: taskSlugs must be non-empty strings`);
+      }
+      const t = ts.trim();
+      if (knownTaskSlugs && !knownTaskSlugs.has(t)) {
+        throw new Error(`category ${slug}: unknown task slug '${t}'`);
+      }
+      cleanTaskSlugs.push(t);
+    }
+
+    const order = Number.isFinite(Number(cat.order)) ? Number(cat.order) : 0;
+    const visible = cat.visible !== false;
+
+    return { slug, title, taskSlugs: cleanTaskSlugs, visible, order };
+  });
+}
+
+async function loadCategoriesFor(slug) {
+  const file = path.join(competitionDir(slug), 'categories.json');
+  try {
+    const raw = await fs.readFile(file, 'utf8');
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    const tasks = await loadTasksFor(slug);
+    const known = new Set(tasks.map((t) => t.slug));
+    const sanitized = [];
+    for (const cat of parsed) {
+      if (!cat || typeof cat !== 'object') continue;
+      const filtered = Array.isArray(cat.taskSlugs)
+        ? cat.taskSlugs.filter((s) => typeof s === 'string' && known.has(s.trim()))
+        : [];
+      sanitized.push({ ...cat, taskSlugs: filtered });
+    }
+    return validateCategories(sanitized, known);
+  } catch (e) {
+    if (e.code === 'ENOENT') return [];
+    throw e;
+  }
+}
+
+async function saveCategoriesFor(slug, categories) {
+  await fs.mkdir(competitionDir(slug), { recursive: true });
+  const file = path.join(competitionDir(slug), 'categories.json');
+  const body = JSON.stringify(categories, null, 2) + '\n';
+  const tmp = `${file}.tmp`;
+  await fs.writeFile(tmp, body, 'utf8');
+  await fs.rename(tmp, file);
+}
+
 async function loadParticipantsFor(slug) {
   const file = path.join(competitionDir(slug), 'participants.json');
   try {
@@ -678,6 +750,17 @@ export function createApp({ db } = {}) {
     }
   });
 
+  app.get('/api/competitions/:competitionSlug/categories', async (req, res) => {
+    const meta = requireCompetition(req, res);
+    if (!meta) return;
+    try {
+      const categories = await loadCategoriesFor(meta.slug);
+      res.json({ categories });
+    } catch (e) {
+      res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
   app.get('/api/competitions/:competitionSlug/participants', (req, res) => {
     const meta = requireCompetition(req, res);
     if (!meta) return;
@@ -898,6 +981,29 @@ export function createApp({ db } = {}) {
       const boards = validateBoards(req.body?.boards, known);
       await saveBoardsFor(slug, boards);
       res.json({ ok: true, boards });
+    } catch (e) {
+      res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
+  app.get('/api/admin/competitions/:competitionSlug/categories', adminMw, async (req, res) => {
+    const slug = ensureKnownSlug(req, res); if (!slug) return;
+    try {
+      const categories = await loadCategoriesFor(slug);
+      res.json({ categories });
+    } catch (e) {
+      res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
+  app.put('/api/admin/competitions/:competitionSlug/categories', adminMw, async (req, res) => {
+    const slug = ensureKnownSlug(req, res); if (!slug) return;
+    try {
+      const tasks = await loadTasksFor(slug);
+      const known = new Set(tasks.map((t) => t.slug));
+      const categories = validateCategories(req.body?.categories, known);
+      await saveCategoriesFor(slug, categories);
+      res.json({ ok: true, categories });
     } catch (e) {
       res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
     }

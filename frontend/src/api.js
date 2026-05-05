@@ -50,6 +50,10 @@ export async function getBoards(slug) {
   return request(`${compBase(slug)}/boards`);
 }
 
+export async function getCategories(slug) {
+  return request(`${compBase(slug)}/categories`);
+}
+
 export async function getParticipants(slug) {
   return request(`${compBase(slug)}/participants`);
 }
@@ -141,6 +145,11 @@ export async function saveAdminTasks(slug, tasks) {
 export async function getAdminBoards(slug) { return adminFetch(`${adminCompBase(slug)}/boards`); }
 export async function saveAdminBoards(slug, boards) {
   return adminFetch(`${adminCompBase(slug)}/boards`, { method: 'PUT', body: JSON.stringify({ boards }) });
+}
+
+export async function getAdminCategories(slug) { return adminFetch(`${adminCompBase(slug)}/categories`); }
+export async function saveAdminCategories(slug, categories) {
+  return adminFetch(`${adminCompBase(slug)}/categories`, { method: 'PUT', body: JSON.stringify({ categories }) });
 }
 
 export async function setAdminCycleBoard(slug, boardSlug) {

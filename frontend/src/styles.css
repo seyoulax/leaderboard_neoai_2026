@@ -397,6 +397,35 @@ code {
   font-size: 0.92em;
 }
 
+.tab-cat {
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tab-cat-chevron {
+  font-size: 10px;
+  opacity: 0.55;
+}
+
+.tabs-sub {
+  margin-top: -4px;
+  padding-top: 4px;
+  padding-left: 18px;
+  border-left: 2px solid var(--accent-soft);
+  margin-left: 4px;
+  flex-wrap: wrap;
+}
+
+.tab-sub {
+  font-size: 13px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  opacity: 0.92;
+}
+
 .admin-card-preview {
   display: flex;
   gap: 18px;

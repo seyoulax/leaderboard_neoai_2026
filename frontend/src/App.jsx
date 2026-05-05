@@ -1,4 +1,4 @@
-import { Link, NavLink, Navigate, Outlet, Route, Routes, useNavigate, useParams } from 'react-router-dom';
+import { Link, NavLink, Navigate, Outlet, Route, Routes, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import {
   getOverallLeaderboard,
@@ -15,6 +15,9 @@ import {
   saveAdminTasks,
   getAdminBoards,
   saveAdminBoards,
+  getCategories,
+  getAdminCategories,
+  saveAdminCategories,
   getAdminPrivate,
   uploadAdminPrivate,
   deleteAdminPrivate,
@@ -224,10 +227,52 @@ function hexToRgba(hex, alpha) {
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
 }
 
-function Layout({ children, tasks, boards, competitionSlug, theme }) {
+function Layout({ children, tasks, boards, categories, competitionSlug, theme }) {
   const visibleBoards = sortedVisibleBoards(boards);
+  const visibleCategories = (categories || [])
+    .filter((c) => c.visible !== false)
+    .slice()
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const virtualCat = {
+    slug: '_all',
+    title: 'Отдельно по задачам',
+    taskSlugs: tasks.map((t) => t.slug),
+  };
+  const allCategories = [...visibleCategories, virtualCat];
+
   const base = `/competitions/${encodeURIComponent(competitionSlug)}`;
   const { style, className } = themeProps(theme);
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const isTaskPage = location.pathname.includes('/task/');
+  const rawCat = searchParams.get('category');
+  const selectedCatSlug = rawCat || (isTaskPage ? '_all' : null);
+  const selectedCat = selectedCatSlug
+    ? allCategories.find((c) => c.slug === selectedCatSlug) || null
+    : null;
+
+  function selectCategory(slug) {
+    const next = new URLSearchParams(searchParams);
+    if (slug == null || slug === rawCat) {
+      next.delete('category');
+    } else {
+      next.set('category', slug);
+    }
+    setSearchParams(next, { replace: true });
+  }
+
+  function taskHref(taskSlug) {
+    const sp = new URLSearchParams();
+    if (selectedCatSlug) sp.set('category', selectedCatSlug);
+    const qs = sp.toString();
+    return `${base}/task/${taskSlug}${qs ? `?${qs}` : ''}`;
+  }
+
+  const subTasks = selectedCat
+    ? tasks.filter((t) => selectedCat.taskSlugs.includes(t.slug))
+    : [];
+
   return (
     <div className={`page ${className}`} style={style}>
       <header className="hero">
@@ -245,12 +290,32 @@ function Layout({ children, tasks, boards, competitionSlug, theme }) {
             {board.title}
           </NavLink>
         ))}
-        {tasks.map((task) => (
-          <NavLink key={task.slug} to={`${base}/task/${task.slug}`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
-            {task.title}
-          </NavLink>
+        {allCategories.map((cat) => (
+          <button
+            key={cat.slug}
+            type="button"
+            onClick={() => selectCategory(cat.slug)}
+            className={`tab tab-cat ${selectedCatSlug === cat.slug ? 'active' : ''}`}
+          >
+            {cat.title}
+            <span className="tab-cat-chevron" aria-hidden="true">▾</span>
+          </button>
         ))}
       </nav>
+
+      {selectedCat && subTasks.length > 0 ? (
+        <nav className="tabs tabs-sub">
+          {subTasks.map((task) => (
+            <NavLink
+              key={task.slug}
+              to={taskHref(task.slug)}
+              className={({ isActive }) => `tab tab-sub ${isActive ? 'active' : ''}`}
+            >
+              {task.title}
+            </NavLink>
+          ))}
+        </nav>
+      ) : null}
 
       <main>{children}</main>
     </div>
@@ -1056,6 +1121,7 @@ function CompetitionShell() {
   const { competitionSlug } = useParams();
   const tasksState = usePolling(() => getOverallLeaderboard(competitionSlug), [competitionSlug]);
   const boardsState = usePolling(() => getBoards(competitionSlug), [competitionSlug]);
+  const categoriesState = usePolling(() => getCategories(competitionSlug), [competitionSlug]);
   const [theme, setTheme] = useState(null);
 
   useEffect(() => {
@@ -1066,7 +1132,7 @@ function CompetitionShell() {
     return () => { active = false; };
   }, [competitionSlug]);
 
-  if (tasksState.loading || boardsState.loading) {
+  if (tasksState.loading || boardsState.loading || categoriesState.loading) {
     return <p className="status">Загрузка...</p>;
   }
   if (tasksState.error) {
@@ -1076,6 +1142,7 @@ function CompetitionShell() {
     <Layout
       tasks={tasksState.data?.tasks || []}
       boards={boardsState.data?.boards || []}
+      categories={categoriesState.data?.categories || []}
       competitionSlug={competitionSlug}
       theme={theme}
     >
@@ -1656,6 +1723,206 @@ function AdminBoardsPage() {
   );
 }
 
+function AdminCategoriesPage() {
+  const { slug: competitionSlug } = useParams();
+  const navigate = useNavigate();
+  const [categories, setCategories] = useState([]);
+  const [allTasks, setAllTasks] = useState([]);
+  const [original, setOriginal] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [savedAt, setSavedAt] = useState(null);
+
+  function normalize(rawList, knownSet) {
+    return (rawList || []).map((c) => ({
+      slug: c.slug || '',
+      title: c.title || '',
+      taskSlugs: Array.isArray(c.taskSlugs)
+        ? c.taskSlugs.filter((s) => !knownSet || knownSet.has(s))
+        : [],
+      visible: c.visible !== false,
+      order: c.order ?? 0,
+    }));
+  }
+
+  async function load() {
+    setLoading(true);
+    setError(null);
+    try {
+      const [c, t] = await Promise.all([getAdminCategories(competitionSlug), getAdminTasks(competitionSlug)]);
+      const tasksList = t.tasks || [];
+      const known = new Set(tasksList.map((x) => x.slug));
+      const list = normalize(c.categories, known);
+      setCategories(list);
+      setAllTasks(tasksList);
+      setOriginal(JSON.stringify(list));
+    } catch (err) {
+      if (err instanceof AdminAuthError) navigate('/admin', { replace: true });
+      else setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  function update(idx, patch) {
+    setCategories((prev) => prev.map((c, i) => (i === idx ? { ...c, ...patch } : c)));
+  }
+
+  function toggleTask(idx, slug) {
+    setCategories((prev) =>
+      prev.map((c, i) => {
+        if (i !== idx) return c;
+        const has = c.taskSlugs.includes(slug);
+        return {
+          ...c,
+          taskSlugs: has ? c.taskSlugs.filter((s) => s !== slug) : [...c.taskSlugs, slug],
+        };
+      })
+    );
+  }
+
+  function remove(idx) {
+    if (!confirm('Удалить категорию?')) return;
+    setCategories((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  function add() {
+    const nextOrder = categories.reduce((m, c) => Math.max(m, c.order ?? 0), 0) + 1;
+    setCategories((prev) => [
+      ...prev,
+      { slug: '', title: '', taskSlugs: [], visible: true, order: nextOrder },
+    ]);
+  }
+
+  async function save() {
+    setSaving(true);
+    setError(null);
+    try {
+      const data = await saveAdminCategories(competitionSlug, categories);
+      const known = new Set(allTasks.map((x) => x.slug));
+      const list = normalize(data.categories, known);
+      setCategories(list);
+      setOriginal(JSON.stringify(list));
+      setSavedAt(new Date());
+    } catch (err) {
+      if (err instanceof AdminAuthError) navigate('/admin', { replace: true });
+      else setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const dirty = JSON.stringify(categories) !== original;
+
+  if (loading) return <p className="status">Загрузка категорий...</p>;
+
+  const sorted = categories
+    .map((c, i) => ({ c, i }))
+    .sort((a, b) => (a.c.order ?? 0) - (b.c.order ?? 0));
+
+  return (
+    <section className="panel">
+      <div className="panel-head">
+        <h2>Категории задач (categories.json)</h2>
+        <span>
+          {dirty ? 'есть несохранённые изменения' : savedAt ? `сохранено ${savedAt.toLocaleTimeString()}` : 'без изменений'}
+        </span>
+      </div>
+
+      {error ? <div className="error-box">{error}</div> : null}
+
+      <div className="admin-boards">
+        {sorted.length === 0 ? (
+          <p className="meta">Пока ни одной категории. Категория «Отдельно по задачам» (со всеми задачами) показывается автоматически.</p>
+        ) : null}
+
+        {sorted.map(({ c: cat, i: idx }) => (
+          <div key={idx} className="admin-board-card">
+            <div className="admin-board-row">
+              <label className="admin-field">
+                <span className="admin-field-label">slug</span>
+                <input
+                  className="control-input"
+                  value={cat.slug}
+                  onChange={(e) => update(idx, { slug: e.target.value })}
+                  placeholder="day-1"
+                />
+              </label>
+              <label className="admin-field" style={{ flex: 1 }}>
+                <span className="admin-field-label">название</span>
+                <input
+                  className="control-input"
+                  value={cat.title}
+                  onChange={(e) => update(idx, { title: e.target.value })}
+                  placeholder="Day 1"
+                />
+              </label>
+              <label className="admin-field" style={{ flex: '0 0 90px' }}>
+                <span className="admin-field-label">order</span>
+                <input
+                  className="control-input"
+                  type="number"
+                  value={cat.order}
+                  onChange={(e) => update(idx, { order: Number(e.target.value) || 0 })}
+                />
+              </label>
+              <label className="admin-field admin-field-check">
+                <span className="admin-field-label">visible</span>
+                <input
+                  type="checkbox"
+                  checked={cat.visible}
+                  onChange={(e) => update(idx, { visible: e.target.checked })}
+                />
+              </label>
+              <button className="control-btn control-btn-ghost" onClick={() => remove(idx)}>×</button>
+            </div>
+
+            <div className="admin-board-tasks">
+              <div className="admin-field-label">задачи в категории</div>
+              <div className="admin-board-tasks-list">
+                {allTasks.length === 0 ? (
+                  <span className="meta">Нет задач — создай их во вкладке «Задачи»</span>
+                ) : (
+                  allTasks.map((t) => (
+                    <label key={t.slug} className="admin-board-task-pick">
+                      <input
+                        type="checkbox"
+                        checked={cat.taskSlugs.includes(t.slug)}
+                        onChange={() => toggleTask(idx, t.slug)}
+                      />
+                      <span>{t.title}</span>
+                      <span className="muted"> ({t.slug})</span>
+                    </label>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+
+        <div className="admin-tasks-actions">
+          <button className="control-btn control-btn-ghost" onClick={add}>+ категория</button>
+          <button className="control-btn control-btn-ghost" onClick={load} disabled={saving}>Откатить</button>
+          <button className="control-btn" onClick={save} disabled={!dirty || saving}>
+            {saving ? 'Сохранение...' : 'Сохранить'}
+          </button>
+        </div>
+
+        <p className="meta">
+          Категории показываются в шапке публичного лидерборда — клик раскрывает вторую строку
+          с задачами категории. Категория «Отдельно по задачам» (со всеми задачами) добавляется
+          автоматически и не редактируется. Slug <code>_all</code> зарезервирован.
+        </p>
+      </div>
+    </section>
+  );
+}
+
 function AdminCyclePage() {
   const { slug: competitionSlug } = useParams();
   const navigate = useNavigate();
@@ -1778,6 +2045,7 @@ function AdminShell() {
         <nav className="tabs">
           <NavLink to={`${base}/tasks`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Tasks</NavLink>
           <NavLink to={`${base}/boards`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Boards</NavLink>
+          <NavLink to={`${base}/categories`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Categories</NavLink>
           <NavLink to={`${base}/participants`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Participants</NavLink>
           <NavLink to={`${base}/card`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Card</NavLink>
           <NavLink to={`${base}/cycle`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Cycle</NavLink>
@@ -1829,6 +2097,7 @@ export default function App() {
           <Route index element={<Navigate to="tasks" replace />} />
           <Route path="tasks" element={<AdminTasksPage />} />
           <Route path="boards" element={<AdminBoardsPage />} />
+          <Route path="categories" element={<AdminCategoriesPage />} />
           <Route path="participants" element={<AdminParticipantsPage />} />
           <Route path="card" element={<ControlPage />} />
           <Route path="cycle" element={<AdminCyclePage />} />
