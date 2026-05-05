@@ -18,6 +18,7 @@ function startApp(app) { return new Promise((r) => { const s = app.listen(0, () 
 
 async function setup() {
   process.env.ADMIN_TOKEN = 'shared';
+  process.env.KAGGLE_CMD = '/bin/echo'; // no-op: refreshCompetition fire-and-forget won't hit real Kaggle
   const db = freshDb();
   insertCompetition(db, { slug: 'c', title: 'C', type: 'native', visibility: 'public' });
   const app = createApp({ db });
@@ -167,19 +168,19 @@ test('GET /members-bonus: 401 anon, 404 unknown slug', async () => {
 
 test('PUT /admin/.../boards: showBonusPoints flows through', async (t) => {
   const { db, app } = await setup();
-  insertCompetition(db, { slug: 'k', title: 'K', type: 'kaggle', visibility: 'public' });
+  insertCompetition(db, { slug: 'k-admin', title: 'K', type: 'kaggle', visibility: 'public' });
   await bootstrapForTests();
-  const compDir = path.join(DATA_DIR, 'competitions', 'k');
+  const compDir = path.join(DATA_DIR, 'competitions', 'k-admin');
   t.after(() => fs.rm(compDir, { recursive: true, force: true }));
   await fs.mkdir(compDir, { recursive: true });
   // tasks first
   const server = await startApp(app);
   const port = server.address().port;
-  await fetch(`http://127.0.0.1:${port}/api/admin/competitions/k/tasks`, {
+  await fetch(`http://127.0.0.1:${port}/api/admin/competitions/k-admin/tasks`, {
     method: 'PUT', headers: ADMIN, body: JSON.stringify({ tasks: [{ slug: 't1', title: 'T1', competition: 'foo' }] }),
   });
   // boards with showBonusPoints
-  const r = await fetch(`http://127.0.0.1:${port}/api/admin/competitions/k/boards`, {
+  const r = await fetch(`http://127.0.0.1:${port}/api/admin/competitions/k-admin/boards`, {
     method: 'PUT', headers: ADMIN, body: JSON.stringify({
       boards: [
         { slug: 'b1', title: 'B1', taskSlugs: ['t1'], showBonusPoints: true },
@@ -192,7 +193,7 @@ test('PUT /admin/.../boards: showBonusPoints flows through', async (t) => {
   assert.equal(j.boards[0].showBonusPoints, true);
   assert.equal(j.boards[1].showBonusPoints, false);
   // GET reads back
-  const g = await fetch(`http://127.0.0.1:${port}/api/competitions/k/boards`).then((x) => x.json());
+  const g = await fetch(`http://127.0.0.1:${port}/api/competitions/k-admin/boards`).then((x) => x.json());
   assert.equal(g.boards[0].showBonusPoints, true);
   assert.equal(g.boards[1].showBonusPoints, false);
   server.close();
@@ -202,15 +203,20 @@ test('PUT /admin/.../boards: showBonusPoints flows through', async (t) => {
 
 test('PUT /admin/.../participants: bonusPoints field flows through', async (t) => {
   process.env.ADMIN_TOKEN = 'shared';
+  process.env.KAGGLE_CMD = '/bin/echo';
   const db = freshDb();
-  insertCompetition(db, { slug: 'k', title: 'K', type: 'kaggle', visibility: 'public' });
+  insertCompetition(db, { slug: 'k-admin', title: 'K', type: 'kaggle', visibility: 'public' });
   const app = createApp({ db });
   await bootstrapForTests();
-  const compDir = path.join(DATA_DIR, 'competitions', 'k');
-  t.after(() => fs.rm(compDir, { recursive: true, force: true }));
+  const compDir = path.join(DATA_DIR, 'competitions', 'k-admin');
+  // Cleanup must wait for async refresh+snapshot writes to settle before rmdir, else ENOTEMPTY.
+  t.after(async () => {
+    await new Promise((r) => setTimeout(r, 200));
+    await fs.rm(compDir, { recursive: true, force: true }).catch(() => {});
+  });
   const server = await startApp(app);
   const port = server.address().port;
-  const r = await fetch(`http://127.0.0.1:${port}/api/admin/competitions/k/participants`, {
+  const r = await fetch(`http://127.0.0.1:${port}/api/admin/competitions/k-admin/participants`, {
     method: 'PUT', headers: ADMIN, body: JSON.stringify({
       participants: [
         { id: 'p1', name: 'Alice X', kaggleId: 'alice', bonusPoints: 25 },
@@ -220,7 +226,7 @@ test('PUT /admin/.../participants: bonusPoints field flows through', async (t) =
   });
   assert.equal(r.status, 200);
   // read back
-  const g = await fetch(`http://127.0.0.1:${port}/api/admin/competitions/k/participants`, {
+  const g = await fetch(`http://127.0.0.1:${port}/api/admin/competitions/k-admin/participants`, {
     headers: { 'x-admin-token': 'shared' },
   }).then((x) => x.json());
   const a = g.participants.find((p) => p.id === 'p1');
