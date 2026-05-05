@@ -93,6 +93,23 @@ test('PATCH /api/me: email collision → 400', async () => {
   server.close();
 });
 
+test('PATCH /api/me: passwordHash never leaks in collision response', async () => {
+  const { db, app, cookie } = await setup();
+  createUser(db, { email: 'taken@x.x', passwordHash: 'h', displayName: 'Taken' });
+  const server = await start(app);
+  const port = server.address().port;
+  const r = await fetch(`http://127.0.0.1:${port}/api/me`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ email: 'taken@x.x' }),
+  });
+  const body = await r.json();
+  assert.equal(body.user, undefined);
+  assert.equal(body.passwordHash, undefined);
+  assert.equal(r.status, 400);
+  server.close();
+});
+
 test('PATCH /api/me: invalid email → 400', async () => {
   const { app, cookie } = await setup();
   const server = await start(app);

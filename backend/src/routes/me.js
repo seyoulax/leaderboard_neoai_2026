@@ -53,7 +53,7 @@ export function createMeRouter({ db }) {
     res.json({ user: userPublic(findUserById(db, req.user.id)) });
   });
 
-  router.patch('/', requireAuth, (req, res) => {
+  router.patch('/', requireAuth, (req, res, next) => {
     const v = validateProfilePatch(req.body || {});
     if (!v.ok) return res.status(400).json({ error: v.errors.join('; ') });
     try {
@@ -63,23 +63,27 @@ export function createMeRouter({ db }) {
       if (/UNIQUE/i.test(String(e.message))) {
         return res.status(400).json({ error: 'email or kaggleId already in use' });
       }
-      throw e;
+      next(e);
     }
   });
 
-  router.post('/password', requireAuth, async (req, res) => {
-    const current = String(req.body?.currentPassword || '');
-    const next = String(req.body?.newPassword || '');
-    if (next.length < 8 || next.length > 256) {
-      return res.status(400).json({ error: 'newPassword must be 8–256 chars' });
+  router.post('/password', requireAuth, async (req, res, next) => {
+    try {
+      const current = String(req.body?.currentPassword || '');
+      const newPw = String(req.body?.newPassword || '');
+      if (newPw.length < 8 || newPw.length > 256) {
+        return res.status(400).json({ error: 'newPassword must be 8–256 chars' });
+      }
+      const u = findUserById(db, req.user.id);
+      if (!u || !(await verifyPassword(current, u.passwordHash))) {
+        return res.status(400).json({ error: 'invalid current password' });
+      }
+      const hash = await hashPassword(newPw);
+      updateUserPassword(db, req.user.id, hash);
+      res.json({ ok: true });
+    } catch (e) {
+      next(e);
     }
-    const u = findUserById(db, req.user.id);
-    if (!u || !(await verifyPassword(current, u.passwordHash))) {
-      return res.status(400).json({ error: 'invalid current password' });
-    }
-    const hash = await hashPassword(next);
-    updateUserPassword(db, req.user.id, hash);
-    res.json({ ok: true });
   });
 
   router.get('/competitions', requireAuth, (req, res) => {
