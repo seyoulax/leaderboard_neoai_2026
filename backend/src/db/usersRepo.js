@@ -1,12 +1,22 @@
 const COLUMNS = 'id, email, password_hash AS passwordHash, display_name AS displayName, kaggle_id AS kaggleId, role, created_at AS createdAt';
 
+function normalizeKaggleId(v) {
+  if (v == null) return null;
+  const s = String(v).trim().toLowerCase();
+  return s || null;
+}
+
+function normalizeEmail(v) {
+  return String(v).trim().toLowerCase();
+}
+
 export function createUser(db, { email, passwordHash, displayName, kaggleId = null }) {
   const result = db
     .prepare(
       `INSERT INTO users (email, password_hash, display_name, kaggle_id)
        VALUES (?, ?, ?, ?)`
     )
-    .run(email, passwordHash, displayName, kaggleId ? String(kaggleId).toLowerCase() : null);
+    .run(normalizeEmail(email), passwordHash, displayName, normalizeKaggleId(kaggleId));
   return findUserById(db, result.lastInsertRowid);
 }
 
@@ -27,7 +37,7 @@ export function setUserRole(db, id, role) {
 
 export function updateKaggleId(db, id, kaggleId) {
   db.prepare('UPDATE users SET kaggle_id = ? WHERE id = ?').run(
-    kaggleId ? String(kaggleId).toLowerCase() : null,
+    normalizeKaggleId(kaggleId),
     id
   );
 }
@@ -48,8 +58,8 @@ export function updateUserProfile(db, id, patch) {
   for (const [k, col] of Object.entries(PROFILE_UPDATABLE)) {
     if (!(k in patch)) continue;
     let v = patch[k];
-    if (k === 'kaggleId') v = v == null ? null : String(v).trim().toLowerCase() || null;
-    if (k === 'email') v = String(v).trim().toLowerCase();
+    if (k === 'kaggleId') v = normalizeKaggleId(v);
+    if (k === 'email') v = normalizeEmail(v);
     if (k === 'displayName') v = String(v).trim();
     sets.push(`${col} = ?`);
     vals.push(v);

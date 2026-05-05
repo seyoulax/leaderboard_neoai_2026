@@ -68,7 +68,7 @@ test('usersRepo.createUser + findUserByEmail (case-insensitive)', () => {
     kaggleId: null,
   });
   assert.equal(u.role, 'participant');
-  assert.equal(u.email, 'Foo@Bar.com');
+  assert.equal(u.email, 'foo@bar.com');
   const found = findUserByEmail(db, 'foo@bar.com');
   assert.equal(found.id, u.id);
 });

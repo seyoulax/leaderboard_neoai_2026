@@ -5,6 +5,7 @@ import { runMigrations } from '../src/db/index.js';
 import {
   createUser,
   findUserById,
+  updateKaggleId,
   updateUserProfile,
   updateUserPassword,
 } from '../src/db/usersRepo.js';
@@ -44,6 +45,41 @@ test('updateUserProfile: email collision throws', () => {
   createUser(db, { email: 'a@a.a', passwordHash: 'h', displayName: 'A' });
   const u = createUser(db, { email: 'b@b.b', passwordHash: 'h', displayName: 'B' });
   assert.throws(() => updateUserProfile(db, u.id, { email: 'a@a.a' }), /UNIQUE/i);
+});
+
+test('createUser normalizes email and kaggleId (trim + lowercase)', () => {
+  const db = freshDb();
+  const u = createUser(db, { email: '  Foo@BAR.com  ', passwordHash: 'h', displayName: 'A', kaggleId: '  Bob  ' });
+  assert.equal(u.email, 'foo@bar.com');
+  assert.equal(u.kaggleId, 'bob');
+});
+
+test('createUser kaggleId="   " is treated as null', () => {
+  const db = freshDb();
+  const u = createUser(db, { email: 'a@a.a', passwordHash: 'h', displayName: 'A', kaggleId: '   ' });
+  assert.equal(u.kaggleId, null);
+});
+
+test('email + kaggleId normalization is consistent across createUser / updateKaggleId / updateUserProfile', () => {
+  const db = freshDb();
+  // createUser path
+  const u1 = createUser(db, { email: '  Foo@BAR.com  ', passwordHash: 'h', displayName: 'A', kaggleId: '  Bob ' });
+  assert.equal(u1.email, 'foo@bar.com');
+  assert.equal(u1.kaggleId, 'bob');
+
+  // updateKaggleId path
+  const u2 = createUser(db, { email: 'b@b.b', passwordHash: 'h', displayName: 'B' });
+  updateKaggleId(db, u2.id, '  Carol  ');
+  assert.equal(findUserById(db, u2.id).kaggleId, 'carol');
+  updateKaggleId(db, u2.id, '   ');
+  assert.equal(findUserById(db, u2.id).kaggleId, null);
+
+  // updateUserProfile path
+  const u3 = createUser(db, { email: 'c@c.c', passwordHash: 'h', displayName: 'C' });
+  updateUserProfile(db, u3.id, { email: '  Dan@DAN.com ', kaggleId: '  Dave  ' });
+  const got = findUserById(db, u3.id);
+  assert.equal(got.email, 'dan@dan.com');
+  assert.equal(got.kaggleId, 'dave');
 });
 
 test('updateUserPassword: смена пароля проверяется через verifyPassword', async () => {
