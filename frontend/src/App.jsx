@@ -50,6 +50,7 @@ import {
 import { AuthProvider, useAuth } from './auth/AuthContext.jsx';
 import { I18nProvider, LangToggle, useT } from './i18n/I18nContext.jsx';
 import { ThemeProvider } from './theme/ThemeProvider.jsx';
+import JoinButton from './competition/JoinButton.jsx';
 import AdminThemePage from './AdminThemePage';
 import LoginPage from './auth/LoginPage.jsx';
 import NativeTaskPage from './native/NativeTaskPage.jsx';
@@ -291,8 +292,9 @@ function hexToRgba(hex, alpha) {
   return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
 }
 
-function Layout({ children, tasks, boards, categories, competitionSlug, theme }) {
+function Layout({ children, tasks, boards, categories, competitionSlug, competition, theme }) {
   const t = useT();
+  const isNative = competition?.type === 'native';
   const visibleBoards = sortedVisibleBoards(boards);
   const visibleCategories = (categories || [])
     .filter((c) => c.visible !== false)
@@ -352,20 +354,40 @@ function Layout({ children, tasks, boards, categories, competitionSlug, theme })
     <div className={`page ${className}`} style={style}>
       <header className="hero">
         <p className="eyebrow"><Link to="/" className="eyebrow-link">{t('shell.back_to_all')}</Link></p>
-        <h1>NEOAI</h1>
-        <p className="subtitle">{t('shell.subtitle')}</p>
+        <h1>{competition?.title || 'NEOAI'}</h1>
+        {competition?.subtitle ? (
+          <p className="subtitle">{competition.subtitle}</p>
+        ) : !isNative ? (
+          <p className="subtitle">{t('shell.subtitle')}</p>
+        ) : null}
+        {isNative ? (
+          <div style={{ marginTop: 16 }}>
+            <JoinButton competitionSlug={competitionSlug} />
+          </div>
+        ) : null}
       </header>
 
       <nav className="tabs">
         <NavLink to={`${base}/leaderboard`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
           {t('shell.tab.overall')}
         </NavLink>
-        {topRowBoards.map((board) => (
+        {isNative
+          ? tasks.map((task) => (
+              <NavLink
+                key={task.slug}
+                to={`${base}/native-tasks/${task.slug}`}
+                className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}
+              >
+                {task.title}
+              </NavLink>
+            ))
+          : null}
+        {!isNative ? topRowBoards.map((board) => (
           <NavLink key={board.slug} to={`${base}/board/${board.slug}`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
             {board.title}
           </NavLink>
-        ))}
-        {allCategories.map((cat) => (
+        )) : null}
+        {!isNative ? allCategories.map((cat) => (
           <button
             key={cat.slug}
             type="button"
@@ -375,7 +397,7 @@ function Layout({ children, tasks, boards, categories, competitionSlug, theme })
             {cat.title}
             <span className="tab-cat-chevron" aria-hidden="true">▾</span>
           </button>
-        ))}
+        )) : null}
       </nav>
 
       {selectedCat && (subTasks.length > 0 || subBoards.length > 0) ? (
@@ -1336,12 +1358,12 @@ function CompetitionShell() {
   const tasksState = usePolling(() => getOverallLeaderboard(competitionSlug), [competitionSlug]);
   const boardsState = usePolling(() => getBoards(competitionSlug), [competitionSlug]);
   const categoriesState = usePolling(() => getCategories(competitionSlug), [competitionSlug]);
-  const [theme, setTheme] = useState(null);
+  const [competition, setCompetition] = useState(null);
 
   useEffect(() => {
     let active = true;
     getCompetition(competitionSlug)
-      .then((r) => { if (active) setTheme(r.competition?.theme || null); })
+      .then((r) => { if (active) setCompetition(r.competition || null); })
       .catch(() => {});
     return () => { active = false; };
   }, [competitionSlug]);
@@ -1358,7 +1380,8 @@ function CompetitionShell() {
       boards={boardsState.data?.boards || []}
       categories={categoriesState.data?.categories || []}
       competitionSlug={competitionSlug}
-      theme={theme}
+      competition={competition}
+      theme={competition?.theme || null}
     >
       <Outlet />
     </Layout>
