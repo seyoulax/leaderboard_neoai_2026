@@ -2,17 +2,43 @@ const COLUMNS = `slug, title, subtitle, type, visibility,
   CAST(visible AS INTEGER) AS visible,
   display_order AS displayOrder,
   created_at AS createdAt,
-  deleted_at AS deletedAt`;
+  deleted_at AS deletedAt,
+  theme_json AS themeJson`;
+
+const HEX_RE = /^#[0-9a-fA-F]{6}$/;
+const VALID_PRESETS = new Set(['default', 'highlight-rising', 'minimal']);
+
+function normalizeTheme(theme) {
+  if (theme == null || typeof theme !== 'object') return null;
+  const out = {};
+  if (typeof theme.accent === 'string' && HEX_RE.test(theme.accent.trim())) {
+    out.accent = theme.accent.trim().toLowerCase();
+  }
+  if (typeof theme.preset === 'string' && VALID_PRESETS.has(theme.preset)) {
+    out.preset = theme.preset;
+  }
+  return Object.keys(out).length === 0 ? null : out;
+}
+
+function serializeTheme(theme) {
+  const t = normalizeTheme(theme);
+  return t == null ? null : JSON.stringify(t);
+}
 
 function rowToCompetition(row) {
   if (!row) return null;
-  return { ...row, visible: row.visible === 1 };
+  let theme = null;
+  if (row.themeJson) {
+    try { theme = JSON.parse(row.themeJson); } catch {}
+  }
+  const { themeJson, ...rest } = row;
+  return { ...rest, visible: row.visible === 1, theme };
 }
 
 export function insertCompetition(db, c) {
   db.prepare(
-    `INSERT INTO competitions (slug, title, subtitle, type, visibility, visible, display_order)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO competitions (slug, title, subtitle, type, visibility, visible, display_order, theme_json)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
     c.slug,
     c.title,
@@ -20,7 +46,8 @@ export function insertCompetition(db, c) {
     c.type,
     c.visibility === 'unlisted' ? 'unlisted' : 'public',
     c.visible === false ? 0 : 1,
-    Number.isFinite(c.displayOrder) ? c.displayOrder : 0
+    Number.isFinite(c.displayOrder) ? c.displayOrder : 0,
+    serializeTheme(c.theme)
   );
   return getCompetition(db, c.slug);
 }
@@ -33,7 +60,7 @@ export function upsertCompetition(db, c) {
   if (existing) {
     db.prepare(
       `UPDATE competitions
-       SET title = ?, subtitle = ?, visibility = ?, visible = ?, display_order = ?, deleted_at = NULL
+       SET title = ?, subtitle = ?, visibility = ?, visible = ?, display_order = ?, theme_json = ?, deleted_at = NULL
        WHERE slug = ?`
     ).run(
       c.title,
@@ -41,6 +68,7 @@ export function upsertCompetition(db, c) {
       c.visibility === 'unlisted' ? 'unlisted' : 'public',
       c.visible === false ? 0 : 1,
       Number.isFinite(c.displayOrder) ? c.displayOrder : 0,
+      serializeTheme(c.theme),
       c.slug
     );
   } else {

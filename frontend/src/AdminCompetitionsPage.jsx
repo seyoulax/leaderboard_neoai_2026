@@ -200,6 +200,7 @@ export default function AdminCompetitionsPage() {
                 <th style={{ width: 70 }}>visible</th>
                 <th style={{ width: 100 }}>тип</th>
                 <th style={{ width: 130 }}>видимость</th>
+                <th style={{ width: 200 }}>тема</th>
                 <th style={{ width: 140 }}>задачи</th>
                 <th style={{ width: 50 }}></th>
               </tr>
@@ -258,6 +259,12 @@ export default function AdminCompetitionsPage() {
                     </select>
                   </td>
                   <td>
+                    <ThemeEditor
+                      value={c.theme}
+                      onChange={(theme) => updateAt(idx, 'theme', theme)}
+                    />
+                  </td>
+                  <td>
                     {c.type === 'native' ? (
                       <Link
                         to={`/admin/competitions/${encodeURIComponent(c.slug)}/native-tasks`}
@@ -289,6 +296,47 @@ export default function AdminCompetitionsPage() {
           </button>
         </div>
       </section>
+    </div>
+  );
+}
+
+const PRESET_LABELS = {
+  default: 'default',
+  'highlight-rising': 'highlight-rising',
+  minimal: 'minimal',
+};
+
+function ThemeEditor({ value, onChange }) {
+  const accent = value?.accent || '#7d5fff';
+  const preset = value?.preset || 'default';
+
+  function set(patch) {
+    const next = { accent, preset, ...patch };
+    // нормализуем default'ы: если оба дефолтные — храним null
+    const isDefaultAccent = next.accent === '#7d5fff';
+    const isDefaultPreset = next.preset === 'default';
+    onChange(isDefaultAccent && isDefaultPreset ? null : next);
+  }
+
+  return (
+    <div className="admin-theme-cell">
+      <input
+        type="color"
+        value={accent}
+        onChange={(e) => set({ accent: e.target.value.toLowerCase() })}
+        title="accent цвет"
+        className="admin-theme-color"
+      />
+      <select
+        className="admin-cell-select"
+        value={preset}
+        onChange={(e) => set({ preset: e.target.value })}
+        title="вариант оформления"
+      >
+        {Object.entries(PRESET_LABELS).map(([k, v]) => (
+          <option key={k} value={k}>{v}</option>
+        ))}
+      </select>
     </div>
   );
 }

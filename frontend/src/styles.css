@@ -1325,3 +1325,66 @@ tr.row-down > td {
   color: var(--accent);
   margin: 0;
 }
+
+.admin-theme-cell { display: flex; gap: 6px; align-items: center; }
+.admin-theme-color {
+  width: 32px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+}
+.admin-theme-color::-webkit-color-swatch-wrapper { padding: 2px; }
+.admin-theme-color::-webkit-color-swatch { border: none; border-radius: 4px; }
+
+/* ─── per-competition theme presets ────────────────────────── */
+
+/* Default — никаких изменений; класс присутствует чтобы переопределять preset'ы при необходимости */
+.theme-default {}
+
+/* Highlight rising — строки с зелёным "взлётом" окрашиваются ярче;
+   падающие — приглушены; топ-3 highlight выключен (фокус на динамике, не на месте). */
+.theme-highlight-rising tbody tr:nth-child(1),
+.theme-highlight-rising tbody tr:nth-child(2),
+.theme-highlight-rising tbody tr:nth-child(3) {
+  background: transparent;
+}
+.theme-highlight-rising tbody tr:nth-child(1) td:first-child,
+.theme-highlight-rising tbody tr:nth-child(2) td:first-child,
+.theme-highlight-rising tbody tr:nth-child(3) td:first-child {
+  color: inherit;
+  font-weight: inherit;
+}
+.theme-highlight-rising tbody tr.row-up {
+  background: rgba(46, 204, 113, 0.16);
+  box-shadow: inset 3px 0 0 #2ecc71;
+}
+.theme-highlight-rising tbody tr.row-up:hover { background: rgba(46, 204, 113, 0.22); }
+.theme-highlight-rising tbody tr.row-up td:first-child {
+  color: #2ecc71;
+  font-weight: 600;
+}
+.theme-highlight-rising tbody tr.row-down {
+  opacity: 0.55;
+}
+.theme-highlight-rising .delta-arrow.up { color: #2ecc71; font-weight: 600; }
+.theme-highlight-rising .delta-arrow.down { color: rgba(255, 255, 255, 0.3); }
+
+/* Minimal — без подсветки топ-3, без hover, без зебры; чистая серая таблица. */
+.theme-minimal tbody tr:nth-child(1),
+.theme-minimal tbody tr:nth-child(2),
+.theme-minimal tbody tr:nth-child(3) {
+  background: transparent;
+}
+.theme-minimal tbody tr:nth-child(1) td:first-child,
+.theme-minimal tbody tr:nth-child(2) td:first-child,
+.theme-minimal tbody tr:nth-child(3) td:first-child {
+  color: inherit;
+  font-weight: inherit;
+}
+.theme-minimal tbody tr:hover { background: transparent; }
+.theme-minimal .panel { border-radius: 8px; }
+.theme-minimal .hero { background: transparent; border: none; padding: 24px 0; }
+.theme-minimal .tab.active { background: transparent; }

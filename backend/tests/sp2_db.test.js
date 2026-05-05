@@ -18,7 +18,7 @@ function freshDb() {
 test('migration 0002: applied after 0001', () => {
   const db = freshDb();
   const versions = db.prepare('SELECT version FROM schema_migrations ORDER BY version').all();
-  assert.deepEqual(versions.map((r) => r.version), [1, 2]);
+  assert.deepEqual(versions.map((r) => r.version), [1, 2, 3]);
 });
 
 test('migration 0002: visibility column on competitions with check', () => {
@@ -149,6 +149,7 @@ import {
 import {
   insertCompetition,
   upsertCompetition,
+  getCompetition,
   listVisibleCompetitions,
   searchPublicCompetitions,
 } from '../src/db/competitionsRepo.js';
@@ -238,4 +239,43 @@ test('competitionsRepo.upsertCompetition: type-lock — менять type сущ
     () => upsertCompetition(db, { slug: 'a', title: 'A', type: 'native' }),
     /type/i
   );
+});
+
+// ─── theme (migration 0003) ──────────────────────────────────────
+
+test('competitionsRepo: theme round-trip (accent + preset)', () => {
+  const db = freshDb();
+  insertCompetition(db, {
+    slug: 'a', title: 'A', type: 'kaggle',
+    theme: { accent: '#ff5500', preset: 'highlight-rising' },
+  });
+  const c = getCompetition(db, 'a');
+  assert.deepEqual(c.theme, { accent: '#ff5500', preset: 'highlight-rising' });
+});
+
+test('competitionsRepo: theme=null persists as null', () => {
+  const db = freshDb();
+  insertCompetition(db, { slug: 'a', title: 'A', type: 'kaggle' });
+  const c = getCompetition(db, 'a');
+  assert.equal(c.theme, null);
+});
+
+test('competitionsRepo.upsertCompetition: theme can be cleared', () => {
+  const db = freshDb();
+  insertCompetition(db, {
+    slug: 'a', title: 'A', type: 'kaggle',
+    theme: { accent: '#abcdef', preset: 'minimal' },
+  });
+  upsertCompetition(db, { slug: 'a', title: 'A', type: 'kaggle', theme: null });
+  assert.equal(getCompetition(db, 'a').theme, null);
+});
+
+test('competitionsRepo: invalid theme fields are stripped', () => {
+  const db = freshDb();
+  insertCompetition(db, {
+    slug: 'a', title: 'A', type: 'kaggle',
+    theme: { accent: 'not-a-hex', preset: 'unknown', junk: 1 },
+  });
+  // accent invalid → dropped; preset invalid → dropped; junk → dropped → empty → null
+  assert.equal(getCompetition(db, 'a').theme, null);
 });

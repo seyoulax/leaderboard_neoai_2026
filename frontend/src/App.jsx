@@ -7,6 +7,7 @@ import {
   getParticipants,
   getCurrentCard,
   setCurrentCard,
+  getCompetition,
   getAdminToken,
   setAdminToken,
   adminPing,
@@ -202,11 +203,31 @@ function sortedVisibleBoards(boards) {
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 }
 
-function Layout({ children, tasks, boards, competitionSlug }) {
+function themeProps(theme) {
+  const style = {};
+  if (theme?.accent) {
+    style['--accent'] = theme.accent;
+    style['--accent-soft'] = hexToRgba(theme.accent, 0.18);
+    style['--accent-glow'] = hexToRgba(theme.accent, 0.5);
+  }
+  const preset = theme?.preset || 'default';
+  const className = `theme-${preset}`;
+  return { style, className };
+}
+
+function hexToRgba(hex, alpha) {
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return `rgba(125, 95, 255, ${alpha})`;
+  const n = parseInt(m[1], 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+}
+
+function Layout({ children, tasks, boards, competitionSlug, theme }) {
   const visibleBoards = sortedVisibleBoards(boards);
   const base = `/competitions/${encodeURIComponent(competitionSlug)}`;
+  const { style, className } = themeProps(theme);
   return (
-    <div className="page">
+    <div className={`page ${className}`} style={style}>
       <header className="hero">
         <p className="eyebrow"><Link to="/" className="eyebrow-link">← все соревнования</Link></p>
         <h1>NEOAI</h1>
@@ -960,6 +981,15 @@ function CompetitionShell() {
   const { competitionSlug } = useParams();
   const tasksState = usePolling(() => getOverallLeaderboard(competitionSlug), [competitionSlug]);
   const boardsState = usePolling(() => getBoards(competitionSlug), [competitionSlug]);
+  const [theme, setTheme] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    getCompetition(competitionSlug)
+      .then((r) => { if (active) setTheme(r.competition?.theme || null); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [competitionSlug]);
 
   if (tasksState.loading || boardsState.loading) {
     return <p className="status">Загрузка...</p>;
@@ -972,6 +1002,7 @@ function CompetitionShell() {
       tasks={tasksState.data?.tasks || []}
       boards={boardsState.data?.boards || []}
       competitionSlug={competitionSlug}
+      theme={theme}
     >
       <Outlet />
     </Layout>

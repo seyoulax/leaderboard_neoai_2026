@@ -767,6 +767,7 @@ export function createApp({ db } = {}) {
           visibility: c.visibility,
           visible: c.visible !== false,
           displayOrder: Number.isFinite(c.order) ? c.order : 0,
+          theme: c.theme ?? null,
         };
       });
       bulkReplaceCompetitions(db, enriched);
@@ -802,6 +803,7 @@ export function createApp({ db } = {}) {
         visibility: validated.visibility,
         visible: validated.visible !== false,
         displayOrder: Number.isFinite(validated.order) ? validated.order : 0,
+        theme: validated.theme ?? null,
       });
       await fs.mkdir(competitionDir(created.slug), { recursive: true });
       cache.competitionsIndex = listActiveCompetitions(db);
