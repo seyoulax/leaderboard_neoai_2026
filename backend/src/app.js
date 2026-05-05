@@ -222,8 +222,9 @@ function validateBoards(input, knownTaskSlugs) {
 
     const order = Number.isFinite(Number(board.order)) ? Number(board.order) : 0;
     const visible = board.visible !== false;
+    const showBonusPoints = Boolean(board.showBonusPoints);
 
-    return { slug, title, taskSlugs: cleanTaskSlugs, visible, order };
+    return { slug, title, taskSlugs: cleanTaskSlugs, visible, order, showBonusPoints };
   });
 }
 
@@ -529,6 +530,40 @@ function projectTaskRowsToOurs(taskRows, oursSet) {
   return taskRows.map((t) => ({ ...t, rows: filterRowsByOurs(t.rows, oursSet) }));
 }
 
+function buildBonusByNickMap(list) {
+  const map = new Map();
+  for (const p of list || []) {
+    const id = (p && p.kaggleId ? String(p.kaggleId) : '').trim().toLowerCase();
+    if (!id) continue;
+    const bonus = Number(p.bonusPoints);
+    if (!Number.isFinite(bonus) || bonus === 0) continue;
+    map.set(id, bonus);
+  }
+  return map;
+}
+
+// Annotate every overall row (and oursOverall) with bonusPoints (0 default).
+// `displayMap` is provided for "ours" variants where nicknames have already
+// been replaced with "FirstName LastName" — we need to look up by the original
+// kaggleId, so we invert the displayMap to map display→kaggleId.
+function attachBonusPoints(result, bonusByNick, displayMap) {
+  const displayToNick = new Map();
+  if (displayMap && displayMap.size) {
+    for (const [nick, display] of displayMap) displayToNick.set(display, nick);
+  }
+  const lookup = (entry) => {
+    const nick = (entry.nickname || '').toLowerCase();
+    if (bonusByNick.has(nick)) return bonusByNick.get(nick);
+    // For "ours" variants the displayed name has been re-written; reverse it.
+    const original = displayToNick.get(entry.nickname);
+    if (original) return bonusByNick.get(original) || 0;
+    return 0;
+  };
+  for (const e of result.overall || []) {
+    e.bonusPoints = lookup(e);
+  }
+}
+
 function applyDisplayNames(result, displayMap) {
   if (!displayMap || displayMap.size === 0) return;
   const rename = (entry) => {
@@ -680,13 +715,16 @@ async function refreshCompetition(slug) {
   const state = await readCompetitionState(competitionDir(slug));
   const oursSet = buildOursKaggleSet(participants);
   const oursDisplayMap = buildOursDisplayMap(participants);
+  const bonusByNick = buildBonusByNickMap(participants);
 
   const result = buildLeaderboards(taskRows, { variant: 'public' });
   annotateWithDeltas(result, { byTask: compCache.byTask, overall: compCache.overall });
+  attachBonusPoints(result, bonusByNick);
 
   const oursResult = buildLeaderboards(projectTaskRowsToOurs(taskRows, oursSet), { variant: 'public' });
   applyDisplayNames(oursResult, oursDisplayMap);
   annotateWithDeltas(oursResult, { byTask: compCache.oursByTask, overall: compCache.oursOverall });
+  attachBonusPoints(oursResult, bonusByNick, oursDisplayMap);
 
   const privDir = privateDirFor(slug);
   const privateTaskRows = [];
@@ -713,6 +751,7 @@ async function refreshCompetition(slug) {
 
   const privateResult = buildLeaderboards(privateTaskRows, { variant: 'private' });
   annotateWithDeltas(privateResult, { byTask: compCache.privateByTask, overall: compCache.privateOverall });
+  attachBonusPoints(privateResult, bonusByNick);
 
   const oursPrivateResult = buildLeaderboards(projectTaskRowsToOurs(privateTaskRows, oursSet), { variant: 'private' });
   applyDisplayNames(oursPrivateResult, oursDisplayMap);
@@ -720,6 +759,7 @@ async function refreshCompetition(slug) {
     byTask: compCache.oursPrivateByTask,
     overall: compCache.oursPrivateOverall,
   });
+  attachBonusPoints(oursPrivateResult, bonusByNick, oursDisplayMap);
 
   // Per-participant-group leaderboards: scores re-normalized within each group.
   const groups = await loadParticipantGroupsFor(slug).catch(() => []);
@@ -734,12 +774,14 @@ async function refreshCompetition(slug) {
       byTask: prevGroupsResults[g.slug]?.byTask || {},
       overall: prevGroupsResults[g.slug]?.overall || [],
     });
+    attachBonusPoints(pub, bonusByNick, oursDisplayMap);
     const priv = buildLeaderboards(projectTaskRowsToOurs(privateTaskRows, groupSet), { variant: 'private' });
     applyDisplayNames(priv, oursDisplayMap);
     annotateWithDeltas(priv, {
       byTask: prevGroupsResults[g.slug]?.privateByTask || {},
       overall: prevGroupsResults[g.slug]?.privateOverall || [],
     });
+    attachBonusPoints(priv, bonusByNick, oursDisplayMap);
     groupsResults[g.slug] = {
       overall: pub.overall,
       byTask: pub.byTask,
@@ -958,19 +1000,45 @@ export function createApp({ db } = {}) {
       return;
     }
     const cc = cache.byCompetition.get(meta.slug) || emptyCompetitionCache();
+    const showBonus = cc.overallShowBonusPoints === true;
+    // Always clone overall arrays before mutating: the cache is shared across
+    // requests and a sweep may be in flight.
+    const cloneOverall = (arr) => structuredClone(arr || []);
+    let overall = cloneOverall(cc.overall);
+    let privateOverall = cloneOverall(cc.privateOverall);
+    let oursOverall = cloneOverall(cc.oursOverall);
+    let oursPrivateOverall = cloneOverall(cc.oursPrivateOverall);
+    let groupsResults = cc.groupsResults || {};
+    if (showBonus) {
+      applyBonusToOverall(overall);
+      applyBonusToOverall(privateOverall);
+      applyBonusToOverall(oursOverall);
+      applyBonusToOverall(oursPrivateOverall);
+      const cloned = {};
+      for (const slug of Object.keys(groupsResults)) {
+        const gr = groupsResults[slug] || {};
+        cloned[slug] = {
+          ...gr,
+          overall: applyBonusToOverall(cloneOverall(gr.overall)),
+          privateOverall: applyBonusToOverall(cloneOverall(gr.privateOverall)),
+        };
+      }
+      groupsResults = cloned;
+    }
     res.json({
       updatedAt: cc.updatedAt,
       tasks: cc.tasks,
-      overall: cc.overall,
-      privateOverall: cc.privateOverall,
+      overall,
+      privateOverall,
       privateByTask: cc.privateByTask,
       privateTaskSlugs: cc.privateTaskSlugs,
-      oursOverall: cc.oursOverall,
+      oursOverall,
       oursByTask: cc.oursByTask,
-      oursPrivateOverall: cc.oursPrivateOverall,
+      oursPrivateOverall,
       oursPrivateByTask: cc.oursPrivateByTask,
       groupsMeta: cc.groupsMeta || [],
-      groupsResults: cc.groupsResults || {},
+      groupsResults,
+      overallShowBonusPoints: showBonus,
       errors: cc.errors,
     });
   });
@@ -1534,6 +1602,58 @@ export function createApp({ db } = {}) {
       refreshCompetition(slug).catch((e) =>
         console.error(`[refresh after public-csv delete ${slug}/${req.params.taskSlug}] FAILED`, e)
       );
+    } catch (e) {
+      res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
+  app.put('/api/admin/competitions/:competitionSlug/overall-show-bonus', adminMw, async (req, res) => {
+    const slug = ensureKnownSlug(req, res); if (!slug) return;
+    const raw = req.body?.show;
+    if (typeof raw !== 'boolean') {
+      res.status(400).json({ error: 'show must be a boolean' });
+      return;
+    }
+    try {
+      const current = await readCompetitionState(competitionDir(slug));
+      await writeCompetitionState(competitionDir(slug), {
+        ...current,
+        overallShowBonusPoints: raw,
+      });
+      const cc = getCompCache(slug);
+      cc.overallShowBonusPoints = raw;
+      res.json({ ok: true, overallShowBonusPoints: raw });
+    } catch (e) {
+      res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
+  app.put('/api/admin/competitions/:competitionSlug/members/:userId/bonus-points', adminMw, (req, res) => {
+    const slug = ensureKnownSlug(req, res); if (!slug) return;
+    const userId = Number(req.params.userId);
+    if (!Number.isInteger(userId) || userId <= 0) {
+      res.status(400).json({ error: 'userId must be a positive integer' });
+      return;
+    }
+    const raw = req.body?.bonusPoints;
+    const bonus = typeof raw === 'number' ? raw : Number(raw);
+    if (!Number.isFinite(bonus)) {
+      res.status(400).json({ error: 'bonusPoints must be a finite number' });
+      return;
+    }
+    try {
+      setMemberBonusPoints(db, slug, userId, bonus);
+      res.json({ ok: true, bonusPoints: bonus });
+    } catch (e) {
+      res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
+  app.get('/api/admin/competitions/:competitionSlug/members-bonus', adminMw, (req, res) => {
+    const slug = ensureKnownSlug(req, res); if (!slug) return;
+    try {
+      const members = listMembersWithBonus(db, slug);
+      res.json({ members });
     } catch (e) {
       res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
     }
