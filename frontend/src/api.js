@@ -232,6 +232,17 @@ export async function deleteAdminPublicCsv(slug, taskSlug) {
   });
 }
 
+// ---------- Theme (global) ----------
+
+export async function getTheme() {
+  return request('/theme');
+}
+export async function setAdminTheme(theme) {
+  return adminFetch('/admin/theme', {
+    method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ theme }),
+  });
+}
+
 // ---------- Auth ----------
 
 export const auth = {

@@ -86,6 +86,9 @@ export default function AdminCompetitionsPage() {
       <header className="admin-comp-header">
         <p className="eyebrow">Админка</p>
         <h1>Соревнования</h1>
+        <p className="meta" style={{ borderBottom: 0, padding: '8px 0 0' }}>
+          <Link to="/admin/theme" className="eyebrow-link">Глобальная тема (цвета сайта) →</Link>
+        </p>
       </header>
 
       {error ? <p className="status error">{error}</p> : null}

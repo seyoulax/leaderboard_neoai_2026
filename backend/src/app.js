@@ -23,6 +23,7 @@ import {
   bulkReplaceCompetitions,
 } from './db/competitionsRepo.js';
 import { readCompetitionState, writeCompetitionState } from './state.js';
+import { readTheme, writeTheme } from './theme.js';
 import { fetchCompetitionLeaderboard } from './kaggle.js';
 import { buildLeaderboards } from './leaderboard.js';
 import {
@@ -951,6 +952,25 @@ export function createApp({ db } = {}) {
     const q = typeof req.query.q === 'string' ? req.query.q : '';
     const list = q ? searchPublicCompetitions(db, q) : listVisibleCompetitions(db);
     res.json({ competitions: list });
+  });
+
+  // ─── Theme (global, site-wide) ───────────────────────────────────
+  app.get('/api/theme', async (_req, res) => {
+    try {
+      const theme = await readTheme(DATA_DIR);
+      res.json({ theme });
+    } catch (e) {
+      res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
+  app.put('/api/admin/theme', adminMw, async (req, res) => {
+    try {
+      const theme = await writeTheme(DATA_DIR, req.body?.theme || {});
+      res.json({ ok: true, theme });
+    } catch (e) {
+      res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
+    }
   });
 
   app.get('/api/competitions/:competitionSlug', (req, res) => {

@@ -2055,3 +2055,59 @@ input[type='number'].control-input {
   color: var(--accent);
   background: var(--accent-soft);
 }
+
+/* ─── Admin theme page ─────────────────────────────────────────── */
+.theme-body {
+  padding: 16px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.theme-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.theme-row-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-weight: 500;
+}
+.theme-row-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.theme-color-input {
+  width: 44px;
+  height: 36px;
+  padding: 2px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: transparent;
+  cursor: pointer;
+}
+.theme-color-input::-webkit-color-swatch { border-radius: 6px; border: none; }
+.theme-color-input::-webkit-color-swatch-wrapper { padding: 0; }
+.theme-hex-input {
+  width: 130px;
+  font-family: ui-monospace, monospace;
+  font-size: 13px;
+}
+.theme-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+@media (max-width: 720px) {
+  .theme-row { grid-template-columns: 1fr; align-items: stretch; }
+  .theme-row-controls { flex-wrap: wrap; }
+}

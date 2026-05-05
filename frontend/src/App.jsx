@@ -49,6 +49,8 @@ import {
 } from './legacyRedirects';
 import { AuthProvider, useAuth } from './auth/AuthContext.jsx';
 import { I18nProvider, LangToggle, useT } from './i18n/I18nContext.jsx';
+import { ThemeProvider } from './theme/ThemeProvider.jsx';
+import AdminThemePage from './AdminThemePage';
 import LoginPage from './auth/LoginPage.jsx';
 import NativeTaskPage from './native/NativeTaskPage.jsx';
 import AdminNativeTasksList from './admin/AdminNativeTasksList.jsx';
@@ -2596,7 +2598,10 @@ function AdminShell() {
     <div className="admin-page">
       <header className="hero">
         <h1>NEOAI Admin</h1>
-        <Link to="/admin/competitions" className="eyebrow-link">← все соревнования</Link>
+        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+          <Link to="/admin/competitions" className="eyebrow-link">← все соревнования</Link>
+          <Link to="/admin/theme" className="eyebrow-link">тема (глобально)</Link>
+        </div>
       </header>
       {competitionSlug ? (
         <nav className="tabs">
@@ -2676,6 +2681,7 @@ function SiteHeader() {
 export default function App() {
   return (
     <I18nProvider>
+    <ThemeProvider>
     <AuthProvider>
       <SiteHeader />
       <Routes>
@@ -2706,6 +2712,7 @@ export default function App() {
       <Route path="/admin" element={<AdminAuthGate />}>
         <Route index element={<Navigate to="competitions" replace />} />
         <Route path="competitions" element={<AdminCompetitionsPage />} />
+        <Route path="theme" element={<AdminThemePage />} />
         <Route path="competitions/:slug" element={<AdminShell />}>
           <Route index element={<Navigate to="tasks" replace />} />
           <Route path="tasks" element={<AdminTasksPage />} />
@@ -2747,6 +2754,7 @@ export default function App() {
       </Routes>
       <SiteFooter />
     </AuthProvider>
+    </ThemeProvider>
     </I18nProvider>
   );
 }
