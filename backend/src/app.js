@@ -39,6 +39,11 @@ import {
 import { buildNativeLeaderboard } from './scoring/nativeLeaderboard.js';
 import { makeSnapshotCache } from './scoring/snapshotCache.js';
 import { setOnScoredCallback } from './scoring/worker.js';
+import { applyBonusToOverall } from './leaderboardBonus.js';
+import {
+  setBonusPoints as setMemberBonusPoints,
+  listMembersWithBonus,
+} from './db/membersRepo.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -476,6 +481,7 @@ function emptyCompetitionCache() {
     currentParticipantId: null,
     cycleBoardSlug: null,
     cardBoardSlug: null,
+    overallShowBonusPoints: false,
     errors: [],
   };
 }
@@ -761,6 +767,7 @@ async function refreshCompetition(slug) {
     currentParticipantId: state.currentParticipantId,
     cycleBoardSlug: state.cycleBoardSlug,
     cardBoardSlug: state.cardBoardSlug,
+    overallShowBonusPoints: state.overallShowBonusPoints === true,
     errors,
   };
   cache.byCompetition.set(slug, next);
@@ -921,19 +928,31 @@ export function createApp({ db } = {}) {
       }
       const priv = buildNativeLeaderboard(db, meta.slug, 'private');
       const privateTaskSlugs = Object.keys(priv.byTask).filter((slug) => priv.byTask[slug].entries.length > 0);
+      const state = await readCompetitionState(competitionDir(meta.slug));
+      const showBonus = state.overallShowBonusPoints === true;
+      // snapshotCache.get returns the stored snapshot directly (no clone on
+      // read), so we structuredClone before mutating to avoid poisoning the
+      // cache. priv is freshly built each request — safe to mutate.
+      let pubOverall = pub.overall;
+      let privOverall = priv.overall;
+      if (showBonus) {
+        pubOverall = applyBonusToOverall(structuredClone(pubOverall));
+        privOverall = applyBonusToOverall(privOverall);
+      }
       res.json({
         updatedAt: new Date().toISOString(),
         tasks: pub.tasks,
-        overall: pub.overall,
+        overall: pubOverall,
         byTask: pub.byTask,
-        privateOverall: priv.overall,
+        privateOverall: privOverall,
         privateByTask: priv.byTask,
         privateTaskSlugs,
         // SP-3: ours = overall (deferred to SP-4 polish)
-        oursOverall: pub.overall,
+        oursOverall: pubOverall,
         oursByTask: pub.byTask,
-        oursPrivateOverall: priv.overall,
+        oursPrivateOverall: privOverall,
         oursPrivateByTask: priv.byTask,
+        overallShowBonusPoints: showBonus,
         errors: [],
       });
       return;
@@ -1098,6 +1117,7 @@ export function createApp({ db } = {}) {
         currentParticipantId: null,
         cycleBoardSlug: cc.cycleBoardSlug ?? null,
         cardBoardSlug: cc.cardBoardSlug ?? null,
+        overallShowBonusPoints: cc.overallShowBonusPoints === true,
       });
       res.json({ ok: true, currentId: null, current: null });
       return;
@@ -1121,6 +1141,7 @@ export function createApp({ db } = {}) {
       currentParticipantId: id,
       cycleBoardSlug: cc.cycleBoardSlug ?? null,
       cardBoardSlug: cc.cardBoardSlug ?? null,
+      overallShowBonusPoints: cc.overallShowBonusPoints === true,
     });
     res.json({ ok: true, currentId: id, current: found });
   });
@@ -1348,6 +1369,7 @@ export function createApp({ db } = {}) {
       currentParticipantId: cc.currentParticipantId ?? null,
       cycleBoardSlug: next,
       cardBoardSlug: cc.cardBoardSlug ?? null,
+      overallShowBonusPoints: cc.overallShowBonusPoints === true,
     });
     res.json({ ok: true, cycleBoardSlug: next });
   });
@@ -1382,6 +1404,7 @@ export function createApp({ db } = {}) {
       currentParticipantId: cc.currentParticipantId ?? null,
       cycleBoardSlug: cc.cycleBoardSlug ?? null,
       cardBoardSlug: next,
+      overallShowBonusPoints: cc.overallShowBonusPoints === true,
     });
     res.json({ ok: true, cardBoardSlug: next });
   });
@@ -1547,6 +1570,7 @@ export async function hydrateFromSnapshots() {
       merged.currentParticipantId = state.currentParticipantId;
       merged.cycleBoardSlug = state.cycleBoardSlug;
       merged.cardBoardSlug = state.cardBoardSlug;
+      merged.overallShowBonusPoints = state.overallShowBonusPoints === true;
     } catch {}
     try {
       merged.participants = await loadParticipantsFor(c.slug);
