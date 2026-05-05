@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { validateCompetitions } from './competitions.js';
 import { loadUser, requireAdmin } from './auth/middleware.js';
 import { createAuthRouter } from './routes/auth.js';
+import { createMeRouter } from './routes/me.js';
 import { createNativeTasksAdminRouter } from './routes/nativeTasksAdmin.js';
 import { createNativeTasksPublicRouter } from './routes/nativeTasksPublic.js';
 import { createSubmissionsPublicRouter } from './routes/submissionsPublic.js';
@@ -866,6 +867,7 @@ export function createApp({ db } = {}) {
   app.use(express.json({ limit: '50mb' }));
   app.use(loadUser({ db }));
   app.use('/api/auth', createAuthRouter({ db }));
+  app.use('/api/me', createMeRouter({ db }));
 
   app.get('/api/health', (_req, res) => {
     const competitions = cache.competitionsIndex.map((c) => {
