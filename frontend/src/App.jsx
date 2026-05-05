@@ -27,6 +27,7 @@ import {
   getAdminParticipantGroups,
   saveAdminParticipantGroups,
   setAdminCycleBoard,
+  setAdminCardBoard,
   getCycleConfig,
   AdminAuthError,
 } from './api';
@@ -264,6 +265,12 @@ function Layout({ children, tasks, boards, categories, competitionSlug, theme })
     .filter((c) => c.visible !== false)
     .slice()
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  // Boards that appear inside any category are reachable through the category's
+  // sub-row only — drop them from the flat top row to declutter.
+  const boardsInCategories = new Set(
+    visibleCategories.flatMap((c) => Array.isArray(c.boardSlugs) ? c.boardSlugs : [])
+  );
+  const topRowBoards = visibleBoards.filter((b) => !boardsInCategories.has(b.slug));
   const virtualCat = {
     slug: '_all',
     title: 'Отдельно по задачам',
@@ -320,7 +327,7 @@ function Layout({ children, tasks, boards, categories, competitionSlug, theme })
         <NavLink to={`${base}/leaderboard`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
           Общий ЛБ
         </NavLink>
-        {visibleBoards.map((board) => (
+        {topRowBoards.map((board) => (
           <NavLink key={board.slug} to={`${base}/board/${board.slug}`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
             {board.title}
           </NavLink>
@@ -992,11 +999,15 @@ function CardPreview({ participant, stats }) {
         {stats ? (
           <div className="admin-card-preview-live">
             <div className="admin-card-preview-cell">
-              <div className="admin-card-preview-cell-label">Место</div>
+              <div className="admin-card-preview-cell-label">
+                Место{stats.sourceLabel ? ` (${stats.sourceLabel})` : ''}
+              </div>
               <div className="admin-card-preview-cell-value">#{stats.place}</div>
             </div>
             <div className="admin-card-preview-cell">
-              <div className="admin-card-preview-cell-label">Total points</div>
+              <div className="admin-card-preview-cell-label">
+                {stats.sourceLabel && stats.sourceLabel !== 'Общий ЛБ' ? 'Board points' : 'Total points'}
+              </div>
               <div className={`admin-card-preview-cell-value ${dir === 'up' ? 'cell-up' : dir === 'down' ? 'cell-down' : ''}`.trim()}>
                 {stats.totalPoints.toFixed(2)}
                 {dir === 'up' ? <span className="delta-arrow up"> ▲</span> : null}
@@ -1037,6 +1048,7 @@ function ControlPage() {
   const [list, setList] = useState([]);
   const [currentId, setCurrentId] = useState(null);
   const [card, setCard] = useState(null);
+  const [boards, setBoards] = useState([]);
   const [query, setQuery] = useState('');
   const [error, setError] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -1061,6 +1073,27 @@ function ControlPage() {
     const t = setInterval(refresh, 2000);
     return () => clearInterval(t);
   }, [competitionSlug]);
+
+  useEffect(() => {
+    let active = true;
+    getBoards(competitionSlug)
+      .then((r) => { if (active) setBoards(r.boards || []); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [competitionSlug]);
+
+  async function pickCardBoard(slug) {
+    setBusy(true);
+    setError(null);
+    try {
+      await setAdminCardBoard(competitionSlug, slug || null);
+      refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function pick(id) {
     setBusy(true);
@@ -1100,6 +1133,21 @@ function ControlPage() {
               Скрыть
             </button>
           ) : null}
+        </div>
+
+        <div className="control-current">
+          <span className="control-label">Источник для «Место / Total»:</span>
+          <select
+            className="search-box filter-select"
+            value={card?.cardBoardSlug || ''}
+            onChange={(e) => pickCardBoard(e.target.value)}
+            disabled={busy}
+          >
+            <option value="">Общий ЛБ</option>
+            {boards.map((b) => (
+              <option key={b.slug} value={b.slug}>{b.title}</option>
+            ))}
+          </select>
         </div>
 
         {card?.current ? (

@@ -432,6 +432,7 @@ function emptyCompetitionCache() {
     groupsResults: {},
     currentParticipantId: null,
     cycleBoardSlug: null,
+    cardBoardSlug: null,
     errors: [],
   };
 }
@@ -706,28 +707,64 @@ async function refreshCompetition(slug) {
     groupsResults,
     currentParticipantId: state.currentParticipantId,
     cycleBoardSlug: state.cycleBoardSlug,
+    cardBoardSlug: state.cardBoardSlug,
     errors,
   });
 
   console.log(`[refresh] ${slug} OK${errors.length ? ` (${errors.length} task errors)` : ''}`);
 }
 
-function findKaggleStats(slug, kaggleId) {
+async function findKaggleStats(slug, kaggleId) {
   if (!kaggleId) return null;
   const compCache = cache.byCompetition.get(slug);
   if (!compCache) return null;
   const key = String(kaggleId).toLowerCase();
-  const row = (compCache.overall || []).find(
-    (r) => (r.nickname || r.participantKey || '').toLowerCase() === key
-  );
+  const overall = compCache.overall || [];
+  const cardBoardSlug = compCache.cardBoardSlug || null;
+
+  if (!cardBoardSlug) {
+    const row = overall.find(
+      (r) => (r.nickname || r.participantKey || '').toLowerCase() === key
+    );
+    if (!row) return null;
+    return {
+      place: row.place,
+      totalPoints: row.totalPoints,
+      previousTotalPoints: row.previousTotalPoints ?? null,
+      nickname: row.nickname,
+      teamName: row.teamName,
+      tasks: row.tasks,
+      sourceLabel: 'Общий ЛБ',
+    };
+  }
+
+  // Board-scoped: re-rank overall rows by sum of points across the board's tasks.
+  const boards = await loadBoardsFor(slug).catch(() => []);
+  const board = boards.find((b) => b.slug === cardBoardSlug);
+  if (!board) return null;
+  const taskSlugs = board.taskSlugs || [];
+  const ranked = overall
+    .map((r) => {
+      const sum = taskSlugs.reduce((s, ts) => s + (r.tasks?.[ts]?.points ?? 0), 0);
+      const hasAnyPrev = taskSlugs.some((ts) => r.tasks?.[ts]?.previousPoints != null);
+      const prevSum = hasAnyPrev
+        ? taskSlugs.reduce((s, ts) => s + (r.tasks?.[ts]?.previousPoints ?? r.tasks?.[ts]?.points ?? 0), 0)
+        : null;
+      return { ...r, _sum: sum, _prev: prevSum };
+    })
+    .filter((r) => taskSlugs.some((ts) => r.tasks?.[ts] !== undefined))
+    .sort((a, b) => b._sum - a._sum || (a.nickname || '').localeCompare(b.nickname || ''))
+    .map((r, i) => ({ ...r, _place: i + 1 }));
+  const row = ranked.find((r) => (r.nickname || r.participantKey || '').toLowerCase() === key);
   if (!row) return null;
   return {
-    place: row.place,
-    totalPoints: row.totalPoints,
-    previousTotalPoints: row.previousTotalPoints ?? null,
+    place: row._place,
+    totalPoints: row._sum,
+    previousTotalPoints: row._prev,
     nickname: row.nickname,
     teamName: row.teamName,
     tasks: row.tasks,
+    sourceLabel: board.title,
   };
 }
 
@@ -955,16 +992,17 @@ export function createApp({ db } = {}) {
     res.json({ ok: true, updatedAt: cc?.updatedAt, errors: cc?.errors || [] });
   });
 
-  app.get('/api/competitions/:competitionSlug/card', (req, res) => {
+  app.get('/api/competitions/:competitionSlug/card', async (req, res) => {
     const meta = requireCompetition(req, res);
     if (!meta) return;
     const cc = cache.byCompetition.get(meta.slug);
     const current = (cc?.participants || []).find((p) => p.id === cc?.currentParticipantId);
-    const kaggleStats = current ? findKaggleStats(meta.slug, current.kaggleId) : null;
+    const kaggleStats = current ? await findKaggleStats(meta.slug, current.kaggleId) : null;
     res.json({
       current: current || null,
       currentId: cc?.currentParticipantId || null,
       kaggleStats,
+      cardBoardSlug: cc?.cardBoardSlug || null,
       updatedAt: cc?.updatedAt || null,
     });
   });
@@ -980,6 +1018,7 @@ export function createApp({ db } = {}) {
       await writeCompetitionState(competitionDir(meta.slug), {
         currentParticipantId: null,
         cycleBoardSlug: cc.cycleBoardSlug ?? null,
+        cardBoardSlug: cc.cardBoardSlug ?? null,
       });
       res.json({ ok: true, currentId: null, current: null });
       return;
@@ -1002,6 +1041,7 @@ export function createApp({ db } = {}) {
     await writeCompetitionState(competitionDir(meta.slug), {
       currentParticipantId: id,
       cycleBoardSlug: cc.cycleBoardSlug ?? null,
+      cardBoardSlug: cc.cardBoardSlug ?? null,
     });
     res.json({ ok: true, currentId: id, current: found });
   });
@@ -1228,8 +1268,43 @@ export function createApp({ db } = {}) {
     await writeCompetitionState(competitionDir(slug), {
       currentParticipantId: cc.currentParticipantId ?? null,
       cycleBoardSlug: next,
+      cardBoardSlug: cc.cardBoardSlug ?? null,
     });
     res.json({ ok: true, cycleBoardSlug: next });
+  });
+
+  app.put('/api/admin/competitions/:competitionSlug/card-board', adminMw, async (req, res) => {
+    const slug = ensureKnownSlug(req, res); if (!slug) return;
+    const raw = req.body?.cardBoardSlug;
+    let next = null;
+    if (raw === null || raw === undefined || raw === '') {
+      next = null;
+    } else if (typeof raw === 'string') {
+      next = raw;
+    } else {
+      res.status(400).json({ error: 'cardBoardSlug must be a string or null' });
+      return;
+    }
+    if (next !== null) {
+      try {
+        const boards = await loadBoardsFor(slug);
+        if (!boards.some((b) => b.slug === next)) {
+          res.status(404).json({ error: `board '${next}' not found in '${slug}'` });
+          return;
+        }
+      } catch (e) {
+        res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+        return;
+      }
+    }
+    const cc = getCompCache(slug);
+    cc.cardBoardSlug = next;
+    await writeCompetitionState(competitionDir(slug), {
+      currentParticipantId: cc.currentParticipantId ?? null,
+      cycleBoardSlug: cc.cycleBoardSlug ?? null,
+      cardBoardSlug: next,
+    });
+    res.json({ ok: true, cardBoardSlug: next });
   });
 
   app.get('/api/admin/competitions/:competitionSlug/participants', adminMw, async (req, res) => {

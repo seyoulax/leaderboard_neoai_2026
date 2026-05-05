@@ -159,6 +159,13 @@ export async function setAdminCycleBoard(slug, boardSlug) {
   });
 }
 
+export async function setAdminCardBoard(slug, boardSlug) {
+  return adminFetch(`${adminCompBase(slug)}/card-board`, {
+    method: 'PUT',
+    body: JSON.stringify({ cardBoardSlug: boardSlug }),
+  });
+}
+
 export async function getAdminParticipants(slug) {
   return adminFetch(`${adminCompBase(slug)}/participants`);
 }

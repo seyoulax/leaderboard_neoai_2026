@@ -60,14 +60,15 @@ export default function ObsCard() {
               prev != null && Number.isFinite(prev) && Math.abs(stats.totalPoints - prev) > 0.01
                 ? stats.totalPoints > prev ? 'up' : 'down'
                 : null;
+            const isBoard = stats.sourceLabel && stats.sourceLabel !== 'Общий ЛБ';
             return (
               <div className="obscard-live">
                 <div className="obscard-live-cell">
-                  <div className="obscard-live-label">Место</div>
+                  <div className="obscard-live-label">{isBoard ? `Место (${stats.sourceLabel})` : 'Место'}</div>
                   <div className="obscard-live-value">#{stats.place}</div>
                 </div>
                 <div className="obscard-live-cell">
-                  <div className="obscard-live-label">Total points</div>
+                  <div className="obscard-live-label">{isBoard ? 'Board points' : 'Total points'}</div>
                   <div className={`obscard-live-value ${dir === 'up' ? 'cell-up' : dir === 'down' ? 'cell-down' : ''}`.trim()}>
                     {stats.totalPoints.toFixed(2)}
                     {dir === 'up' ? <span className="delta-arrow up"> ▲</span> : null}
