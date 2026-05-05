@@ -2612,7 +2612,18 @@ function SiteHeader() {
     <header className="site-header">
       <div className="site-header-inner">
         <Link to="/" className="site-header-brand">
-          <span><span className="site-header-brand-accent">St</span>ackOverFlow</span>
+          <svg className="site-header-logo" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="brand-grad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%"  stopColor="#a48bff"/>
+                <stop offset="100%" stopColor="#7d5fff"/>
+              </linearGradient>
+            </defs>
+            <rect x="3"  y="14.5" width="18" height="4" rx="1.5" fill="url(#brand-grad)" opacity="0.5"/>
+            <rect x="5"  y="9.25" width="14" height="4" rx="1.5" fill="url(#brand-grad)" opacity="0.78"/>
+            <rect x="7"  y="4"    width="10" height="4" rx="1.5" fill="url(#brand-grad)"/>
+          </svg>
+          <span className="site-header-brand-text">StackOverFlow</span>
         </Link>
         <nav className="site-header-nav">
           <NavLink
