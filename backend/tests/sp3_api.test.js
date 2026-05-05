@@ -119,6 +119,81 @@ test('POST /submissions: rate limit → 429', async () => {
   server.close();
 });
 
+test('admin: GET all submissions, POST /rescore, DELETE one', async () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sp3-adm-'));
+  process.env.NATIVE_DATA_DIR = tmp;
+  const { db, app, userId } = await setupApp();
+  const { insertSubmission, markScored, pickAndMarkScoring } = await import('../src/db/submissionsRepo.js');
+  const sub = insertSubmission(db, { taskId: 1, userId, originalFilename: 'a', sizeBytes: 1, sha256: 'x', path: '/a' });
+  pickAndMarkScoring(db);
+  markScored(db, sub.id, { rawScorePublic: 0.5, pointsPublic: 50, log: '', durationMs: 1 });
+  const server = await start(app);
+  const port = server.address().port;
+
+  const list = await fetch(`http://127.0.0.1:${port}/api/admin/competitions/c/native-tasks/t/submissions`, {
+    headers: { 'x-admin-token': 'shared' },
+  }).then((r) => r.json());
+  assert.equal(list.submissions.length, 1);
+
+  const r = await fetch(`http://127.0.0.1:${port}/api/admin/competitions/c/native-tasks/t/submissions/${sub.id}/rescore`, {
+    method: 'POST', headers: { 'x-admin-token': 'shared' },
+  });
+  assert.equal(r.status, 200);
+  const got = await fetch(`http://127.0.0.1:${port}/api/competitions/c/native-tasks/t/submissions/${sub.id}`, {
+    headers: { 'x-admin-token': 'shared', cookie: '' },
+  });
+  // admin token doesn't carry user, so /submissions/:id (which uses requireAuth + ownership) returns 401
+  // Verify directly via DB instead:
+  const fromDb = db.prepare('SELECT status, points_public FROM submissions WHERE id=?').get(sub.id);
+  assert.equal(fromDb.status, 'pending');
+  assert.equal(fromDb.points_public, null);
+
+  // DELETE
+  const fakePath = path.join(tmp, 'fake.csv');
+  fs.writeFileSync(fakePath, 'x');
+  db.prepare("UPDATE submissions SET path = ? WHERE id = ?").run(fakePath, sub.id);
+  const d = await fetch(`http://127.0.0.1:${port}/api/admin/competitions/c/native-tasks/t/submissions/${sub.id}`, {
+    method: 'DELETE', headers: { 'x-admin-token': 'shared' },
+  });
+  assert.equal(d.status, 200);
+  assert.equal(fs.existsSync(fakePath), false);
+
+  fs.rmSync(tmp, { recursive: true, force: true });
+  server.close();
+});
+
+test('admin PUT /ground-truth-private + DELETE: пишет/обнуляет groundTruthPrivatePath', async () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sp3-gt-'));
+  process.env.NATIVE_DATA_DIR = tmp;
+  const { db, app } = await setupApp();
+  const server = await start(app);
+  const port = server.address().port;
+  const boundary = '----X';
+  const body = Buffer.concat([
+    Buffer.from(`--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="priv.csv"\r\nContent-Type: text/csv\r\n\r\n`),
+    Buffer.from('id,label\n1,A\n'),
+    Buffer.from(`\r\n--${boundary}--\r\n`),
+  ]);
+  const r = await fetch(`http://127.0.0.1:${port}/api/admin/competitions/c/native-tasks/t/ground-truth-private`, {
+    method: 'PUT',
+    headers: { 'content-type': `multipart/form-data; boundary=${boundary}`, 'x-admin-token': 'shared' },
+    body,
+  });
+  assert.equal(r.status, 200);
+  const t = db.prepare("SELECT ground_truth_private_path FROM native_tasks WHERE slug='t'").get();
+  assert.ok(t.ground_truth_private_path);
+  assert.ok(fs.existsSync(t.ground_truth_private_path));
+
+  const d = await fetch(`http://127.0.0.1:${port}/api/admin/competitions/c/native-tasks/t/ground-truth-private`, {
+    method: 'DELETE', headers: { 'x-admin-token': 'shared' },
+  });
+  assert.equal(d.status, 200);
+  const t2 = db.prepare("SELECT ground_truth_private_path FROM native_tasks WHERE slug='t'").get();
+  assert.equal(t2.ground_truth_private_path, null);
+  fs.rmSync(tmp, { recursive: true, force: true });
+  server.close();
+});
+
 test('GET /submissions/me: список своих сабмитов', async () => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sp3api-'));
   process.env.NATIVE_DATA_DIR = tmp;

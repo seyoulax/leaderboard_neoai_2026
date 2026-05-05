@@ -189,7 +189,7 @@ export function createNativeTasksAdminRouter({ db }) {
     });
   });
 
-  function singleSlotEndpoint(slot, maxEnvKey) {
+  function singleSlotEndpoint(slot, pathField, maxEnvKey) {
     return (req, res) => {
       const r = requireNativeComp(db, req.params.competitionSlug);
       if (r.error) return res.status(r.error.status).json({ error: r.error.message });
@@ -205,16 +205,14 @@ export function createNativeTasksAdminRouter({ db }) {
         onAccepted: async ({ finalPath, originalFilename }) => {
           try {
             const ext = path.extname(originalFilename) || '';
-            const target = path.join(taskDir, `${slot.replace('-', '_')}${ext}`);
+            const target = path.join(taskDir, `${slot.replace(/-/g, '_')}${ext}`);
             const fsp = await import('node:fs/promises');
-            const prevPath = slot === 'grader' ? task.graderPath : task.groundTruthPath;
+            const prevPath = task[pathField];
             if (prevPath && prevPath !== target) {
               await fsp.rm(prevPath, { force: true }).catch(() => {});
             }
             await fsp.rename(finalPath, target);
-            updateNativeTask(db, req.params.competitionSlug, req.params.taskSlug,
-              slot === 'grader' ? { graderPath: target } : { groundTruthPath: target }
-            );
+            updateNativeTask(db, req.params.competitionSlug, req.params.taskSlug, { [pathField]: target });
             res.json({ ok: true, path: target });
           } catch (e) {
             res.status(500).json({ error: e.message });
@@ -225,34 +223,28 @@ export function createNativeTasksAdminRouter({ db }) {
     };
   }
 
-  router.put('/:taskSlug/grader', singleSlotEndpoint('grader', 'MAX_GRADER_BYTES'));
-  router.put('/:taskSlug/ground-truth', singleSlotEndpoint('ground-truth', 'MAX_GROUND_TRUTH_BYTES'));
+  function deleteSlotEndpoint(pathField) {
+    return async (req, res) => {
+      const r = requireNativeComp(db, req.params.competitionSlug);
+      if (r.error) return res.status(r.error.status).json({ error: r.error.message });
+      const task = getNativeTask(db, req.params.competitionSlug, req.params.taskSlug);
+      if (!task) return res.status(404).json({ error: 'task not found' });
+      if (task[pathField]) {
+        const fsp = await import('node:fs/promises');
+        await fsp.rm(task[pathField], { force: true }).catch(() => {});
+      }
+      updateNativeTask(db, req.params.competitionSlug, req.params.taskSlug, { [pathField]: null });
+      res.json({ ok: true });
+    };
+  }
 
-  router.delete('/:taskSlug/grader', async (req, res) => {
-    const r = requireNativeComp(db, req.params.competitionSlug);
-    if (r.error) return res.status(r.error.status).json({ error: r.error.message });
-    const task = getNativeTask(db, req.params.competitionSlug, req.params.taskSlug);
-    if (!task) return res.status(404).json({ error: 'task not found' });
-    if (task.graderPath) {
-      const fsp = await import('node:fs/promises');
-      await fsp.rm(task.graderPath, { force: true }).catch(() => {});
-    }
-    updateNativeTask(db, req.params.competitionSlug, req.params.taskSlug, { graderPath: null });
-    res.json({ ok: true });
-  });
+  router.put('/:taskSlug/grader', singleSlotEndpoint('grader', 'graderPath', 'MAX_GRADER_BYTES'));
+  router.put('/:taskSlug/ground-truth', singleSlotEndpoint('ground-truth', 'groundTruthPath', 'MAX_GROUND_TRUTH_BYTES'));
+  router.put('/:taskSlug/ground-truth-private', singleSlotEndpoint('ground-truth-private', 'groundTruthPrivatePath', 'MAX_GROUND_TRUTH_BYTES'));
 
-  router.delete('/:taskSlug/ground-truth', async (req, res) => {
-    const r = requireNativeComp(db, req.params.competitionSlug);
-    if (r.error) return res.status(r.error.status).json({ error: r.error.message });
-    const task = getNativeTask(db, req.params.competitionSlug, req.params.taskSlug);
-    if (!task) return res.status(404).json({ error: 'task not found' });
-    if (task.groundTruthPath) {
-      const fsp = await import('node:fs/promises');
-      await fsp.rm(task.groundTruthPath, { force: true }).catch(() => {});
-    }
-    updateNativeTask(db, req.params.competitionSlug, req.params.taskSlug, { groundTruthPath: null });
-    res.json({ ok: true });
-  });
+  router.delete('/:taskSlug/grader', deleteSlotEndpoint('graderPath'));
+  router.delete('/:taskSlug/ground-truth', deleteSlotEndpoint('groundTruthPath'));
+  router.delete('/:taskSlug/ground-truth-private', deleteSlotEndpoint('groundTruthPrivatePath'));
 
   return router;
 }

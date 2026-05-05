@@ -9,6 +9,7 @@ import { createAuthRouter } from './routes/auth.js';
 import { createNativeTasksAdminRouter } from './routes/nativeTasksAdmin.js';
 import { createNativeTasksPublicRouter } from './routes/nativeTasksPublic.js';
 import { createSubmissionsPublicRouter } from './routes/submissionsPublic.js';
+import { createSubmissionsAdminRouter } from './routes/submissionsAdmin.js';
 import { listNativeTasks } from './db/nativeTasksRepo.js';
 import {
   listActiveCompetitions,
@@ -969,6 +970,7 @@ export function createApp({ db } = {}) {
   app.use('/api/admin/competitions/:competitionSlug/native-tasks', adminMw, createNativeTasksAdminRouter({ db }));
   app.use('/api/competitions/:competitionSlug/native-tasks', createNativeTasksPublicRouter({ db }));
   app.use('/api/competitions/:competitionSlug/native-tasks/:taskSlug/submissions', createSubmissionsPublicRouter({ db }));
+  app.use('/api/admin/competitions/:competitionSlug/native-tasks/:taskSlug/submissions', adminMw, createSubmissionsAdminRouter({ db }));
 
   return app;
 }
