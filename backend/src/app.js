@@ -11,6 +11,7 @@ import { createNativeTasksAdminRouter } from './routes/nativeTasksAdmin.js';
 import { createNativeTasksPublicRouter } from './routes/nativeTasksPublic.js';
 import { createSubmissionsPublicRouter } from './routes/submissionsPublic.js';
 import { createSubmissionsAdminRouter } from './routes/submissionsAdmin.js';
+import { createMembershipRouter } from './routes/membership.js';
 import { listNativeTasks } from './db/nativeTasksRepo.js';
 import {
   listActiveCompetitions,
@@ -1505,6 +1506,7 @@ export function createApp({ db } = {}) {
   app.use('/api/competitions/:competitionSlug/native-tasks', createNativeTasksPublicRouter({ db }));
   app.use('/api/competitions/:competitionSlug/native-tasks/:taskSlug/submissions', createSubmissionsPublicRouter({ db }));
   app.use('/api/admin/competitions/:competitionSlug/native-tasks/:taskSlug/submissions', adminMw, createSubmissionsAdminRouter({ db }));
+  app.use('/api/competitions/:competitionSlug', createMembershipRouter({ db }));
 
   return app;
 }
