@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { meApi } from '../api.js';
+import { useT } from '../i18n/I18nContext.jsx';
 
 export default function MySubmissionsCabinet() {
+  const t = useT();
   const [items, setItems] = useState([]);
   const [error, setError] = useState(null);
 
@@ -11,14 +13,23 @@ export default function MySubmissionsCabinet() {
   }, []);
 
   if (error) return <div className="error">{error}</div>;
-  if (items.length === 0) return <p className="dim">Сабмитов пока нет</p>;
+  if (items.length === 0) return <p className="dim">{t('me.empty.submissions')}</p>;
 
   return (
     <section>
-      <h2>Мои сабмиты</h2>
+      <h2>{t('me.title.submissions')}</h2>
       <table className="submissions-table">
         <thead>
-          <tr><th>Когда</th><th>Соревнование</th><th>Задача</th><th>Файл</th><th>Статус</th><th>Public</th><th>Private</th><th>Selected</th></tr>
+          <tr>
+            <th>{t('mysub.col.when')}</th>
+            <th>{t('mysub.col.competition')}</th>
+            <th>{t('mysub.col.task')}</th>
+            <th>{t('mysub.col.file')}</th>
+            <th>{t('mysub.col.status')}</th>
+            <th>{t('mysub.col.public')}</th>
+            <th>{t('mysub.col.private')}</th>
+            <th>{t('mysub.col.selected')}</th>
+          </tr>
         </thead>
         <tbody>
           {items.map((s) => (

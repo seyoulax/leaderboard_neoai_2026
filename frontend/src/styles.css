@@ -2019,3 +2019,31 @@ input[type='number'].control-input {
   font-weight: 500;
 }
 .site-footer-inner a:hover { text-decoration: underline; }
+
+/* ─── Language toggle (in site-header) ──────────────────────────── */
+.lang-toggle {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+.lang-toggle-btn {
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 5px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.18s, background 0.18s;
+}
+.lang-toggle-btn:hover { color: var(--ink); }
+.lang-toggle-btn.active {
+  color: var(--accent);
+  background: var(--accent-soft);
+}

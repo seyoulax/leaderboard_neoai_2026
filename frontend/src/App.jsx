@@ -48,6 +48,7 @@ import {
   LegacyObsTaskRedirect,
 } from './legacyRedirects';
 import { AuthProvider, useAuth } from './auth/AuthContext.jsx';
+import { I18nProvider, LangToggle, useT } from './i18n/I18nContext.jsx';
 import LoginPage from './auth/LoginPage.jsx';
 import NativeTaskPage from './native/NativeTaskPage.jsx';
 import AdminNativeTasksList from './admin/AdminNativeTasksList.jsx';
@@ -2608,6 +2609,7 @@ function AdminShell() {
 
 function SiteHeader() {
   const { user } = useAuth();
+  const t = useT();
   return (
     <header className="site-header">
       <div className="site-header-inner">
@@ -2631,7 +2633,7 @@ function SiteHeader() {
             end
             className={({ isActive }) => `site-header-link ${isActive ? 'active' : ''}`}
           >
-            Соревнования
+            {t('nav.competitions')}
           </NavLink>
           {user ? (
             <>
@@ -2640,23 +2642,24 @@ function SiteHeader() {
                 end
                 className={({ isActive }) => `site-header-link ${isActive ? 'active' : ''}`}
               >
-                Кабинет
+                {t('nav.cabinet')}
               </NavLink>
               <NavLink
                 to="/me/competitions"
                 className={({ isActive }) => `site-header-link ${isActive ? 'active' : ''}`}
               >
-                Мои соревнования
+                {t('nav.my_competitions')}
               </NavLink>
               <NavLink
                 to="/me/submissions"
                 className={({ isActive }) => `site-header-link ${isActive ? 'active' : ''}`}
               >
-                Мои сабмиты
+                {t('nav.my_submissions')}
               </NavLink>
             </>
           ) : null}
         </nav>
+        <LangToggle />
         <UserMenu />
       </div>
     </header>
@@ -2665,6 +2668,7 @@ function SiteHeader() {
 
 export default function App() {
   return (
+    <I18nProvider>
     <AuthProvider>
       <SiteHeader />
       <Routes>
@@ -2736,15 +2740,17 @@ export default function App() {
       </Routes>
       <SiteFooter />
     </AuthProvider>
+    </I18nProvider>
   );
 }
 
 function SiteFooter() {
+  const t = useT();
   return (
     <footer className="site-footer">
       <div className="site-footer-inner">
         <span>
-          Сделано <strong>Данисом</strong> ·{' '}
+          {t('footer.made_by')} <strong>Danis</strong> ·{' '}
           <a href="https://github.com/seyoulax" target="_blank" rel="noreferrer">github.com/seyoulax</a>
           {' '}· {new Date().getFullYear()}
         </span>

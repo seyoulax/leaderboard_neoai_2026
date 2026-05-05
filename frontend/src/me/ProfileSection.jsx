@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { meApi } from '../api.js';
+import { useT } from '../i18n/I18nContext.jsx';
 
 export default function ProfileSection() {
   const { user, refresh } = useAuth();
+  const t = useT();
   const [form, setForm] = useState({
     email: user?.email || '',
     displayName: user?.displayName || '',
@@ -25,7 +27,7 @@ export default function ProfileSection() {
         kaggleId: form.kaggleId || null,
       });
       await refresh();
-      setMsg('Сохранено');
+      setMsg(t('profile.saved'));
     } catch (e) { setErr(e.message || 'failed'); }
     finally { setBusy(false); }
   }
@@ -33,12 +35,12 @@ export default function ProfileSection() {
   if (!user) return null;
   return (
     <section className="profile-section">
-      <h2>Профиль</h2>
+      <h2>{t('profile.title')}</h2>
       <form onSubmit={save}>
-        <label>Email <input type="email" value={form.email} onChange={set('email')} required /></label>
-        <label>Имя <input value={form.displayName} onChange={set('displayName')} required maxLength={80} /></label>
-        <label>Kaggle ID <input value={form.kaggleId} onChange={set('kaggleId')} placeholder="myname" /></label>
-        <button disabled={busy}>{busy ? '…' : 'Сохранить'}</button>
+        <label>{t('profile.email')} <input type="email" value={form.email} onChange={set('email')} required /></label>
+        <label>{t('profile.display_name')} <input value={form.displayName} onChange={set('displayName')} required maxLength={80} /></label>
+        <label>{t('profile.kaggle_id')} <input value={form.kaggleId} onChange={set('kaggleId')} placeholder="myname" /></label>
+        <button disabled={busy}>{busy ? '…' : t('common.save')}</button>
         {msg && <div className="success">{msg}</div>}
         {err && <div className="error">{err}</div>}
       </form>
