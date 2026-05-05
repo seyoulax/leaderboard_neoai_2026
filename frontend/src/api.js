@@ -229,4 +229,39 @@ export const adminNativeTasks = {
     request(`/admin/competitions/${compSlug}/native-tasks/${taskSlug}/grader`, { method: 'DELETE' }),
   deleteGroundTruth: (compSlug, taskSlug) =>
     request(`/admin/competitions/${compSlug}/native-tasks/${taskSlug}/ground-truth`, { method: 'DELETE' }),
+  uploadGroundTruthPrivate: (compSlug, taskSlug, formData) =>
+    putFormData(`${API_BASE}/admin/competitions/${compSlug}/native-tasks/${taskSlug}/ground-truth-private`, formData),
+  deleteGroundTruthPrivate: (compSlug, taskSlug) =>
+    request(`/admin/competitions/${compSlug}/native-tasks/${taskSlug}/ground-truth-private`, { method: 'DELETE' }),
+};
+
+// ---------- Submissions (public) ----------
+
+export const submissions = {
+  create: async (compSlug, taskSlug, formData) => {
+    const r = await fetch(`${API_BASE}/competitions/${compSlug}/native-tasks/${taskSlug}/submissions`, {
+      method: 'POST', credentials: 'include', body: formData,
+    });
+    const text = await r.text();
+    let json = null;
+    try { json = text ? JSON.parse(text) : null; } catch {}
+    if (!r.ok) {
+      const err = new Error(json?.error || r.statusText);
+      err.status = r.status;
+      err.payload = json;
+      throw err;
+    }
+    return json;
+  },
+  listMine: (compSlug, taskSlug) => request(`/competitions/${compSlug}/native-tasks/${taskSlug}/submissions/me`),
+  get: (compSlug, taskSlug, id) => request(`/competitions/${compSlug}/native-tasks/${taskSlug}/submissions/${id}`),
+};
+
+// ---------- Submissions (admin) ----------
+
+export const adminSubmissions = {
+  list: (compSlug, taskSlug, status) => request(`/admin/competitions/${compSlug}/native-tasks/${taskSlug}/submissions${status ? `?status=${status}` : ''}`),
+  delete: (compSlug, taskSlug, id) => request(`/admin/competitions/${compSlug}/native-tasks/${taskSlug}/submissions/${id}`, { method: 'DELETE' }),
+  rescore: (compSlug, taskSlug, id) => request(`/admin/competitions/${compSlug}/native-tasks/${taskSlug}/submissions/${id}/rescore`, { method: 'POST' }),
+  rescoreAll: (compSlug, taskSlug) => request(`/admin/competitions/${compSlug}/native-tasks/${taskSlug}/submissions/rescore-all`, { method: 'POST' }),
 };
