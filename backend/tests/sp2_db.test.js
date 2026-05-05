@@ -18,7 +18,7 @@ function freshDb() {
 test('migration 0002: applied after 0001', () => {
   const db = freshDb();
   const versions = db.prepare('SELECT version FROM schema_migrations ORDER BY version').all();
-  assert.deepEqual(versions.map((r) => r.version), [1, 2, 3]);
+  assert.deepEqual(versions.map((r) => r.version), [1, 2, 3, 4]);
 });
 
 test('migration 0002: visibility column on competitions with check', () => {

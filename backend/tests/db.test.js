@@ -38,7 +38,7 @@ function freshDb() {
 test('runMigrations: applies 0001_init on empty DB', () => {
   const db = freshDb();
   const row = db.prepare("SELECT version FROM schema_migrations ORDER BY version").all();
-  assert.deepEqual(row, [{ version: 1 }, { version: 2 }, { version: 3 }]);
+  assert.deepEqual(row, [{ version: 1 }, { version: 2 }, { version: 3 }, { version: 4 }]);
   const tables = db
     .prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
     .all()
@@ -54,7 +54,7 @@ test('runMigrations: idempotent (second call no-op)', () => {
   runMigrations(db);
   runMigrations(db);
   const versions = db.prepare('SELECT version FROM schema_migrations').all();
-  assert.equal(versions.length, 3);
+  assert.equal(versions.length, 4);
 });
 
 // ─── usersRepo ───────────────────────────────────────────────────
