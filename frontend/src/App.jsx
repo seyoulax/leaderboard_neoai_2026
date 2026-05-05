@@ -2645,6 +2645,8 @@ function AdminShell() {
 function SiteHeader() {
   const { user } = useAuth();
   const t = useT();
+  const location = useLocation();
+  if (location.pathname.startsWith('/obs/')) return null;
   return (
     <header className="site-header">
       <div className="site-header-inner">
@@ -2784,6 +2786,8 @@ export default function App() {
 
 function SiteFooter() {
   const t = useT();
+  const location = useLocation();
+  if (location.pathname.startsWith('/obs/')) return null;
   return (
     <footer className="site-footer">
       <div className="site-footer-inner">
