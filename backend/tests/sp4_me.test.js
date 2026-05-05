@@ -97,3 +97,48 @@ test('PATCH /api/me: invalid email → 400', async () => {
   assert.equal(r.status, 400);
   server.close();
 });
+
+test('POST /api/me/password: success + login with new password works', async () => {
+  const { app, cookie } = await setup();
+  const server = await start(app);
+  const port = server.address().port;
+  const r = await fetch(`http://127.0.0.1:${port}/api/me/password`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ currentPassword: 'p', newPassword: 'newhunter2' }),
+  });
+  assert.equal(r.status, 200);
+  const r2 = await fetch(`http://127.0.0.1:${port}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email: 'a@a.a', password: 'newhunter2' }),
+  });
+  assert.equal(r2.status, 200);
+  server.close();
+});
+
+test('POST /api/me/password: wrong currentPassword → 400', async () => {
+  const { app, cookie } = await setup();
+  const server = await start(app);
+  const port = server.address().port;
+  const r = await fetch(`http://127.0.0.1:${port}/api/me/password`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ currentPassword: 'WRONG', newPassword: 'newhunter2' }),
+  });
+  assert.equal(r.status, 400);
+  server.close();
+});
+
+test('POST /api/me/password: newPassword too short → 400', async () => {
+  const { app, cookie } = await setup();
+  const server = await start(app);
+  const port = server.address().port;
+  const r = await fetch(`http://127.0.0.1:${port}/api/me/password`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', cookie },
+    body: JSON.stringify({ currentPassword: 'p', newPassword: 'short' }),
+  });
+  assert.equal(r.status, 400);
+  server.close();
+});
