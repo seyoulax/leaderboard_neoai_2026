@@ -287,6 +287,89 @@ test('PUT /select: pending (not scored) submission → 400', async () => {
   server.close();
 });
 
+import { buildNativeLeaderboard } from '../src/scoring/nativeLeaderboard.js';
+
+test('private LB: selected filter — picks best from selected, not from all', () => {
+  const db = freshDb();
+  insertCompetition(db, { slug: 'c', title: 'C', type: 'native', visibility: 'public' });
+  const t = insertNativeTask(db, { competitionSlug: 'c', slug: 't', title: 'T',
+    baselineScorePrivate: 0, authorScorePrivate: 1 });
+  const u = createUser(db, { email: 'a@a.a', passwordHash: 'h', displayName: 'A' });
+  function scoredPriv(points) {
+    const s = insertSubmission(db, { taskId: t.id, userId: u.id, originalFilename: 'sub', sizeBytes: 1, sha256: 'x', path: '/x' });
+    pickAndMarkScoring(db);
+    markScored(db, s.id, {
+      rawScorePublic: 0.5, pointsPublic: 50,
+      rawScorePrivate: points / 100, pointsPrivate: points,
+      log: '', durationMs: 1,
+    });
+    return s.id;
+  }
+  const a = scoredPriv(70);
+  const b = scoredPriv(80);
+  scoredPriv(90);
+  setSubmissionSelected(db, a, true);
+  setSubmissionSelected(db, b, true);
+  const lb = buildNativeLeaderboard(db, 'c', 'private');
+  const row = lb.overall.find((e) => e.participantKey === `user:${u.id}`);
+  assert.equal(row.totalPoints, 80);
+});
+
+test('private LB: no selected → fallback to overall best (90)', () => {
+  const db = freshDb();
+  insertCompetition(db, { slug: 'c', title: 'C', type: 'native', visibility: 'public' });
+  const t = insertNativeTask(db, { competitionSlug: 'c', slug: 't', title: 'T',
+    baselineScorePrivate: 0, authorScorePrivate: 1 });
+  const u = createUser(db, { email: 'a@a.a', passwordHash: 'h', displayName: 'A' });
+  function scoredPriv(points) {
+    const s = insertSubmission(db, { taskId: t.id, userId: u.id, originalFilename: 'sub', sizeBytes: 1, sha256: 'x', path: '/x' });
+    pickAndMarkScoring(db);
+    markScored(db, s.id, { rawScorePublic: 0.5, pointsPublic: 50, rawScorePrivate: points/100, pointsPrivate: points, log: '', durationMs: 1 });
+  }
+  scoredPriv(70); scoredPriv(80); scoredPriv(90);
+  const lb = buildNativeLeaderboard(db, 'c', 'private');
+  const row = lb.overall.find((e) => e.participantKey === `user:${u.id}`);
+  assert.equal(row.totalPoints, 90);
+});
+
+test('public LB: selected does NOT affect (always best)', () => {
+  const db = freshDb();
+  insertCompetition(db, { slug: 'c', title: 'C', type: 'native', visibility: 'public' });
+  const t = insertNativeTask(db, { competitionSlug: 'c', slug: 't', title: 'T' });
+  const u = createUser(db, { email: 'a@a.a', passwordHash: 'h', displayName: 'A' });
+  const a = makeScoredSub(db, t.id, u.id, 70);
+  makeScoredSub(db, t.id, u.id, 90);
+  setSubmissionSelected(db, a, true);
+  const lb = buildNativeLeaderboard(db, 'c', 'public');
+  const row = lb.overall.find((e) => e.participantKey === `user:${u.id}`);
+  assert.equal(row.totalPoints, 90);
+});
+
+test('private LB: per-user mix — one user selected, one user not', () => {
+  const db = freshDb();
+  insertCompetition(db, { slug: 'c', title: 'C', type: 'native', visibility: 'public' });
+  const t = insertNativeTask(db, { competitionSlug: 'c', slug: 't', title: 'T',
+    baselineScorePrivate: 0, authorScorePrivate: 1 });
+  const u1 = createUser(db, { email: 'a@a.a', passwordHash: 'h', displayName: 'A' });
+  const u2 = createUser(db, { email: 'b@b.b', passwordHash: 'h', displayName: 'B' });
+  function priv(uid, points) {
+    const s = insertSubmission(db, { taskId: t.id, userId: uid, originalFilename: 'x', sizeBytes: 1, sha256: 'x', path: '/x' });
+    pickAndMarkScoring(db);
+    markScored(db, s.id, { rawScorePublic: 0.5, pointsPublic: 50, rawScorePrivate: points/100, pointsPrivate: points, log: '', durationMs: 1 });
+    return s.id;
+  }
+  const u1a = priv(u1.id, 70);
+  priv(u1.id, 90);
+  setSubmissionSelected(db, u1a, true);
+  priv(u2.id, 60);
+  priv(u2.id, 85);
+  const lb = buildNativeLeaderboard(db, 'c', 'private');
+  const r1 = lb.overall.find((e) => e.participantKey === `user:${u1.id}`);
+  const r2 = lb.overall.find((e) => e.participantKey === `user:${u2.id}`);
+  assert.equal(r1.totalPoints, 70);
+  assert.equal(r2.totalPoints, 85);
+});
+
 test('publicSubmission shape includes selected field', async () => {
   process.env.ADMIN_TOKEN = 'shared';
   const db = freshDb();
