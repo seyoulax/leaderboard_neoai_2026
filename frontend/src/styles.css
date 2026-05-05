@@ -1640,6 +1640,11 @@ tr.row-down > td {
   font-size: 14px;
   text-shadow: 0 0 12px var(--accent-glow);
 }
+.site-header-brand-accent {
+  color: var(--accent);
+  font-weight: 700;
+  text-shadow: 0 0 8px var(--accent-glow);
+}
 .site-header-nav {
   display: flex;
   gap: 4px;

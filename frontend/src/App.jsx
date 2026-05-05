@@ -2613,7 +2613,7 @@ function SiteHeader() {
       <div className="site-header-inner">
         <Link to="/" className="site-header-brand">
           <span className="site-header-mark">●</span>
-          <span>NEOAI · Leaderboard</span>
+          <span><span className="site-header-brand-accent">CU</span>mpetitions</span>
         </Link>
         <nav className="site-header-nav">
           <NavLink
