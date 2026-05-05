@@ -39,6 +39,11 @@ import {
 import { buildNativeLeaderboard } from './scoring/nativeLeaderboard.js';
 import { makeSnapshotCache } from './scoring/snapshotCache.js';
 import { setOnScoredCallback } from './scoring/worker.js';
+import { applyBonusToOverall } from './leaderboardBonus.js';
+import {
+  setBonusPoints as setMemberBonusPoints,
+  listMembersWithBonus,
+} from './db/membersRepo.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -217,8 +222,9 @@ function validateBoards(input, knownTaskSlugs) {
 
     const order = Number.isFinite(Number(board.order)) ? Number(board.order) : 0;
     const visible = board.visible !== false;
+    const showBonusPoints = Boolean(board.showBonusPoints);
 
-    return { slug, title, taskSlugs: cleanTaskSlugs, visible, order };
+    return { slug, title, taskSlugs: cleanTaskSlugs, visible, order, showBonusPoints };
   });
 }
 
@@ -476,6 +482,7 @@ function emptyCompetitionCache() {
     currentParticipantId: null,
     cycleBoardSlug: null,
     cardBoardSlug: null,
+    overallShowBonusPoints: false,
     errors: [],
   };
 }
@@ -521,6 +528,40 @@ function filterRowsByOurs(rows, oursSet) {
 
 function projectTaskRowsToOurs(taskRows, oursSet) {
   return taskRows.map((t) => ({ ...t, rows: filterRowsByOurs(t.rows, oursSet) }));
+}
+
+function buildBonusByNickMap(list) {
+  const map = new Map();
+  for (const p of list || []) {
+    const id = (p && p.kaggleId ? String(p.kaggleId) : '').trim().toLowerCase();
+    if (!id) continue;
+    const bonus = Number(p.bonusPoints);
+    if (!Number.isFinite(bonus) || bonus === 0) continue;
+    map.set(id, bonus);
+  }
+  return map;
+}
+
+// Annotate every overall row (and oursOverall) with bonusPoints (0 default).
+// `displayMap` is provided for "ours" variants where nicknames have already
+// been replaced with "FirstName LastName" — we need to look up by the original
+// kaggleId, so we invert the displayMap to map display→kaggleId.
+function attachBonusPoints(result, bonusByNick, displayMap) {
+  const displayToNick = new Map();
+  if (displayMap && displayMap.size) {
+    for (const [nick, display] of displayMap) displayToNick.set(display, nick);
+  }
+  const lookup = (entry) => {
+    const nick = (entry.nickname || '').toLowerCase();
+    if (bonusByNick.has(nick)) return bonusByNick.get(nick);
+    // For "ours" variants the displayed name has been re-written; reverse it.
+    const original = displayToNick.get(entry.nickname);
+    if (original) return bonusByNick.get(original) || 0;
+    return 0;
+  };
+  for (const e of result.overall || []) {
+    e.bonusPoints = lookup(e);
+  }
 }
 
 function applyDisplayNames(result, displayMap) {
@@ -674,13 +715,16 @@ async function refreshCompetition(slug) {
   const state = await readCompetitionState(competitionDir(slug));
   const oursSet = buildOursKaggleSet(participants);
   const oursDisplayMap = buildOursDisplayMap(participants);
+  const bonusByNick = buildBonusByNickMap(participants);
 
   const result = buildLeaderboards(taskRows, { variant: 'public' });
   annotateWithDeltas(result, { byTask: compCache.byTask, overall: compCache.overall });
+  attachBonusPoints(result, bonusByNick);
 
   const oursResult = buildLeaderboards(projectTaskRowsToOurs(taskRows, oursSet), { variant: 'public' });
   applyDisplayNames(oursResult, oursDisplayMap);
   annotateWithDeltas(oursResult, { byTask: compCache.oursByTask, overall: compCache.oursOverall });
+  attachBonusPoints(oursResult, bonusByNick, oursDisplayMap);
 
   const privDir = privateDirFor(slug);
   const privateTaskRows = [];
@@ -707,6 +751,7 @@ async function refreshCompetition(slug) {
 
   const privateResult = buildLeaderboards(privateTaskRows, { variant: 'private' });
   annotateWithDeltas(privateResult, { byTask: compCache.privateByTask, overall: compCache.privateOverall });
+  attachBonusPoints(privateResult, bonusByNick);
 
   const oursPrivateResult = buildLeaderboards(projectTaskRowsToOurs(privateTaskRows, oursSet), { variant: 'private' });
   applyDisplayNames(oursPrivateResult, oursDisplayMap);
@@ -714,6 +759,7 @@ async function refreshCompetition(slug) {
     byTask: compCache.oursPrivateByTask,
     overall: compCache.oursPrivateOverall,
   });
+  attachBonusPoints(oursPrivateResult, bonusByNick, oursDisplayMap);
 
   // Per-participant-group leaderboards: scores re-normalized within each group.
   const groups = await loadParticipantGroupsFor(slug).catch(() => []);
@@ -728,12 +774,14 @@ async function refreshCompetition(slug) {
       byTask: prevGroupsResults[g.slug]?.byTask || {},
       overall: prevGroupsResults[g.slug]?.overall || [],
     });
+    attachBonusPoints(pub, bonusByNick, oursDisplayMap);
     const priv = buildLeaderboards(projectTaskRowsToOurs(privateTaskRows, groupSet), { variant: 'private' });
     applyDisplayNames(priv, oursDisplayMap);
     annotateWithDeltas(priv, {
       byTask: prevGroupsResults[g.slug]?.privateByTask || {},
       overall: prevGroupsResults[g.slug]?.privateOverall || [],
     });
+    attachBonusPoints(priv, bonusByNick, oursDisplayMap);
     groupsResults[g.slug] = {
       overall: pub.overall,
       byTask: pub.byTask,
@@ -761,6 +809,7 @@ async function refreshCompetition(slug) {
     currentParticipantId: state.currentParticipantId,
     cycleBoardSlug: state.cycleBoardSlug,
     cardBoardSlug: state.cardBoardSlug,
+    overallShowBonusPoints: state.overallShowBonusPoints === true,
     errors,
   };
   cache.byCompetition.set(slug, next);
@@ -921,37 +970,75 @@ export function createApp({ db } = {}) {
       }
       const priv = buildNativeLeaderboard(db, meta.slug, 'private');
       const privateTaskSlugs = Object.keys(priv.byTask).filter((slug) => priv.byTask[slug].entries.length > 0);
+      const state = await readCompetitionState(competitionDir(meta.slug));
+      const showBonus = state.overallShowBonusPoints === true;
+      // snapshotCache.get returns the stored snapshot directly (no clone on
+      // read), so we structuredClone before mutating to avoid poisoning the
+      // cache. priv is freshly built each request — safe to mutate.
+      let pubOverall = pub.overall;
+      let privOverall = priv.overall;
+      if (showBonus) {
+        pubOverall = applyBonusToOverall(structuredClone(pubOverall));
+        privOverall = applyBonusToOverall(privOverall);
+      }
       res.json({
         updatedAt: new Date().toISOString(),
         tasks: pub.tasks,
-        overall: pub.overall,
+        overall: pubOverall,
         byTask: pub.byTask,
-        privateOverall: priv.overall,
+        privateOverall: privOverall,
         privateByTask: priv.byTask,
         privateTaskSlugs,
         // SP-3: ours = overall (deferred to SP-4 polish)
-        oursOverall: pub.overall,
+        oursOverall: pubOverall,
         oursByTask: pub.byTask,
-        oursPrivateOverall: priv.overall,
+        oursPrivateOverall: privOverall,
         oursPrivateByTask: priv.byTask,
+        overallShowBonusPoints: showBonus,
         errors: [],
       });
       return;
     }
     const cc = cache.byCompetition.get(meta.slug) || emptyCompetitionCache();
+    const showBonus = cc.overallShowBonusPoints === true;
+    // Always clone overall arrays before mutating: the cache is shared across
+    // requests and a sweep may be in flight.
+    const cloneOverall = (arr) => structuredClone(arr || []);
+    let overall = cloneOverall(cc.overall);
+    let privateOverall = cloneOverall(cc.privateOverall);
+    let oursOverall = cloneOverall(cc.oursOverall);
+    let oursPrivateOverall = cloneOverall(cc.oursPrivateOverall);
+    let groupsResults = cc.groupsResults || {};
+    if (showBonus) {
+      applyBonusToOverall(overall);
+      applyBonusToOverall(privateOverall);
+      applyBonusToOverall(oursOverall);
+      applyBonusToOverall(oursPrivateOverall);
+      const cloned = {};
+      for (const slug of Object.keys(groupsResults)) {
+        const gr = groupsResults[slug] || {};
+        cloned[slug] = {
+          ...gr,
+          overall: applyBonusToOverall(cloneOverall(gr.overall)),
+          privateOverall: applyBonusToOverall(cloneOverall(gr.privateOverall)),
+        };
+      }
+      groupsResults = cloned;
+    }
     res.json({
       updatedAt: cc.updatedAt,
       tasks: cc.tasks,
-      overall: cc.overall,
-      privateOverall: cc.privateOverall,
+      overall,
+      privateOverall,
       privateByTask: cc.privateByTask,
       privateTaskSlugs: cc.privateTaskSlugs,
-      oursOverall: cc.oursOverall,
+      oursOverall,
       oursByTask: cc.oursByTask,
-      oursPrivateOverall: cc.oursPrivateOverall,
+      oursPrivateOverall,
       oursPrivateByTask: cc.oursPrivateByTask,
       groupsMeta: cc.groupsMeta || [],
-      groupsResults: cc.groupsResults || {},
+      groupsResults,
+      overallShowBonusPoints: showBonus,
       errors: cc.errors,
     });
   });
@@ -1098,6 +1185,7 @@ export function createApp({ db } = {}) {
         currentParticipantId: null,
         cycleBoardSlug: cc.cycleBoardSlug ?? null,
         cardBoardSlug: cc.cardBoardSlug ?? null,
+        overallShowBonusPoints: cc.overallShowBonusPoints === true,
       });
       res.json({ ok: true, currentId: null, current: null });
       return;
@@ -1121,6 +1209,7 @@ export function createApp({ db } = {}) {
       currentParticipantId: id,
       cycleBoardSlug: cc.cycleBoardSlug ?? null,
       cardBoardSlug: cc.cardBoardSlug ?? null,
+      overallShowBonusPoints: cc.overallShowBonusPoints === true,
     });
     res.json({ ok: true, currentId: id, current: found });
   });
@@ -1348,6 +1437,7 @@ export function createApp({ db } = {}) {
       currentParticipantId: cc.currentParticipantId ?? null,
       cycleBoardSlug: next,
       cardBoardSlug: cc.cardBoardSlug ?? null,
+      overallShowBonusPoints: cc.overallShowBonusPoints === true,
     });
     res.json({ ok: true, cycleBoardSlug: next });
   });
@@ -1382,6 +1472,7 @@ export function createApp({ db } = {}) {
       currentParticipantId: cc.currentParticipantId ?? null,
       cycleBoardSlug: cc.cycleBoardSlug ?? null,
       cardBoardSlug: next,
+      overallShowBonusPoints: cc.overallShowBonusPoints === true,
     });
     res.json({ ok: true, cardBoardSlug: next });
   });
@@ -1516,6 +1607,58 @@ export function createApp({ db } = {}) {
     }
   });
 
+  app.put('/api/admin/competitions/:competitionSlug/overall-show-bonus', adminMw, async (req, res) => {
+    const slug = ensureKnownSlug(req, res); if (!slug) return;
+    const raw = req.body?.show;
+    if (typeof raw !== 'boolean') {
+      res.status(400).json({ error: 'show must be a boolean' });
+      return;
+    }
+    try {
+      const current = await readCompetitionState(competitionDir(slug));
+      await writeCompetitionState(competitionDir(slug), {
+        ...current,
+        overallShowBonusPoints: raw,
+      });
+      const cc = getCompCache(slug);
+      cc.overallShowBonusPoints = raw;
+      res.json({ ok: true, overallShowBonusPoints: raw });
+    } catch (e) {
+      res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
+  app.put('/api/admin/competitions/:competitionSlug/members/:userId/bonus-points', adminMw, (req, res) => {
+    const slug = ensureKnownSlug(req, res); if (!slug) return;
+    const userId = Number(req.params.userId);
+    if (!Number.isInteger(userId) || userId <= 0) {
+      res.status(400).json({ error: 'userId must be a positive integer' });
+      return;
+    }
+    const raw = req.body?.bonusPoints;
+    const bonus = typeof raw === 'number' ? raw : Number(raw);
+    if (!Number.isFinite(bonus)) {
+      res.status(400).json({ error: 'bonusPoints must be a finite number' });
+      return;
+    }
+    try {
+      setMemberBonusPoints(db, slug, userId, bonus);
+      res.json({ ok: true, bonusPoints: bonus });
+    } catch (e) {
+      res.status(400).json({ error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
+  app.get('/api/admin/competitions/:competitionSlug/members-bonus', adminMw, (req, res) => {
+    const slug = ensureKnownSlug(req, res); if (!slug) return;
+    try {
+      const members = listMembersWithBonus(db, slug);
+      res.json({ members });
+    } catch (e) {
+      res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
   app.use('/api/admin/competitions/:competitionSlug/native-tasks', adminMw, createNativeTasksAdminRouter({ db }));
   app.use('/api/competitions/:competitionSlug/native-tasks', createNativeTasksPublicRouter({ db }));
   app.use('/api/competitions/:competitionSlug/native-tasks/:taskSlug/submissions', createSubmissionsPublicRouter({ db }));
@@ -1547,6 +1690,7 @@ export async function hydrateFromSnapshots() {
       merged.currentParticipantId = state.currentParticipantId;
       merged.cycleBoardSlug = state.cycleBoardSlug;
       merged.cardBoardSlug = state.cardBoardSlug;
+      merged.overallShowBonusPoints = state.overallShowBonusPoints === true;
     } catch {}
     try {
       merged.participants = await loadParticipantsFor(c.slug);

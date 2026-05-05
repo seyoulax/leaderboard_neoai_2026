@@ -11,12 +11,13 @@ function normalize(list) {
     out.achievements = Array.isArray(p?.achievements)
       ? p.achievements.filter((a) => typeof a === 'string')
       : [];
+    out.bonusPoints = Number.isFinite(Number(p?.bonusPoints)) ? Number(p.bonusPoints) : 0;
     return out;
   });
 }
 
 function emptyParticipant() {
-  return { id: '', name: '', kaggleId: '', photo: '', role: 'Участник', city: '', grade: '', achievements: [], bio: '' };
+  return { id: '', name: '', kaggleId: '', photo: '', role: 'Участник', city: '', grade: '', achievements: [], bio: '', bonusPoints: 0 };
 }
 
 function slugifyName(name) {
@@ -140,6 +141,7 @@ export default function AdminParticipantsPage() {
         grade: p.grade.trim(),
         bio: p.bio,
         achievements: p.achievements.map((a) => a.trim()).filter(Boolean),
+        bonusPoints: Number(p.bonusPoints) || 0,
       }));
       const r = await saveAdminParticipants(competitionSlug, cleaned);
       const list = normalize(cleaned);
@@ -272,6 +274,16 @@ export default function AdminParticipantsPage() {
                   value={p.kaggleId}
                   onChange={(e) => update(idx, { kaggleId: e.target.value })}
                   placeholder="kaggleId"
+                />
+                <input
+                  className="control-input"
+                  style={{ flex: '0 0 90px' }}
+                  type="number"
+                  step="1"
+                  value={p.bonusPoints ?? 0}
+                  onChange={(e) => update(idx, { bonusPoints: Number(e.target.value) || 0 })}
+                  placeholder="Бонус"
+                  title="Бонусные баллы"
                 />
                 <input
                   className="control-input"

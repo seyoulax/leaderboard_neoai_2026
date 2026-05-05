@@ -176,6 +176,24 @@ export async function saveAdminParticipants(slug, participants) {
   });
 }
 
+export async function setAdminOverallShowBonus(slug, show) {
+  return adminFetch(`${adminCompBase(slug)}/overall-show-bonus`, {
+    method: 'PUT',
+    body: JSON.stringify({ show }),
+  });
+}
+
+export async function setAdminMemberBonus(slug, userId, bonusPoints) {
+  return adminFetch(`${adminCompBase(slug)}/members/${encodeURIComponent(userId)}/bonus-points`, {
+    method: 'PUT',
+    body: JSON.stringify({ bonusPoints }),
+  });
+}
+
+export async function getAdminMembersBonus(slug) {
+  return adminFetch(`${adminCompBase(slug)}/members-bonus`);
+}
+
 export async function getAdminParticipantGroups(slug) {
   return adminFetch(`${adminCompBase(slug)}/participant-groups`);
 }
