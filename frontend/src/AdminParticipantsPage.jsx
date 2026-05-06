@@ -12,12 +12,16 @@ function normalize(list) {
       ? p.achievements.filter((a) => typeof a === 'string')
       : [];
     out.bonusPoints = Number.isFinite(Number(p?.bonusPoints)) ? Number(p.bonusPoints) : 0;
+    // Extra kaggle accounts beyond the primary `kaggleId` (multi-account participants).
+    out.kaggleIds = Array.isArray(p?.kaggleIds)
+      ? p.kaggleIds.filter((s) => typeof s === 'string').map((s) => s.trim()).filter(Boolean)
+      : [];
     return out;
   });
 }
 
 function emptyParticipant() {
-  return { id: '', name: '', kaggleId: '', photo: '', role: 'Участник', city: '', grade: '', achievements: [], bio: '', bonusPoints: 0 };
+  return { id: '', name: '', kaggleId: '', kaggleIds: [], photo: '', role: 'Участник', city: '', grade: '', achievements: [], bio: '', bonusPoints: 0 };
 }
 
 function slugifyName(name) {
@@ -142,6 +146,7 @@ export default function AdminParticipantsPage() {
         bio: p.bio,
         achievements: p.achievements.map((a) => a.trim()).filter(Boolean),
         bonusPoints: Number(p.bonusPoints) || 0,
+        kaggleIds: (Array.isArray(p.kaggleIds) ? p.kaggleIds : []).map((s) => String(s).trim()).filter(Boolean),
       }));
       const r = await saveAdminParticipants(competitionSlug, cleaned);
       const list = normalize(cleaned);
@@ -350,6 +355,17 @@ export default function AdminParticipantsPage() {
                       />
                     </label>
                   </div>
+
+                  <label className="admin-pp-textfield">
+                    <span>дополнительные kaggleIds <span className="muted" style={{ fontSize: 11 }}>(если у участника несколько аккаунтов на каггле — по одному в строке; основной указан выше)</span></span>
+                    <textarea
+                      className="admin-pp-textarea"
+                      rows={Math.max(2, p.kaggleIds.length + 1)}
+                      value={p.kaggleIds.join('\n')}
+                      onChange={(e) => update(idx, { kaggleIds: e.target.value.split('\n') })}
+                      placeholder="alt-account-1&#10;alt-account-2"
+                    />
+                  </label>
 
                   <label className="admin-pp-textfield">
                     <span>achievements <span className="muted" style={{ fontSize: 11 }}>(по одному в строке, формат «Олимпиада: Результат»)</span></span>

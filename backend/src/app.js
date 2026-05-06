@@ -40,7 +40,7 @@ import {
 import { buildNativeLeaderboard } from './scoring/nativeLeaderboard.js';
 import { makeSnapshotCache } from './scoring/snapshotCache.js';
 import { setOnScoredCallback } from './scoring/worker.js';
-import { applyBonusToOverall } from './leaderboardBonus.js';
+import { applyBonusToOverall, applyMultiplierAndBonus } from './leaderboardBonus.js';
 import {
   setBonusPoints as setMemberBonusPoints,
   listMembersWithBonus,
@@ -225,8 +225,11 @@ function validateBoards(input, knownTaskSlugs) {
     const order = Number.isFinite(Number(board.order)) ? Number(board.order) : 0;
     const visible = board.visible !== false;
     const showBonusPoints = Boolean(board.showBonusPoints);
+    const scoreMultiplier = typeof board.scoreMultiplier === 'string'
+      ? board.scoreMultiplier
+      : '';
 
-    return { slug, title, taskSlugs: cleanTaskSlugs, visible, order, showBonusPoints };
+    return { slug, title, taskSlugs: cleanTaskSlugs, visible, order, showBonusPoints, scoreMultiplier };
   });
 }
 
@@ -503,23 +506,50 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// Collect every kaggle nickname declared for this participant (legacy
+// `kaggleId` + new `kaggleIds: string[]`), normalized lowercase, deduped.
+function collectParticipantKaggleIds(p) {
+  if (!p) return [];
+  const out = new Set();
+  const add = (raw) => {
+    if (typeof raw !== 'string') return;
+    const s = raw.trim().toLowerCase();
+    if (s) out.add(s);
+  };
+  add(p.kaggleId);
+  if (Array.isArray(p.kaggleIds)) {
+    for (const id of p.kaggleIds) add(id);
+  }
+  return [...out];
+}
+
 function buildOursKaggleSet(list) {
   const set = new Set();
   for (const p of list || []) {
-    const id = (p && p.kaggleId ? String(p.kaggleId) : '').trim().toLowerCase();
-    if (id) set.add(id);
+    for (const id of collectParticipantKaggleIds(p)) set.add(id);
   }
   return set;
+}
+
+// Map: lowercased kaggleId → participant.id (one participant may own many ids).
+function buildKaggleIdToParticipantIdMap(list) {
+  const m = new Map();
+  for (const p of list || []) {
+    if (!p?.id) continue;
+    for (const id of collectParticipantKaggleIds(p)) m.set(id, p.id);
+  }
+  return m;
 }
 
 function buildOursDisplayMap(list) {
   const map = new Map();
   for (const p of list || []) {
-    const id = (p && p.kaggleId ? String(p.kaggleId) : '').trim().toLowerCase();
-    if (!id) continue;
+    const ids = collectParticipantKaggleIds(p);
+    if (ids.length === 0) continue;
     const parts = (p.name || '').trim().split(/\s+/).filter(Boolean);
     const display = parts.length >= 2 ? `${parts[0]} ${parts[1]}` : (parts[0] || '');
-    if (display) map.set(id, display);
+    if (!display) continue;
+    for (const id of ids) map.set(id, display);
   }
   return map;
 }
@@ -529,18 +559,42 @@ function filterRowsByOurs(rows, oursSet) {
   return (rows || []).filter((r) => oursSet.has((r.nickname || '').toLowerCase()));
 }
 
-function projectTaskRowsToOurs(taskRows, oursSet) {
-  return taskRows.map((t) => ({ ...t, rows: filterRowsByOurs(t.rows, oursSet) }));
+// Project task rows to "ours" view, optionally merging multiple kaggle accounts
+// belonging to the same participant. When `kaggleIdToPid` is provided:
+//   - Each row's participantKey is rewritten to `participant:<participantId>`
+//     so buildLeaderboards groups all of one participant's accounts into one
+//     LB row.
+//   - If a participant scored on the same task from multiple accounts, only
+//     the row with the highest points survives (best-of).
+function projectTaskRowsToOurs(taskRows, oursSet, kaggleIdToPid) {
+  const merge = kaggleIdToPid && kaggleIdToPid.size > 0;
+  return taskRows.map((task) => {
+    let rows = filterRowsByOurs(task.rows, oursSet);
+    if (merge) {
+      const best = new Map(); // participantKey → row (highest points)
+      for (const r of rows) {
+        const nick = (r.nickname || '').toLowerCase();
+        const pid = kaggleIdToPid.get(nick);
+        if (!pid) continue;
+        const key = `participant:${pid}`;
+        const rNorm = { ...r, participantKey: key };
+        const existing = best.get(key);
+        if (!existing || (Number(r.points) || 0) > (Number(existing.points) || 0)) {
+          best.set(key, rNorm);
+        }
+      }
+      rows = [...best.values()];
+    }
+    return { ...task, rows };
+  });
 }
 
 function buildBonusByNickMap(list) {
   const map = new Map();
   for (const p of list || []) {
-    const id = (p && p.kaggleId ? String(p.kaggleId) : '').trim().toLowerCase();
-    if (!id) continue;
-    const bonus = Number(p.bonusPoints);
+    const bonus = Number(p?.bonusPoints);
     if (!Number.isFinite(bonus) || bonus === 0) continue;
-    map.set(id, bonus);
+    for (const id of collectParticipantKaggleIds(p)) map.set(id, bonus);
   }
   return map;
 }
@@ -721,13 +775,14 @@ async function refreshCompetition(slug) {
   const state = await readCompetitionState(competitionDir(slug));
   const oursSet = buildOursKaggleSet(participants);
   const oursDisplayMap = buildOursDisplayMap(participants);
+  const kaggleIdToPid = buildKaggleIdToParticipantIdMap(participants);
   const bonusByNick = buildBonusByNickMap(participants);
 
   const result = buildLeaderboards(taskRows, { variant: 'public' });
   annotateWithDeltas(result, { byTask: compCache.byTask, overall: compCache.overall });
   attachBonusPoints(result, bonusByNick);
 
-  const oursResult = buildLeaderboards(projectTaskRowsToOurs(taskRows, oursSet), { variant: 'public' });
+  const oursResult = buildLeaderboards(projectTaskRowsToOurs(taskRows, oursSet, kaggleIdToPid), { variant: 'public' });
   applyDisplayNames(oursResult, oursDisplayMap);
   annotateWithDeltas(oursResult, { byTask: compCache.oursByTask, overall: compCache.oursOverall });
   attachBonusPoints(oursResult, bonusByNick, oursDisplayMap);
@@ -759,7 +814,7 @@ async function refreshCompetition(slug) {
   annotateWithDeltas(privateResult, { byTask: compCache.privateByTask, overall: compCache.privateOverall });
   attachBonusPoints(privateResult, bonusByNick);
 
-  const oursPrivateResult = buildLeaderboards(projectTaskRowsToOurs(privateTaskRows, oursSet), { variant: 'private' });
+  const oursPrivateResult = buildLeaderboards(projectTaskRowsToOurs(privateTaskRows, oursSet, kaggleIdToPid), { variant: 'private' });
   applyDisplayNames(oursPrivateResult, oursDisplayMap);
   annotateWithDeltas(oursPrivateResult, {
     byTask: compCache.oursPrivateByTask,
@@ -774,14 +829,17 @@ async function refreshCompetition(slug) {
   const groupsMeta = [];
   for (const g of groups) {
     const groupSet = new Set(g.kaggleIds.map((s) => s.trim().toLowerCase()).filter(Boolean));
-    const pub = buildLeaderboards(projectTaskRowsToOurs(taskRows, groupSet), { variant: 'public' });
+    // Within a group, also merge multi-account participants whose ids are in groupSet.
+    const groupKaggleIdToPid = new Map();
+    for (const [id, pid] of kaggleIdToPid) if (groupSet.has(id)) groupKaggleIdToPid.set(id, pid);
+    const pub = buildLeaderboards(projectTaskRowsToOurs(taskRows, groupSet, groupKaggleIdToPid), { variant: 'public' });
     applyDisplayNames(pub, oursDisplayMap);
     annotateWithDeltas(pub, {
       byTask: prevGroupsResults[g.slug]?.byTask || {},
       overall: prevGroupsResults[g.slug]?.overall || [],
     });
     attachBonusPoints(pub, bonusByNick, oursDisplayMap);
-    const priv = buildLeaderboards(projectTaskRowsToOurs(privateTaskRows, groupSet), { variant: 'private' });
+    const priv = buildLeaderboards(projectTaskRowsToOurs(privateTaskRows, groupSet, groupKaggleIdToPid), { variant: 'private' });
     applyDisplayNames(priv, oursDisplayMap);
     annotateWithDeltas(priv, {
       byTask: prevGroupsResults[g.slug]?.privateByTask || {},
@@ -816,6 +874,7 @@ async function refreshCompetition(slug) {
     cycleBoardSlug: state.cycleBoardSlug,
     cardBoardSlug: state.cardBoardSlug,
     overallShowBonusPoints: state.overallShowBonusPoints === true,
+    overallScoreMultiplier: typeof state.overallScoreMultiplier === 'string' ? state.overallScoreMultiplier : '',
     hideLeaderboards: state.hideLeaderboards === true,
     errors,
   };
@@ -998,15 +1057,10 @@ export function createApp({ db } = {}) {
       const privateTaskSlugs = Object.keys(priv.byTask).filter((slug) => priv.byTask[slug].entries.length > 0);
       const state = await readCompetitionState(competitionDir(meta.slug));
       const showBonus = state.overallShowBonusPoints === true;
-      // snapshotCache.get returns the stored snapshot directly (no clone on
-      // read), so we structuredClone before mutating to avoid poisoning the
-      // cache. priv is freshly built each request — safe to mutate.
-      let pubOverall = pub.overall;
-      let privOverall = priv.overall;
-      if (showBonus) {
-        pubOverall = applyBonusToOverall(structuredClone(pubOverall));
-        privOverall = applyBonusToOverall(privOverall);
-      }
+      const k = state.overallScoreMultiplier || '';
+      // Always clone before mutating snapshot.
+      let pubOverall = applyMultiplierAndBonus(structuredClone(pub.overall), k, showBonus);
+      let privOverall = applyMultiplierAndBonus(priv.overall, k, showBonus);
       res.json({
         updatedAt: new Date().toISOString(),
         tasks: pub.tasks,
@@ -1021,6 +1075,7 @@ export function createApp({ db } = {}) {
         oursPrivateOverall: privOverall,
         oursPrivateByTask: priv.byTask,
         overallShowBonusPoints: showBonus,
+        overallScoreMultiplier: k,
         hideLeaderboards: state.hideLeaderboards === true,
         errors: [],
       });
@@ -1028,29 +1083,22 @@ export function createApp({ db } = {}) {
     }
     const cc = cache.byCompetition.get(meta.slug) || emptyCompetitionCache();
     const showBonus = cc.overallShowBonusPoints === true;
+    const k = cc.overallScoreMultiplier || '';
     // Always clone overall arrays before mutating: the cache is shared across
     // requests and a sweep may be in flight.
     const cloneOverall = (arr) => structuredClone(arr || []);
-    let overall = cloneOverall(cc.overall);
-    let privateOverall = cloneOverall(cc.privateOverall);
-    let oursOverall = cloneOverall(cc.oursOverall);
-    let oursPrivateOverall = cloneOverall(cc.oursPrivateOverall);
-    let groupsResults = cc.groupsResults || {};
-    if (showBonus) {
-      applyBonusToOverall(overall);
-      applyBonusToOverall(privateOverall);
-      applyBonusToOverall(oursOverall);
-      applyBonusToOverall(oursPrivateOverall);
-      const cloned = {};
-      for (const slug of Object.keys(groupsResults)) {
-        const gr = groupsResults[slug] || {};
-        cloned[slug] = {
-          ...gr,
-          overall: applyBonusToOverall(cloneOverall(gr.overall)),
-          privateOverall: applyBonusToOverall(cloneOverall(gr.privateOverall)),
-        };
-      }
-      groupsResults = cloned;
+    let overall = applyMultiplierAndBonus(cloneOverall(cc.overall), k, showBonus);
+    let privateOverall = applyMultiplierAndBonus(cloneOverall(cc.privateOverall), k, showBonus);
+    let oursOverall = applyMultiplierAndBonus(cloneOverall(cc.oursOverall), k, showBonus);
+    let oursPrivateOverall = applyMultiplierAndBonus(cloneOverall(cc.oursPrivateOverall), k, showBonus);
+    let groupsResults = {};
+    for (const slug of Object.keys(cc.groupsResults || {})) {
+      const gr = cc.groupsResults[slug] || {};
+      groupsResults[slug] = {
+        ...gr,
+        overall: applyMultiplierAndBonus(cloneOverall(gr.overall), k, showBonus),
+        privateOverall: applyMultiplierAndBonus(cloneOverall(gr.privateOverall), k, showBonus),
+      };
     }
     res.json({
       updatedAt: cc.updatedAt,
@@ -1214,8 +1262,8 @@ export function createApp({ db } = {}) {
         cycleBoardSlug: cc.cycleBoardSlug ?? null,
         cardBoardSlug: cc.cardBoardSlug ?? null,
         overallShowBonusPoints: cc.overallShowBonusPoints === true,
-      hideLeaderboards: cc.hideLeaderboards === true,
         hideLeaderboards: cc.hideLeaderboards === true,
+        overallScoreMultiplier: cc.overallScoreMultiplier || '',
       });
       res.json({ ok: true, currentId: null, current: null });
       return;
@@ -1241,6 +1289,7 @@ export function createApp({ db } = {}) {
       cardBoardSlug: cc.cardBoardSlug ?? null,
       overallShowBonusPoints: cc.overallShowBonusPoints === true,
       hideLeaderboards: cc.hideLeaderboards === true,
+      overallScoreMultiplier: cc.overallScoreMultiplier || '',
     });
     res.json({ ok: true, currentId: id, current: found });
   });
@@ -1470,6 +1519,7 @@ export function createApp({ db } = {}) {
       cardBoardSlug: cc.cardBoardSlug ?? null,
       overallShowBonusPoints: cc.overallShowBonusPoints === true,
       hideLeaderboards: cc.hideLeaderboards === true,
+      overallScoreMultiplier: cc.overallScoreMultiplier || '',
     });
     res.json({ ok: true, cycleBoardSlug: next });
   });
@@ -1506,6 +1556,7 @@ export function createApp({ db } = {}) {
       cardBoardSlug: next,
       overallShowBonusPoints: cc.overallShowBonusPoints === true,
       hideLeaderboards: cc.hideLeaderboards === true,
+      overallScoreMultiplier: cc.overallScoreMultiplier || '',
     });
     res.json({ ok: true, cardBoardSlug: next });
   });
@@ -1656,6 +1707,27 @@ export function createApp({ db } = {}) {
       const cc = getCompCache(slug);
       cc.overallShowBonusPoints = raw;
       res.json({ ok: true, overallShowBonusPoints: raw });
+    } catch (e) {
+      res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
+    }
+  });
+
+  app.put('/api/admin/competitions/:competitionSlug/overall-multiplier', adminMw, async (req, res) => {
+    const slug = ensureKnownSlug(req, res); if (!slug) return;
+    const raw = req.body?.multiplier;
+    if (raw !== '' && typeof raw !== 'string') {
+      res.status(400).json({ error: 'multiplier must be a string' });
+      return;
+    }
+    try {
+      const current = await readCompetitionState(competitionDir(slug));
+      await writeCompetitionState(competitionDir(slug), {
+        ...current,
+        overallScoreMultiplier: raw,
+      });
+      const cc = getCompCache(slug);
+      cc.overallScoreMultiplier = raw;
+      res.json({ ok: true, overallScoreMultiplier: raw });
     } catch (e) {
       res.status(500).json({ error: e instanceof Error ? e.message : String(e) });
     }

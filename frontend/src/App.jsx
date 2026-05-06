@@ -17,6 +17,7 @@ import {
   saveAdminBoards,
   setAdminOverallShowBonus,
   setAdminHideLeaderboards,
+  setAdminOverallMultiplier,
   getCategories,
   getAdminCategories,
   saveAdminCategories,
@@ -286,6 +287,21 @@ function themeProps(theme) {
   return { style, className };
 }
 
+function parseMultiplier(input) {
+  if (input === null || input === undefined) return 1;
+  const s = String(input).trim();
+  if (!s) return 1;
+  const m = /^(-?\d+(?:\.\d+)?)\s*\/\s*(-?\d+(?:\.\d+)?)$/.exec(s);
+  if (m) {
+    const num = Number(m[1]);
+    const den = Number(m[2]);
+    if (!Number.isFinite(num) || !Number.isFinite(den) || den === 0) return 1;
+    return num / den;
+  }
+  const dec = Number(s);
+  return Number.isFinite(dec) ? dec : 1;
+}
+
 function hexToRgba(hex, alpha) {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
   if (!m) return `rgba(125, 95, 255, ${alpha})`;
@@ -472,6 +488,7 @@ function OverallPage() {
     const headers = [
       '#', 'Nickname', 'Team Name',
       'Total points',
+      ...(showBonus ? ['Tasks only'] : []),
       ...data.tasks.map((t) => t.title),
       ...(showBonus ? ['Бонус'] : []),
     ];
@@ -480,6 +497,7 @@ function OverallPage() {
       row.nickname || '',
       row.teamName || '',
       row.totalPoints.toFixed(2),
+      ...(showBonus ? [(row.multipliedTasksPoints != null ? row.multipliedTasksPoints : 0).toFixed(2)] : []),
       ...data.tasks.map((t) => {
         const p = row.tasks?.[t.slug]?.points;
         return p !== undefined ? p.toFixed(2) : (isPrivate ? '0.00' : '');
@@ -515,6 +533,7 @@ function OverallPage() {
               <th>{t('col.nickname')}</th>
               <th>{t('col.team')}</th>
               <th>{t('col.total')}</th>
+              {showBonus && <th>{t('col.tasks_only')}</th>}
               {data.tasks.map((task) => (
                 <th key={task.slug}>{task.title}</th>
               ))}
@@ -528,6 +547,7 @@ function OverallPage() {
                 <td className="team">{row.nickname || '-'}</td>
                 <td>{row.teamName || '-'}</td>
                 <DeltaCell value={row.totalPoints} prev={row.previousTotalPoints} />
+                {showBonus && <td className="mono">{(row.multipliedTasksPoints != null ? row.multipliedTasksPoints : (row.tasksPoints != null ? row.tasksPoints : 0)).toFixed(2)}</td>}
                 {data.tasks.map((task) => {
                   const cell = row.tasks?.[task.slug];
                   if (!cell && isPrivate) {
@@ -586,6 +606,7 @@ function CyclingOverallPage() {
     const headers = [
       '#', 'Nickname', 'Team Name',
       'Total points',
+      ...(showBonus ? ['Tasks only'] : []),
       ...data.tasks.map((t) => t.title),
       ...(showBonus ? ['Бонус'] : []),
     ];
@@ -594,6 +615,7 @@ function CyclingOverallPage() {
       row.nickname || '',
       row.teamName || '',
       row.totalPoints.toFixed(2),
+      ...(showBonus ? [(row.multipliedTasksPoints != null ? row.multipliedTasksPoints : 0).toFixed(2)] : []),
       ...data.tasks.map((t) => {
         const p = row.tasks?.[t.slug]?.points;
         return p !== undefined ? p.toFixed(2) : '';
@@ -627,6 +649,7 @@ function CyclingOverallPage() {
               <th>{t('col.nickname')}</th>
               <th>{t('col.team')}</th>
               <th>{t('col.total')}</th>
+              {showBonus && <th>{t('col.tasks_only')}</th>}
               {data.tasks.map((task) => (
                 <th key={task.slug}>{task.title}</th>
               ))}
@@ -640,6 +663,7 @@ function CyclingOverallPage() {
                 <td className="team">{row.nickname || '-'}</td>
                 <td>{row.teamName || '-'}</td>
                 <DeltaCell value={row.totalPoints} prev={row.previousTotalPoints} />
+                {showBonus && <td className="mono">{(row.multipliedTasksPoints != null ? row.multipliedTasksPoints : (row.tasksPoints != null ? row.tasksPoints : 0)).toFixed(2)}</td>}
                 {data.tasks.map((task) => {
                   const cell = row.tasks?.[task.slug];
                   return (
@@ -684,26 +708,28 @@ function BoardPage({ boards }) {
   const groupTasks = data.tasks.filter((t) => presentSlugs.includes(t.slug));
 
   const showBonus = board.showBonusPoints === true;
+  const k = parseMultiplier(board.scoreMultiplier);
 
   const enriched = overallSrc
     .map((row) => {
-      let total = presentSlugs.reduce((sum, slug) => sum + (row.tasks?.[slug]?.points ?? 0), 0);
+      const rawTasksSum = presentSlugs.reduce((sum, slug) => sum + (row.tasks?.[slug]?.points ?? 0), 0);
       const hasAnyPrev = presentSlugs.some((slug) => row.tasks?.[slug]?.previousPoints != null);
-      let prevTotal = hasAnyPrev
+      const rawPrevSum = hasAnyPrev
         ? presentSlugs.reduce(
             (sum, slug) => sum + (row.tasks?.[slug]?.previousPoints ?? row.tasks?.[slug]?.points ?? 0),
             0
           )
         : null;
-      if (showBonus) {
-        const bonus = Number(row.bonusPoints) || 0;
-        total += bonus;
-        if (prevTotal != null) prevTotal += bonus;
-      }
+      const multiTasks = rawTasksSum * k;
+      const multiPrev = rawPrevSum != null ? rawPrevSum * k : null;
+      const bonus = Number(row.bonusPoints) || 0;
+      const total = multiTasks + (showBonus ? bonus : 0);
+      const prevTotal = multiPrev != null ? multiPrev + (showBonus ? bonus : 0) : null;
       return {
         ...row,
         groupPoints: Number(total.toFixed(6)),
         previousGroupPoints: prevTotal != null ? Number(prevTotal.toFixed(6)) : null,
+        tasksGroupPoints: Number(multiTasks.toFixed(6)),
       };
     })
     .filter((row) => presentSlugs.some((slug) => row.tasks?.[slug] !== undefined));
@@ -734,6 +760,7 @@ function BoardPage({ boards }) {
     const headers = [
       '#', 'Nickname', 'Team Name',
       'Board points',
+      ...(showBonus ? ['Tasks only'] : []),
       ...groupTasks.map((t) => t.title),
       ...(showBonus ? ['Бонус'] : []),
     ];
@@ -742,6 +769,7 @@ function BoardPage({ boards }) {
       row.nickname || '',
       row.teamName || '',
       row.groupPoints.toFixed(2),
+      ...(showBonus ? [(row.tasksGroupPoints != null ? row.tasksGroupPoints : 0).toFixed(2)] : []),
       ...groupTasks.map((t) => {
         const p = row.tasks?.[t.slug]?.points;
         return p !== undefined ? p.toFixed(2) : (isPrivate ? '0.00' : '');
@@ -777,6 +805,7 @@ function BoardPage({ boards }) {
               <th>{t('col.nickname')}</th>
               <th>{t('col.team')}</th>
               <th>{t('col.board_total')}</th>
+              {showBonus && <th>{t('col.tasks_only')}</th>}
               {groupTasks.map((task) => (
                 <th key={task.slug}>{task.title}</th>
               ))}
@@ -790,6 +819,7 @@ function BoardPage({ boards }) {
                 <td className="team">{row.nickname || '-'}</td>
                 <td>{row.teamName || '-'}</td>
                 <DeltaCell value={row.groupPoints} prev={row.previousGroupPoints} />
+                {showBonus && <td className="mono">{(row.tasksGroupPoints != null ? row.tasksGroupPoints : 0).toFixed(2)}</td>}
                 {groupTasks.map((task) => {
                   const cell = row.tasks?.[task.slug];
                   if (!cell && isPrivate) {
@@ -1871,6 +1901,9 @@ function AdminBoardsPage() {
   const [overallToggleSaving, setOverallToggleSaving] = useState(false);
   const [hideLeaderboards, setHideLeaderboards] = useState(false);
   const [hideToggleSaving, setHideToggleSaving] = useState(false);
+  const [overallMultiplier, setOverallMultiplier] = useState('');
+  const [overallMultiplierOriginal, setOverallMultiplierOriginal] = useState('');
+  const [overallMultiplierSaving, setOverallMultiplierSaving] = useState(false);
 
   function normalize(rawList, knownSet) {
     return (rawList || []).map((b) => ({
@@ -1882,6 +1915,7 @@ function AdminBoardsPage() {
       visible: b.visible !== false,
       order: b.order ?? 0,
       showBonusPoints: b.showBonusPoints === true,
+      scoreMultiplier: typeof b.scoreMultiplier === 'string' ? b.scoreMultiplier : '',
     }));
   }
 
@@ -1902,6 +1936,9 @@ function AdminBoardsPage() {
       setOriginal(JSON.stringify(list));
       setOverallShowBonus(lb?.overallShowBonusPoints === true);
       setHideLeaderboards(lb?.hideLeaderboards === true);
+      const mul = typeof lb?.overallScoreMultiplier === 'string' ? lb.overallScoreMultiplier : '';
+      setOverallMultiplier(mul);
+      setOverallMultiplierOriginal(mul);
     } catch (err) {
       if (err instanceof AdminAuthError) navigate('/admin', { replace: true });
       else setError(err instanceof Error ? err.message : String(err));
@@ -1926,6 +1963,23 @@ function AdminBoardsPage() {
       else setError(err instanceof Error ? err.message : String(err));
     } finally {
       setOverallToggleSaving(false);
+    }
+  }
+
+  async function saveOverallMultiplier() {
+    setOverallMultiplierSaving(true);
+    setError(null);
+    try {
+      const r = await setAdminOverallMultiplier(competitionSlug, overallMultiplier || '');
+      const m = typeof r?.overallScoreMultiplier === 'string' ? r.overallScoreMultiplier : (overallMultiplier || '');
+      setOverallMultiplier(m);
+      setOverallMultiplierOriginal(m);
+      setSavedAt(new Date());
+    } catch (err) {
+      if (err instanceof AdminAuthError) navigate('/admin', { replace: true });
+      else setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setOverallMultiplierSaving(false);
     }
   }
 
@@ -1970,7 +2024,7 @@ function AdminBoardsPage() {
     const nextOrder = boards.reduce((m, b) => Math.max(m, b.order ?? 0), 0) + 1;
     setBoards((prev) => [
       ...prev,
-      { slug: '', title: '', taskSlugs: [], visible: true, order: nextOrder, showBonusPoints: false },
+      { slug: '', title: '', taskSlugs: [], visible: true, order: nextOrder, showBonusPoints: false, scoreMultiplier: '' },
     ]);
   }
 
@@ -2043,6 +2097,32 @@ function AdminBoardsPage() {
         </p>
       </div>
 
+      <div className="admin-bonus-toggle">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span>Коэффициент общего ЛБ:</span>
+            <input
+              className="control-input"
+              style={{ width: 110, padding: '6px 10px' }}
+              value={overallMultiplier}
+              onChange={(e) => setOverallMultiplier(e.target.value)}
+              placeholder="напр. 2/3 или 0.75"
+            />
+          </label>
+          <button
+            className="control-btn"
+            onClick={saveOverallMultiplier}
+            disabled={overallMultiplierSaving || overallMultiplier === overallMultiplierOriginal}
+          >
+            {overallMultiplierSaving ? 'Сохранение…' : 'Сохранить'}
+          </button>
+        </div>
+        <p className="muted" style={{ fontSize: 12, margin: '6px 0 0' }}>
+          Дробь («2/3») или десятичное («0.75»). Пусто = ×1. Применяется к сумме баллов
+          за задачи (бонусы НЕ умножаются). Total = tasks × k + bonus (если бонусы включены).
+        </p>
+      </div>
+
       <div className="admin-boards">
         {sorted.length === 0 ? (
           <p className="meta">Пока ни одного лидерборда. Создай первый.</p>
@@ -2092,6 +2172,16 @@ function AdminBoardsPage() {
                   type="checkbox"
                   checked={board.showBonusPoints}
                   onChange={(e) => update(idx, { showBonusPoints: e.target.checked })}
+                />
+              </label>
+              <label className="admin-field" style={{ flex: '0 0 110px' }}>
+                <span className="admin-field-label">коэф.</span>
+                <input
+                  className="control-input"
+                  value={board.scoreMultiplier || ''}
+                  onChange={(e) => update(idx, { scoreMultiplier: e.target.value })}
+                  placeholder="2/3"
+                  title="Коэффициент для баллов задач этого борда. Дробь («2/3») или число («0.75»). Пусто = ×1."
                 />
               </label>
               <button className="control-btn control-btn-ghost" onClick={() => remove(idx)}>×</button>

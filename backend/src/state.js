@@ -18,6 +18,9 @@ export async function readCompetitionState(competitionDir) {
         : null,
       overallShowBonusPoints: parsed?.overallShowBonusPoints === true,
       hideLeaderboards: parsed?.hideLeaderboards === true,
+      overallScoreMultiplier: typeof parsed?.overallScoreMultiplier === 'string'
+        ? parsed.overallScoreMultiplier
+        : '',
     };
   } catch (e) {
     if (e.code === 'ENOENT') return {
@@ -26,6 +29,7 @@ export async function readCompetitionState(competitionDir) {
       cardBoardSlug: null,
       overallShowBonusPoints: false,
       hideLeaderboards: false,
+      overallScoreMultiplier: '',
     };
     throw e;
   }
@@ -40,6 +44,9 @@ export async function writeCompetitionState(competitionDir, state) {
     cardBoardSlug: state.cardBoardSlug ?? null,
     overallShowBonusPoints: state.overallShowBonusPoints === true,
     hideLeaderboards: state.hideLeaderboards === true,
+    overallScoreMultiplier: typeof state.overallScoreMultiplier === 'string'
+      ? state.overallScoreMultiplier
+      : '',
   }, null, 2) + '\n';
   await fs.writeFile(file, body, 'utf8');
 }

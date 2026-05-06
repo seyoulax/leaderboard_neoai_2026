@@ -122,6 +122,7 @@ export const dict = {
   'col.nickname':           { ru: 'Nickname',      en: 'Nickname' },
   'col.team':               { ru: 'Team Name',     en: 'Team' },
   'col.total':              { ru: 'Total points',  en: 'Total points' },
+  'col.tasks_only':         { ru: 'Tasks only',    en: 'Tasks only' },
   'col.board_total':        { ru: 'Board points',  en: 'Board points' },
 
   // Native task page

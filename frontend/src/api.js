@@ -238,6 +238,12 @@ export async function setAdminHideLeaderboards(slug, hidden) {
   });
 }
 
+export async function setAdminOverallMultiplier(slug, multiplier) {
+  return adminFetch(`/admin/competitions/${slug}/overall-multiplier`, {
+    method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ multiplier }),
+  });
+}
+
 // ---------- Theme (global) ----------
 
 export async function getTheme() {
