@@ -19,6 +19,7 @@
 | `/competitions/<slug>/board/<b>` | Лидерборд борда |
 | `/competitions/<slug>/task/<t>` | Лидерборд задачи (kaggle) |
 | `/competitions/<slug>/native-tasks/<task>` | Публичная страница нативной задачи: markdown-описание + datasets/artifacts с auth-gated скачиванием + zip-бандлы |
+| `/competitions/<slug>/results` | Церемония оглашения результатов (live SSE) — олимпиадный reveal по итоговому private-LB |
 
 В правом верхнем углу любой страницы — `UserMenu`: «Войти / Регистрация» для анонимов; имя + «Выйти» (+ ссылка «Админка», если `role='admin'`) — для залогиненных.
 
@@ -46,6 +47,7 @@
 | `/admin/competitions/<slug>/card` | OBS-карточка (scoped) |
 | `/admin/competitions/<slug>/native-tasks` | Список нативных задач (только для `type=native`): создание/удаление |
 | `/admin/competitions/<slug>/native-tasks/<task>` | Редактор нативной задачи: метаданные + markdown с preview + scoring anchors + загрузка датасетов/артефактов/grader/ground-truth |
+| `/admin/competitions/<slug>/results` | Загрузка финального CSV + выбор группы сравнения + старт церемонии + кнопка «Следующий шаг» (SSE-пуш зрителям) + reset |
 
 ## Legacy redirects
 
@@ -83,6 +85,8 @@
 | POST | `/api/competitions/<slug>/refresh` |
 | GET | `/api/competitions/<slug>/card` |
 | POST | `/api/competitions/<slug>/card` |
+| GET | `/api/competitions/<slug>/results` (redacted reveal state — never leaks unrevealed rows / kaggleIds) |
+| GET | `/api/competitions/<slug>/results/stream` (SSE — `event: state` per stepId, heartbeat `: ping` каждые 25s) |
 
 ### Native task endpoints (публично)
 
@@ -108,6 +112,12 @@
 | GET/PUT | `/api/admin/competitions/<slug>/boards` | Boards scoped |
 | GET/PUT | `/api/admin/competitions/<slug>/participants` | Participants — bulk replace через JSON |
 | GET/PUT/DELETE | `/api/admin/competitions/<slug>/tasks/<t>/private` | Private CSV (поддерживает Kaggle all-submissions и legacy `kaggle_id,raw_score`) |
+| GET | `/api/admin/competitions/<slug>/results` | Полное состояние reveal (с rows, kaggleIds — admin-only) |
+| PUT | `/api/admin/competitions/<slug>/results/upload` | `{csv: string}` — парсит и сохраняет финальный CSV (`kaggleId, fullName, points, bonus`); 409 если церемония запущена |
+| PUT | `/api/admin/competitions/<slug>/results/settings` | `{compareGroupSlug}` — задаёт группу для сравнения «было место №X» |
+| POST | `/api/admin/competitions/<slug>/results/start` | Снимает snapshot мест из `groupsResults[<g>].overall` и переводит в фазу `revealing` |
+| POST | `/api/admin/competitions/<slug>/results/advance` | `{expectedStepId}` — следующий шаг (409 при mismatch) |
+| POST | `/api/admin/competitions/<slug>/results/reset` | Сбрасывает CSV + state файлы (idle) |
 
 JSON body limit для админских PUT — **50 MB** (нужно для больших Kaggle all-submissions CSV).
 
