@@ -53,6 +53,8 @@ import { AuthProvider, useAuth } from './auth/AuthContext.jsx';
 import { I18nProvider, LangToggle, useT } from './i18n/I18nContext.jsx';
 import { ThemeProvider } from './theme/ThemeProvider.jsx';
 import JoinButton from './competition/JoinButton.jsx';
+import ResultsRevealPage from './competition/ResultsRevealPage.jsx';
+import AdminResultsPage from './admin/AdminResultsPage.jsx';
 import AdminThemePage from './AdminThemePage';
 import LoginPage from './auth/LoginPage.jsx';
 import NativeTaskPage from './native/NativeTaskPage.jsx';
@@ -416,6 +418,9 @@ function Layout({ children, tasks, boards, categories, competitionSlug, competit
               <span className="tab-cat-chevron" aria-hidden="true">▾</span>
             </button>
           )) : null}
+          <NavLink to={`${base}/results`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>
+            Результаты
+          </NavLink>
         </nav>
       )}
 
@@ -2780,6 +2785,7 @@ function AdminShell() {
           <NavLink to={`${base}/groups`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Groups</NavLink>
           <NavLink to={`${base}/card`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Card</NavLink>
           <NavLink to={`${base}/cycle`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Cycle</NavLink>
+          <NavLink to={`${base}/results`} className={({ isActive }) => `tab ${isActive ? 'active' : ''}`}>Results</NavLink>
         </nav>
       ) : null}
       <Outlet />
@@ -2876,6 +2882,7 @@ export default function App() {
         <Route path="cycle" element={<CyclingOverallPage />} />
         <Route path="board/:slug" element={<BoardPageWrapper />} />
         <Route path="task/:slug" element={<TaskPage />} />
+        <Route path="results" element={<ResultsRevealPage />} />
       </Route>
 
       {/* Admin */}
@@ -2892,6 +2899,7 @@ export default function App() {
           <Route path="groups" element={<AdminParticipantGroupsPage />} />
           <Route path="card" element={<ControlPage />} />
           <Route path="cycle" element={<AdminCyclePage />} />
+          <Route path="results" element={<AdminResultsPage />} />
         </Route>
         <Route path="competitions/:competitionSlug/native-tasks" element={<AdminNativeTasksList />} />
         <Route path="competitions/:competitionSlug/native-tasks/:taskSlug" element={<AdminNativeTaskEdit />} />

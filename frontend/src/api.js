@@ -381,3 +381,27 @@ export const membership = {
   join: (slug) => request(`/competitions/${slug}/join`, { method: 'POST' }),
   leave: (slug) => request(`/competitions/${slug}/members/me`, { method: 'DELETE' }),
 };
+
+// ---------- Results-reveal ceremony ----------
+
+export const results = {
+  publicGet: (slug) => request(`/competitions/${slug}/results`),
+  streamUrl: (slug) => `${API_BASE}/competitions/${encodeURIComponent(slug)}/results/stream`,
+  adminGet: (slug) => adminFetch(`/admin/competitions/${slug}/results`),
+  upload: (slug, csvText) =>
+    adminFetch(`/admin/competitions/${slug}/results/upload`, {
+      method: 'PUT', body: JSON.stringify({ csv: csvText }),
+    }),
+  setSettings: (slug, compareGroupSlug) =>
+    adminFetch(`/admin/competitions/${slug}/results/settings`, {
+      method: 'PUT', body: JSON.stringify({ compareGroupSlug }),
+    }),
+  start: (slug) =>
+    adminFetch(`/admin/competitions/${slug}/results/start`, { method: 'POST', body: '{}' }),
+  advance: (slug, expectedStepId) =>
+    adminFetch(`/admin/competitions/${slug}/results/advance`, {
+      method: 'POST', body: JSON.stringify({ expectedStepId }),
+    }),
+  reset: (slug) =>
+    adminFetch(`/admin/competitions/${slug}/results/reset`, { method: 'POST' }),
+};
