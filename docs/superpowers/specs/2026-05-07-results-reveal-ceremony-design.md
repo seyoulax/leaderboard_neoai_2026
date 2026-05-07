@@ -75,8 +75,8 @@ Parser is permissive: trims, accepts both `,` and `;` as separator (auto-detect 
     }
   ],
   "skipPlan": {
-    "outsiders": [12, 10],
-    "skipped": [11, 9]
+    "outsiders": [12, 11, 10, 9],
+    "skipped": []
   },
   "cursor": {
     "stage": "idle | outsiders | batch_skipped | drum_roll | top8 | finished",
@@ -96,7 +96,8 @@ Parser is permissive: trims, accepts both `,` and `;` as separator (auto-detect 
 - `skipPlan` is computed at `start`:
   - `N = rows.length`
   - if `N <= 8`: `outsiders=[]`, `skipped=[]`, ceremony jumps straight to `drum_roll → top8` starting at `min(8, N)`.
-  - else: from `N` down to `9`, take every-other (`N, N-2, …`) → `outsiders`; the rest → `skipped`.
+  - else: every place from `N` down to `9` goes into `outsiders`; `skipped` is always `[]`. (Earlier draft used "every-other"; reverted 2026-05-08 per Danis — show all 9..N one by one for full drama.)
+- The `batch_skipped` stage is kept in the state-machine for backward-compatibility with persisted state but is no longer reached from a fresh ceremony.
 - `stepId` increments on every state mutation; client passes `expectedStepId` on advance for idempotency / out-of-order protection.
 
 ## State machine

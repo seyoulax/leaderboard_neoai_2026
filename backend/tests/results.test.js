@@ -121,23 +121,19 @@ test('computeSkipPlan N=5 (≤8)', () => {
 test('computeSkipPlan N=8 (≤8)', () => {
   assert.deepEqual(computeSkipPlan(8), { outsiders: [], skipped: [] });
 });
-test('computeSkipPlan N=9: outsider=9, skipped=[]', () => {
-  // From 9 down to 9, only one place. (N-r)%2==0 → r=9 visible.
+test('computeSkipPlan N=9', () => {
   assert.deepEqual(computeSkipPlan(9), { outsiders: [9], skipped: [] });
 });
 test('computeSkipPlan N=10', () => {
-  // r in 10..9: 10 visible (N-r=0), 9 skipped (N-r=1).
-  assert.deepEqual(computeSkipPlan(10), { outsiders: [10], skipped: [9] });
+  assert.deepEqual(computeSkipPlan(10), { outsiders: [10, 9], skipped: [] });
 });
 test('computeSkipPlan N=11', () => {
-  // r in 11..9: 11 visible (0), 10 skipped (1), 9 visible (2).
-  assert.deepEqual(computeSkipPlan(11), { outsiders: [11, 9], skipped: [10] });
+  assert.deepEqual(computeSkipPlan(11), { outsiders: [11, 10, 9], skipped: [] });
 });
 test('computeSkipPlan N=30', () => {
   const plan = computeSkipPlan(30);
-  // visible: 30,28,...,10 ; skipped: 29,27,...,9
-  assert.deepEqual(plan.outsiders, [30, 28, 26, 24, 22, 20, 18, 16, 14, 12, 10]);
-  assert.deepEqual(plan.skipped, [29, 27, 25, 23, 21, 19, 17, 15, 13, 11, 9]);
+  assert.deepEqual(plan.outsiders, [30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9]);
+  assert.deepEqual(plan.skipped, []);
 });
 
 // ---------- computePublicPlaces ----------
@@ -196,15 +192,15 @@ test('reduceSetSettings: stores compareGroupSlug', () => {
   assert.equal(s2.compareGroupSlug, 'philippines');
 });
 
-test('reduceStart: N>8 enters OUTSIDERS', () => {
+test('reduceStart: N>8 enters OUTSIDERS with all places N..9', () => {
   let s = reduceUpload(initialState(), makeRows(10));
   s = reduceSetSettings(s, { compareGroupSlug: 'g' });
   const s2 = reduceStart(s, { groupOverall: [] });
   assert.equal(s2.phase, PHASE.REVEALING);
   assert.equal(s2.cursor.stage, STAGE.OUTSIDERS);
   assert.equal(s2.cursor.outsidersIdx, 0);
-  assert.deepEqual(s2.skipPlan.outsiders, [10]);
-  assert.deepEqual(s2.skipPlan.skipped, [9]);
+  assert.deepEqual(s2.skipPlan.outsiders, [10, 9]);
+  assert.deepEqual(s2.skipPlan.skipped, []);
 });
 
 test('reduceStart: N≤8 jumps to DRUM_ROLL', () => {
@@ -219,26 +215,22 @@ test('reduceStart: requires compareGroupSlug', () => {
   assert.throws(() => reduceStart(s, { groupOverall: [] }), /compareGroupSlug/);
 });
 
-test('reduceAdvance: full ceremony for N=10', () => {
+test('reduceAdvance: full ceremony for N=10 (outsiders 10,9; no batch_skipped)', () => {
   let s = reduceUpload(initialState(), makeRows(10));
   s = reduceSetSettings(s, { compareGroupSlug: 'g' });
   s = reduceStart(s, { groupOverall: [] });
-  // Initial: OUTSIDERS, idx=0 (rank 10 displayed)
+  // OUTSIDERS, idx=0 → rank 10
   assert.equal(s.cursor.stage, STAGE.OUTSIDERS);
-  // advance: outsiders complete (only 1 outsider) → BATCH_SKIPPED
   s = reduceAdvance(s);
-  assert.equal(s.cursor.stage, STAGE.BATCH_SKIPPED);
-  // advance: → DRUM_ROLL
+  // idx=1 → rank 9
+  assert.equal(s.cursor.stage, STAGE.OUTSIDERS);
+  assert.equal(s.cursor.outsidersIdx, 1);
   s = reduceAdvance(s);
+  // outsiders done; skipped is empty → DRUM_ROLL
   assert.equal(s.cursor.stage, STAGE.DRUM_ROLL);
-  // advance: → TOP8 starting at rank 8, step place
   s = reduceAdvance(s);
   assert.equal(s.cursor.stage, STAGE.TOP8);
   assert.equal(s.cursor.top8Rank, 8);
-  assert.equal(s.cursor.top8Step, 'place');
-  // walk through 8 ranks × 6 steps (place→done = 5 advances per rank, +1 to next rank's place = 6 total per rank except final)
-  // Actually: per rank we do 5 advances (place→dpublic→bonus→points→name→done), then 1 more to cross to next rank.
-  // For 8 ranks → 8*6 = 48 advances should land us at FINISHED.
   for (let i = 0; i < 8 * 6; i++) {
     s = reduceAdvance(s);
   }
@@ -260,19 +252,16 @@ test('reduceAdvance: N=4 (no outsiders) full walk', () => {
   assert.equal(s.phase, PHASE.FINISHED);
 });
 
-test('reduceAdvance: N=11 outsiders + skipped', () => {
+test('reduceAdvance: N=11 walks all outsiders 11→10→9 then drum_roll', () => {
   let s = reduceUpload(initialState(), makeRows(11));
   s = reduceSetSettings(s, { compareGroupSlug: 'g' });
   s = reduceStart(s, { groupOverall: [] });
-  // outsiders=[11,9], skipped=[10]
-  assert.deepEqual(s.skipPlan.outsiders, [11, 9]);
-  assert.equal(s.cursor.outsidersIdx, 0); // rank 11 shown
-  s = reduceAdvance(s);
-  assert.equal(s.cursor.outsidersIdx, 1); // rank 9 shown
-  s = reduceAdvance(s);
-  assert.equal(s.cursor.stage, STAGE.BATCH_SKIPPED);
-  s = reduceAdvance(s);
-  assert.equal(s.cursor.stage, STAGE.DRUM_ROLL);
+  assert.deepEqual(s.skipPlan.outsiders, [11, 10, 9]);
+  assert.deepEqual(s.skipPlan.skipped, []);
+  assert.equal(s.cursor.outsidersIdx, 0);
+  s = reduceAdvance(s); assert.equal(s.cursor.outsidersIdx, 1);
+  s = reduceAdvance(s); assert.equal(s.cursor.outsidersIdx, 2);
+  s = reduceAdvance(s); assert.equal(s.cursor.stage, STAGE.DRUM_ROLL);
 });
 
 test('reduceAdvance: at FINISHED throws NOOP', () => {
@@ -317,28 +306,18 @@ test('redact during OUTSIDERS shows current+previous outsiders only', () => {
   let s = reduceUpload(initialState(), makeRows(11));
   s = reduceSetSettings(s, { compareGroupSlug: 'g' });
   s = reduceStart(s, { groupOverall: [] });
-  // outsiders=[11,9]. idx=0 → rank 11 shown.
+  // outsiders=[11,10,9]. idx=0 → rank 11.
   let r = redact(s);
   assert.equal(r.revealedRows.length, 1);
   assert.equal(r.revealedRows[0].rank, 11);
-  assert.equal(r.skippedRows, null); // still hidden
   assert.equal(r.currentTop8, null);
 
-  s = reduceAdvance(s); // idx=1 → rank 9 shown
+  s = reduceAdvance(s); // idx=1 → rank 10
   r = redact(s);
   assert.equal(r.revealedRows.length, 2);
-  assert.equal(r.skippedRows, null);
-});
-
-test('redact during BATCH_SKIPPED shows skipped rows', () => {
-  let s = reduceUpload(initialState(), makeRows(11));
-  s = reduceSetSettings(s, { compareGroupSlug: 'g' });
-  s = reduceStart(s, { groupOverall: [] });
-  s = reduceAdvance(s); // rank 9 shown
-  s = reduceAdvance(s); // → BATCH_SKIPPED
-  const r = redact(s);
-  assert.equal(r.skippedRows.length, 1);
-  assert.equal(r.skippedRows[0].rank, 10);
+  s = reduceAdvance(s); // idx=2 → rank 9
+  r = redact(s);
+  assert.equal(r.revealedRows.length, 3);
 });
 
 test('redact during TOP8 partial reveal: place step exposes only rank', () => {

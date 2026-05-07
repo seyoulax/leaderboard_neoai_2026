@@ -151,13 +151,8 @@ export function parseResultsCsv(text) {
 export function computeSkipPlan(N) {
   if (N <= 8) return { outsiders: [], skipped: [] };
   const outsiders = [];
-  const skipped = [];
-  for (let r = N; r >= 9; r--) {
-    // Visible (one-by-one): even step from N. r in (N, N-2, ...)
-    if ((N - r) % 2 === 0) outsiders.push(r);
-    else skipped.push(r);
-  }
-  return { outsiders, skipped };
+  for (let r = N; r >= 9; r--) outsiders.push(r);
+  return { outsiders, skipped: [] };
 }
 
 export function computePublicPlaces(rows, groupOverall) {
