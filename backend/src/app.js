@@ -12,6 +12,8 @@ import { createNativeTasksPublicRouter } from './routes/nativeTasksPublic.js';
 import { createSubmissionsPublicRouter } from './routes/submissionsPublic.js';
 import { createSubmissionsAdminRouter } from './routes/submissionsAdmin.js';
 import { createMembershipRouter } from './routes/membership.js';
+import { createResultsPublicRouter, createResultsAdminRouter } from './routes/results.js';
+import { makeResultsStore } from './results/store.js';
 import { listNativeTasks } from './db/nativeTasksRepo.js';
 import {
   listActiveCompetitions,
@@ -461,7 +463,7 @@ async function saveParticipantsFor(slug, participants) {
   await fs.rename(tmp, file);
 }
 
-let cache = {
+export const cache = {
   isRefreshing: false,
   lastSweepAt: null,
   competitionsIndex: [],
@@ -1790,6 +1792,24 @@ export function createApp({ db } = {}) {
   app.use('/api/competitions/:competitionSlug/native-tasks/:taskSlug/submissions', createSubmissionsPublicRouter({ db }));
   app.use('/api/admin/competitions/:competitionSlug/native-tasks/:taskSlug/submissions', adminMw, createSubmissionsAdminRouter({ db }));
   app.use('/api/competitions/:competitionSlug', createMembershipRouter({ db }));
+
+  // Results-reveal ceremony.
+  const resultsStore = makeResultsStore({ getCompetitionDir: competitionDir });
+  const getGroupOverall = async (slug, groupSlug) => {
+    const cc = cache.byCompetition.get(slug);
+    if (cc?.groupsResults?.[groupSlug]) return cc.groupsResults[groupSlug].overall || [];
+    // For native: build leaderboard ad-hoc; groups concept lives only on kaggle for now.
+    return [];
+  };
+  app.use(
+    '/api/competitions/:competitionSlug/results',
+    createResultsPublicRouter({ store: resultsStore, requireCompetition }),
+  );
+  app.use(
+    '/api/admin/competitions/:competitionSlug/results',
+    adminMw,
+    createResultsAdminRouter({ store: resultsStore, requireCompetition, getGroupOverall }),
+  );
 
   return app;
 }
