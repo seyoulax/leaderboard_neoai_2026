@@ -392,9 +392,9 @@ export const results = {
     adminFetch(`/admin/competitions/${slug}/results/upload`, {
       method: 'PUT', body: JSON.stringify({ csv: csvText }),
     }),
-  setSettings: (slug, compareGroupSlug) =>
+  setSettings: (slug, patch) =>
     adminFetch(`/admin/competitions/${slug}/results/settings`, {
-      method: 'PUT', body: JSON.stringify({ compareGroupSlug }),
+      method: 'PUT', body: JSON.stringify(patch),
     }),
   start: (slug) =>
     adminFetch(`/admin/competitions/${slug}/results/start`, { method: 'POST', body: '{}' }),

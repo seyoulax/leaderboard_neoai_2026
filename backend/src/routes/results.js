@@ -95,10 +95,17 @@ export function createResultsAdminRouter({ store, requireCompetition, getGroupOv
   router.put('/settings', async (req, res) => {
     if (!requireCompetition(req, res)) return;
     const slug = req.params.competitionSlug;
-    const compareGroupSlug = String(req.body?.compareGroupSlug || '').toLowerCase().trim();
-    if (!compareGroupSlug) return res.status(400).json({ error: 'compareGroupSlug required' });
+    const patch = {};
+    if (req.body?.compareGroupSlug !== undefined) {
+      const v = String(req.body.compareGroupSlug || '').toLowerCase().trim();
+      if (!v) return res.status(400).json({ error: 'compareGroupSlug required' });
+      patch.compareGroupSlug = v;
+    }
+    if (req.body?.compareSource !== undefined) {
+      patch.compareSource = String(req.body.compareSource || '').trim();
+    }
     try {
-      const next = await store.update(slug, (cur) => reduceSetSettings(cur, { compareGroupSlug }));
+      const next = await store.update(slug, (cur) => reduceSetSettings(cur, patch));
       res.json(next);
     } catch (e) {
       res.status(e.statusCode || 500).json({ error: e.message });
@@ -112,7 +119,7 @@ export function createResultsAdminRouter({ store, requireCompetition, getGroupOv
       const cur = await store.getState(slug);
       if (cur.phase !== PHASE.UPLOADED) return res.status(409).json({ error: `cannot start from phase ${cur.phase}` });
       if (!cur.compareGroupSlug) return res.status(409).json({ error: 'compareGroupSlug not set' });
-      const groupOverall = await getGroupOverall(slug, cur.compareGroupSlug);
+      const groupOverall = await getGroupOverall(slug, cur.compareGroupSlug, cur.compareSource || 'overall');
       const next = await store.update(slug, (s) => reduceStart(s, { groupOverall }));
       res.json(next);
     } catch (e) {

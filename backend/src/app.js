@@ -1795,11 +1795,38 @@ export function createApp({ db } = {}) {
 
   // Results-reveal ceremony.
   const resultsStore = makeResultsStore({ getCompetitionDir: competitionDir });
-  const getGroupOverall = async (slug, groupSlug) => {
+  // Resolve the public ranking inside `groupSlug` for `compareSource`.
+  // - 'overall'      → existing groupsResults[g].overall
+  // - 'board:<bsl>'  → re-aggregate points within the board's tasks per participant inside the group
+  const getGroupOverall = async (slug, groupSlug, compareSource = 'overall') => {
     const cc = cache.byCompetition.get(slug);
-    if (cc?.groupsResults?.[groupSlug]) return cc.groupsResults[groupSlug].overall || [];
-    // For native: build leaderboard ad-hoc; groups concept lives only on kaggle for now.
-    return [];
+    const grp = cc?.groupsResults?.[groupSlug];
+    if (!grp) return [];
+    if (!compareSource || compareSource === 'overall') return grp.overall || [];
+    if (compareSource.startsWith('board:')) {
+      const bSlug = compareSource.slice('board:'.length);
+      const boards = await loadBoardsFor(slug).catch(() => []);
+      const board = boards.find((b) => b.slug === bSlug);
+      if (!board) return [];
+      const taskSlugs = Array.isArray(board.taskSlugs) ? board.taskSlugs : (Array.isArray(board.tasks) ? board.tasks : []);
+      const taskSet = new Set(taskSlugs);
+      const aggregated = [];
+      for (const e of grp.overall || []) {
+        let pts = 0;
+        for (const [tslug, t] of Object.entries(e.tasks || {})) {
+          if (taskSet.has(tslug)) pts += Number(t.points) || 0;
+        }
+        aggregated.push({
+          kaggleId: e.kaggleId || e.nickname || null,
+          nickname: e.nickname || null,
+          totalPoints: pts,
+        });
+      }
+      aggregated.sort((a, b) => b.totalPoints - a.totalPoints);
+      aggregated.forEach((x, i) => { x.place = i + 1; });
+      return aggregated;
+    }
+    return grp.overall || [];
   };
   app.use(
     '/api/competitions/:competitionSlug/results',

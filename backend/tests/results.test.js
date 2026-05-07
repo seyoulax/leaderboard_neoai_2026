@@ -190,6 +190,22 @@ test('reduceSetSettings: stores compareGroupSlug', () => {
   const s = reduceUpload(initialState(), makeRows(2));
   const s2 = reduceSetSettings(s, { compareGroupSlug: 'philippines' });
   assert.equal(s2.compareGroupSlug, 'philippines');
+  assert.equal(s2.compareSource, 'overall'); // default
+});
+
+test('reduceSetSettings: stores compareSource separately and preserves group', () => {
+  let s = reduceUpload(initialState(), makeRows(2));
+  s = reduceSetSettings(s, { compareGroupSlug: 'philippines' });
+  s = reduceSetSettings(s, { compareSource: 'board:round-3' });
+  assert.equal(s.compareSource, 'board:round-3');
+  assert.equal(s.compareGroupSlug, 'philippines');
+});
+
+test('reduceSetSettings: rejects malformed compareSource', () => {
+  let s = reduceUpload(initialState(), makeRows(2));
+  s = reduceSetSettings(s, { compareGroupSlug: 'g' });
+  assert.throws(() => reduceSetSettings(s, { compareSource: 'private' }), /invalid compareSource/);
+  assert.throws(() => reduceSetSettings(s, { compareSource: 'board:' }), /invalid compareSource/);
 });
 
 test('reduceStart: N>8 enters OUTSIDERS with all places N..9', () => {

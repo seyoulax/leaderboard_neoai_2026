@@ -45,8 +45,8 @@ function DrumRollOverlay() {
   return (
     <div className="results-reveal-drumroll">
       <div className="results-reveal-drumroll-inner">
-        <div className="results-reveal-drumroll-emoji">🥁🤔</div>
-        <h2>Кто же пройдёт в сборную?</h2>
+        <div className="results-reveal-drumroll-emoji">🥁🎉</div>
+        <h2>Вот они — слева направо</h2>
       </div>
     </div>
   );

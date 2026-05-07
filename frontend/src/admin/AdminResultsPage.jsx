@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { results, getOverallLeaderboard } from '../api.js';
+import { results, getOverallLeaderboard, getBoards } from '../api.js';
 
 export default function AdminResultsPage() {
   const { slug: competitionSlug } = useParams();
   const [state, setState] = useState(null);
   const [groupsMeta, setGroupsMeta] = useState([]);
+  const [boards, setBoards] = useState([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
 
@@ -15,10 +16,12 @@ export default function AdminResultsPage() {
     Promise.all([
       results.adminGet(competitionSlug),
       getOverallLeaderboard(competitionSlug).catch(() => null),
-    ]).then(([s, lb]) => {
+      getBoards(competitionSlug).catch(() => null),
+    ]).then(([s, lb, bd]) => {
       if (!active) return;
       setState(s);
       setGroupsMeta(lb?.groupsMeta || []);
+      setBoards(bd?.boards || []);
     }).catch((e) => {
       if (active) setErr(e.message || String(e));
     });
@@ -50,7 +53,14 @@ export default function AdminResultsPage() {
 
   function onSetGroup(slug) {
     withBusy(async () => {
-      const next = await results.setSettings(competitionSlug, slug);
+      const next = await results.setSettings(competitionSlug, { compareGroupSlug: slug });
+      setState(next);
+    });
+  }
+
+  function onSetSource(source) {
+    withBusy(async () => {
+      const next = await results.setSettings(competitionSlug, { compareSource: source });
       setState(next);
     });
   }
@@ -88,7 +98,9 @@ export default function AdminResultsPage() {
       <SettingsSection
         state={state}
         groupsMeta={groupsMeta}
-        onChange={onSetGroup}
+        boards={boards}
+        onChangeGroup={onSetGroup}
+        onChangeSource={onSetSource}
         disabled={busy}
       />
       <StartSection state={state} onStart={onStart} disabled={busy} />
@@ -125,23 +137,43 @@ function UploadSection({ state, onUpload, disabled }) {
   );
 }
 
-function SettingsSection({ state, groupsMeta, onChange, disabled }) {
+function SettingsSection({ state, groupsMeta, boards, onChangeGroup, onChangeSource, disabled }) {
   const blocked = state.phase === 'revealing' || state.phase === 'finished';
-  const value = state.compareGroupSlug || '';
+  const groupValue = state.compareGroupSlug || '';
+  const sourceValue = state.compareSource || 'overall';
+  const lockedSelect = disabled || blocked || state.phase === 'idle';
   return (
     <section className="admin-results-section">
-      <h3>2. Группа сравнения</h3>
-      <p className="status">Внутри этой группы считаем «было место №X» по public-лидерборду.</p>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        disabled={disabled || blocked || state.phase === 'idle'}
-      >
-        <option value="" disabled>— выберите группу —</option>
-        {(groupsMeta || []).map((g) => (
-          <option key={g.slug} value={g.slug}>{g.title}</option>
-        ))}
-      </select>
+      <h3>2. С чем сравниваем</h3>
+      <p className="status">«Было место №X» считается внутри выбранной группы по выбранному public-лидерборду.</p>
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <span>Группа</span>
+          <select
+            value={groupValue}
+            onChange={(e) => onChangeGroup(e.target.value)}
+            disabled={lockedSelect}
+          >
+            <option value="" disabled>— выберите —</option>
+            {(groupsMeta || []).map((g) => (
+              <option key={g.slug} value={g.slug}>{g.title}</option>
+            ))}
+          </select>
+        </label>
+        <label style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <span>Лидерборд</span>
+          <select
+            value={sourceValue}
+            onChange={(e) => onChangeSource(e.target.value)}
+            disabled={lockedSelect}
+          >
+            <option value="overall">Общий public</option>
+            {(boards || []).map((b) => (
+              <option key={b.slug} value={`board:${b.slug}`}>{b.title}</option>
+            ))}
+          </select>
+        </label>
+      </div>
       {state.phase === 'idle' ? <p className="status">Сначала загрузи CSV.</p> : null}
     </section>
   );

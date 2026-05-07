@@ -24,6 +24,7 @@ export function initialState() {
     version: 1,
     phase: PHASE.IDLE,
     compareGroupSlug: null,
+    compareSource: 'overall', // 'overall' | 'board:<slug>'
     rows: [],
     skipPlan: { outsiders: [], skipped: [] },
     cursor: { stage: STAGE.IDLE, outsidersIdx: -1, top8Rank: 0, top8Step: 'place' },
@@ -180,25 +181,35 @@ export function reduceUpload(state, rows) {
     phase: PHASE.UPLOADED,
     rows,
     compareGroupSlug: state.compareGroupSlug || null,
+    compareSource: state.compareSource || 'overall',
     createdAt: state.createdAt || nowIso(),
     updatedAt: nowIso(),
     stepId: state.stepId + 1,
   };
 }
 
-export function reduceSetSettings(state, { compareGroupSlug }) {
+const COMPARE_SOURCE_RE = /^(overall|board:[a-z0-9][a-z0-9-]*)$/;
+
+export function reduceSetSettings(state, { compareGroupSlug, compareSource }) {
   if (state.phase === PHASE.REVEALING || state.phase === PHASE.FINISHED) {
     const err = new Error('cannot change settings during ceremony'); err.statusCode = 409; throw err;
   }
-  if (typeof compareGroupSlug !== 'string' || !compareGroupSlug) {
-    const err = new Error('compareGroupSlug required'); err.statusCode = 400; throw err;
+  const next = { ...state };
+  if (compareGroupSlug !== undefined) {
+    if (typeof compareGroupSlug !== 'string' || !compareGroupSlug) {
+      const err = new Error('compareGroupSlug required'); err.statusCode = 400; throw err;
+    }
+    next.compareGroupSlug = compareGroupSlug;
   }
-  return {
-    ...state,
-    compareGroupSlug,
-    updatedAt: nowIso(),
-    stepId: state.stepId + 1,
-  };
+  if (compareSource !== undefined) {
+    if (typeof compareSource !== 'string' || !COMPARE_SOURCE_RE.test(compareSource)) {
+      const err = new Error(`invalid compareSource "${compareSource}"`); err.statusCode = 400; throw err;
+    }
+    next.compareSource = compareSource;
+  }
+  next.updatedAt = nowIso();
+  next.stepId = state.stepId + 1;
+  return next;
 }
 
 export function reduceStart(state, { groupOverall }) {
